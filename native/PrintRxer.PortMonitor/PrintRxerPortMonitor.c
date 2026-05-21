@@ -11,8 +11,8 @@
  * PrintRxer first-cut native port monitor.
  *
  * This exposes one fixed local port, "printrx:", and captures the raw XPS
- * payload to %ProgramData%\printrxer_v3\work\spool\<job-folder>\job.xps. When the job
- * completes, the folder is atomically moved into %ProgramData%\printrxer_v3\work\
+ * payload to %ProgramData%\printRxer\work\spool\<job-folder>\job.xps. When the job
+ * completes, the folder is atomically moved into %ProgramData%\printRxer\work\
  * incoming\<job-folder> for the managed agent to process.
  *
  * The monitor does not open network sockets or implement a remote transport.
@@ -22,7 +22,7 @@
 static const WCHAR PRINT_RXER_PORT_NAME[] = L"printrx:";
 static const WCHAR PRINT_RXER_MONITOR_NAME[] = L"PrintRxer Port Monitor";
 static const WCHAR PRINT_RXER_DESCRIPTION[] = L"PrintRxer XPS capture port";
-static const WCHAR PRINT_RXER_ROOT_NAME[] = L"printrxer_v3";
+static const WCHAR PRINT_RXER_ROOT_NAME[] = L"printRxer";
 static const WCHAR PRINT_RXER_WORK_NAME[] = L"work";
 static const WCHAR PRINT_RXER_SPOOL_NAME[] = L"spool";
 static const WCHAR PRINT_RXER_INCOMING_NAME[] = L"incoming";
