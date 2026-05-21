@@ -217,28 +217,35 @@ internal sealed class SuiteInstallerForm : Form
         {
             Text = "Uninstall / repair",
             StartPosition = FormStartPosition.CenterParent,
-            Size = new Size(520, 260),
+            MinimumSize = new Size(560, 360),
+            Size = new Size(600, 380),
             FormBorderStyle = FormBorderStyle.FixedDialog,
             MaximizeBox = false,
             MinimizeBox = false
         };
 
-        FlowLayoutPanel panel = new()
+        TableLayoutPanel panel = new()
         {
             Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.TopDown,
+            ColumnCount = 1,
+            RowCount = 4,
             Padding = new Padding(20)
         };
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
         Button repairPrintRxer = CreateButton("Repair / reinstall printRxer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath); });
         Button repairHealthMailer = CreateButton("Repair / reinstall HealthMailer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.HealthMailerSetupPath); });
         Button uninstallPrintRxer = CreateButton("Uninstall printRxer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath, "--uninstall"); });
         Button uninstallHealthMailer = CreateButton("Uninstall HealthMailer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.HealthMailerSetupPath, "--uninstall"); });
 
-        panel.Controls.Add(repairPrintRxer);
-        panel.Controls.Add(repairHealthMailer);
-        panel.Controls.Add(uninstallPrintRxer);
-        panel.Controls.Add(uninstallHealthMailer);
+        foreach (Button button in new[] { repairPrintRxer, repairHealthMailer, uninstallPrintRxer, uninstallHealthMailer })
+        {
+            button.Dock = DockStyle.Fill;
+            button.Margin = new Padding(0, 0, 0, 12);
+            panel.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
+            panel.Controls.Add(button);
+        }
+
         dialog.Controls.Add(panel);
         dialog.ShowDialog(this);
     }

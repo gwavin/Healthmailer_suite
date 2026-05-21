@@ -49,6 +49,8 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("Create support bundle", form, StringComparison.Ordinal);
         Assert.Contains("Uninstall / repair", form, StringComparison.Ordinal);
         Assert.Contains("excludes PDF payloads by default", form, StringComparison.Ordinal);
+        Assert.Contains("MinimumSize = new Size(560, 360)", form, StringComparison.Ordinal);
+        Assert.Contains("TableLayoutPanel panel", form, StringComparison.Ordinal);
     }
 
     private static string FindRepoRoot()
