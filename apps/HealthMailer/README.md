@@ -1,0 +1,150 @@
+# HealthMailer
+
+HealthMailer is the local Outlook courier for PrintRxer v3 handoff packages.
+
+It watches a configured handoff folder, validates a completed PrintRxer v3 package, sends the PDF through the logged-in user's Outlook profile, optionally copies the PDF to a ViewPoint/chart import folder, writes terminal audit records, and archives the package locally.
+
+## Runtime Flow
+
+```text
+PrintRxer v3 package folder
+  request.json
+  prescription.pdf
+  request.sha256
+  READY
+        |
+HealthMailer watcher
+        |
+validate READY + PDF signature + SHA256
+        |
+Outlook COM send using current user profile
+        |
+optional chart/ViewPoint copy
+        |
+result.json + summary.txt
+        |
+local sent/failed/quarantine archive
+```
+
+HealthMailer does not use SMTP, Microsoft Graph, a relay service, or embedded credentials.
+
+HealthMailer can be installed by itself on the Outlook/Healthmail machine. It does not require PrintRxerV3 to be installed locally; it only needs access to the configured handoff folder.
+
+## Install
+
+Publish the single-file EXE:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\Publish-HealthMailer.ps1
+```
+
+Run the setup wizard:
+
+```powershell
+.\publish\HealthMailer\HealthMailer.exe --install
+```
+
+The wizard asks the user to browse to:
+
+- the PrintRxer v3 handoff folder
+- optionally, the ViewPoint/chart import folder
+
+It writes config to:
+
+```text
+%ProgramData%\HealthMailer\healthmailer.settings.json
+```
+
+and registers a per-user logon scheduled task named `HealthMailer`.
+
+The handoff folder may be local for same-machine testing or a UNC path such as `\\server\HealthMailerDrop$\incoming` for site deployment. UNC paths should be used directly rather than mapped drive letters.
+
+## Secure Handling
+
+HealthMailer rejects packages unless all of these are true:
+
+- the package folder is not a staging folder such as `.writing-*`
+  or `.uploading-*`
+- `READY` exists
+- `request.json`, `prescription.pdf`, and `request.sha256` exist
+- `prescription.pdf` begins with `%PDF-`
+- the actual PDF SHA256 matches both `request.json` and `request.sha256`
+- a selected recipient email is present
+
+Every terminal processing attempt writes `result.json` and a human-readable
+`summary.txt` into the package before it is archived. `summary.html` can be
+enabled with `WriteHtmlSummary`; generated HTML is self-contained and does not
+use scripts or external resources.
+
+HealthMailer also maintains:
+
+```text
+%ProgramData%\HealthMailer\processed-ledger.jsonl
+```
+
+The ledger records successfully sent package IDs and completed package hashes.
+If either value is seen again, HealthMailer quarantines the duplicate instead of
+sending it.
+
+The default processing order is:
+
+```text
+validate -> mail send -> chart/ViewPoint copy -> result.json -> archive
+```
+
+Chart/ViewPoint copy therefore happens only after a successful mail handoff
+unless code is explicitly changed to use a different policy.
+
+For local folders, the installer attempts to harden ACLs for the HealthMailer root and configured folders. For shared folders, ACLs must still be set correctly on the file server. The share should be restricted to the PrintRxer v3 writer identity, the HealthMailer runtime user, local admins, and authorised support admins only.
+
+Processed packages are moved out of the handoff folder into:
+
+```text
+%ProgramData%\HealthMailer\sent
+%ProgramData%\HealthMailer\failed
+%ProgramData%\HealthMailer\quarantine
+```
+
+## Commands
+
+Run watcher:
+
+```powershell
+HealthMailer.exe --watch
+```
+
+Process current ready packages once:
+
+```powershell
+HealthMailer.exe --process-once
+```
+
+Validate config and Outlook registration:
+
+```powershell
+HealthMailer.exe --validate
+```
+
+Uninstall scheduled task:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-HealthMailer.ps1
+```
+
+Remove local HealthMailer data as well:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-HealthMailer.ps1 -RemoveData
+```
+
+## ViewPoint Import
+
+The chart-copy feature is configurable but conservative by default. It uses this filename template:
+
+```text
+Rx-{MRN}-{PackageId}.pdf
+```
+
+and writes a JSON sidecar containing package ID, MRN, patient name, copied timestamp, and PDF SHA256.
+
+The exact ViewPoint import filename convention still needs confirmation from the local ViewPoint documentation or vendor/admin configuration. Until that is confirmed, the filename template should be treated as a safe placeholder rather than a guaranteed chart-ingestion contract.

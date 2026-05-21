@@ -1,0 +1,127 @@
+*%
+*% PrintRxer custom XPS driver scaffold.
+*% Based on the shape of Microsoft's package-aware XPS printer descriptors.
+*%
+*GPDFileVersion: "1.0"
+*GPDSpecVersion: "1.0"
+*GPDFileName:    "PrintRxerXpsDrv.gpd"
+*ModelName:      "PrintRxer XPS Driver"
+*MasterUnits:    PAIR(1200, 1200)
+*PrinterType:    PAGE
+*MaxCopies:      999
+
+*IsXPSDriver?: TRUE
+*PrintSchemaPrivateNamespaceURI: "https://printrxer.local/printschema/private"
+
+*Include:        "StdNames.gpd"
+*Include:        "MSxpsinc.gpd"
+*ResourceDLL:    "unires.dll"
+
+*%******************************************************************************
+*%                             Orientation
+*%******************************************************************************
+*Feature: Orientation
+{
+    *rcNameID: =ORIENTATION_DISPLAY
+    *DefaultOption: PORTRAIT
+
+    *Option: PORTRAIT
+    {
+        *rcNameID: =PORTRAIT_DISPLAY
+    }
+
+    *Option: LANDSCAPE_CC270
+    {
+        *rcNameID: =LANDSCAPE_DISPLAY
+    }
+}
+
+*%******************************************************************************
+*%                              Resolution
+*%******************************************************************************
+*Feature: Resolution
+{
+    *rcNameID: =RESOLUTION_DISPLAY
+    *DefaultOption: 600dpi
+
+    *Option: 300dpi
+    {
+        *Name: "300x300 " =DOTS_PER_INCH
+        *DPI: PAIR(300, 300)
+        *TextDPI: PAIR(300, 300)
+        *SpotDiameter: 100
+    }
+
+    *Option: 600dpi
+    {
+        *Name: "600x600 " =DOTS_PER_INCH
+        *DPI: PAIR(600, 600)
+        *TextDPI: PAIR(600, 600)
+        *SpotDiameter: 100
+    }
+}
+
+*%******************************************************************************
+*%                            Paper Size
+*%******************************************************************************
+*Feature: PaperSize
+{
+    *rcNameID: =PAPER_SIZE_DISPLAY
+    *DefaultOption: LETTER
+
+    *Option: LETTER
+    {
+        *rcNameID: =RCID_DMPAPER_SYSTEM_NAME
+        *PrintableOrigin: PAIR(0, 0)
+        *PrintableArea: PAIR(10200, 13200)
+        *CursorOrigin: PAIR(0, 0)
+    }
+
+    *Option: A4
+    {
+        *rcNameID: =RCID_DMPAPER_SYSTEM_NAME
+        *PrintableOrigin: PAIR(0, 0)
+        *PrintableArea: PAIR(9924, 14028)
+        *CursorOrigin: PAIR(0, 0)
+    }
+}
+
+*%******************************************************************************
+*%                            Media Type
+*%******************************************************************************
+*Feature: MediaType
+{
+    *rcNameID: =MEDIA_TYPE_DISPLAY
+    *DefaultOption: STANDARD
+
+    *Option: STANDARD
+    {
+        *rcNameID: =PLAIN_PAPER_DISPLAY
+    }
+}
+
+*%******************************************************************************
+*%                            Color Mode
+*%******************************************************************************
+*Feature: ColorMode
+{
+    *Name: "Color Mode"
+    *DefaultOption: RGB24
+    *ConcealFromUI?: TRUE
+
+    *Option: RGB24
+    {
+        *Name: "24 bpp"
+        *DevNumOfPlanes: 1
+        *DevBPP: 24
+        *DrvBPP: 24
+    }
+}
+
+*%******************************************************************************
+*%                         Cursor Commands
+*%******************************************************************************
+*Command: CmdCR { *Cmd : "" }
+*Command: CmdLF { *Cmd : "" }
+*Command: CmdFF { *Cmd : "" }
+*Command: CmdSendBlockData { *Cmd : "" }

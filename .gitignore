@@ -1,0 +1,15 @@
+bin/
+obj/
+publish/
+tmp/
+dist/
+*.zip
+*.nupkg
+*.msi
+*.exe
+!assets/**/*.exe
+**/bin/
+**/obj/
+**/publish/
+**/tmp/
+**/dist/

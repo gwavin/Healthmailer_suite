@@ -1,0 +1,51 @@
+[Version]
+Signature="$Windows NT$"
+Provider="PrintRxer"
+ClassGUID={4D36E979-E325-11CE-BFC1-08002BE10318}
+Class=Printer
+CatalogFile=PrintRxerXpsDrv.cat
+DriverVer=03/24/2026,1.0.0.0
+
+[Manufacturer]
+"PrintRxer"=PrintRxer,NTamd64
+
+[PrintRxer.NTamd64]
+"PrintRxer XPS Driver" = PRINTRX_XPS,,PrintRxer_XPS_Driver
+
+[PRINTRX_XPS]
+CopyFiles=PRINTRX_XPS_FILES
+ConfigFile=PrintConfig.dll
+DataFile=PrintRxerXpsDrv.gpd
+DriverFile=mxdwdrv.dll
+DriverCategory=PrintFax.Printer.Virtual
+CoreDriverSections="{D20EA372-DD35-4950-9ED8-A6335AFE79F5},XPSDRV.OEM"
+
+[PRINTRX_XPS_FILES]
+PrintRxer-pipelineconfig.xml
+PrintRxerXpsDrv.gpd
+PrintConfig.dll
+
+[PRINTRX_XPS.Services]
+AddService = , %SPSVCINST_ASSOCSERVICE%
+
+[DestinationDirs]
+PRINTRX_XPS_FILES=66000
+
+[SourceDisksFiles]
+PrintRxerXpsDrv.gpd         = 1
+PrintRxer-pipelineconfig.xml = 1
+PrintConfig.dll             = 1
+
+[PrinterPackageInstallation.amd64]
+PackageAware=TRUE
+CoreDriverDependencies={D20EA372-DD35-4950-9ED8-A6335AFE79F5}
+
+[ControlFlags]
+AlwaysExcludeFromSelect=*
+
+[Strings]
+SPSVCINST_ASSOCSERVICE = 0x00000002
+Disk1 = "PrintRxer Driver Package"
+
+[SourceDisksNames.amd64]
+1 = %Disk1%,,,"amd64"

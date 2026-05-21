@@ -1,0 +1,220 @@
+using System.Text.Json;
+
+namespace PrintRxerV3Installer;
+
+internal static class PrintRxerInstaller
+{
+    public static void Install(InstallOptions options, Action<string> log)
+    {
+        if (!Directory.Exists(InstallerPaths.PayloadPublishRoot))
+        {
+            throw new DirectoryNotFoundException("The installer payload is missing: " + InstallerPaths.PayloadPublishRoot);
+        }
+
+        log("Creating local folders.");
+        CreateDirectories();
+
+        log("Installing PrintRxerV3 application files.");
+        CopyDirectory(InstallerPaths.PayloadPublishRoot, InstallerPaths.ProgramFilesRoot);
+
+        log("Seeding recipients and picker image if missing.");
+        SeedDataFiles();
+
+        log("Writing PrintRxerV3 configuration.");
+        WriteConfig(options.HandoffRoot);
+
+        log("Installing printRxer capture printer.");
+        InstallCapturePrinter();
+
+        log("Verifying printRxer capture printer.");
+        VerifyCapturePrinter();
+
+        log("Registering PrintRxerV3 watcher task.");
+        RegisterScheduledTask();
+    }
+
+    private static void CreateDirectories()
+    {
+        foreach (string path in new[]
+        {
+            InstallerPaths.ProgramFilesRoot,
+            InstallerPaths.ProgramDataRoot,
+            Path.Combine(InstallerPaths.ProgramDataRoot, "config"),
+            Path.Combine(InstallerPaths.ProgramDataRoot, "data", "recipients"),
+            Path.Combine(InstallerPaths.ProgramDataRoot, "data", "Images"),
+            Path.Combine(InstallerPaths.ProgramDataRoot, "work", "incoming"),
+            Path.Combine(InstallerPaths.ProgramDataRoot, "processed"),
+            Path.Combine(InstallerPaths.ProgramDataRoot, "deferred"),
+            Path.Combine(InstallerPaths.ProgramDataRoot, "pending-outbox"),
+            Path.Combine(InstallerPaths.ProgramDataRoot, "published"),
+            Path.Combine(InstallerPaths.ProgramDataRoot, "failed"),
+            Path.Combine(InstallerPaths.ProgramDataRoot, "logs"),
+            Path.Combine(InstallerPaths.ProgramDataRoot, "temp")
+        })
+        {
+            Directory.CreateDirectory(path);
+        }
+    }
+
+    private static void SeedDataFiles()
+    {
+        string recipientsSource = Path.Combine(InstallerPaths.PayloadAssetsRoot, "recipients", "recipients.csv");
+        string imageSource = Path.Combine(InstallerPaths.PayloadAssetsRoot, "branding", "mncms_400x400.jpg");
+        string recipientsDestination = Path.Combine(InstallerPaths.ProgramDataRoot, "data", "recipients", "recipients.csv");
+        string imageDestination = Path.Combine(InstallerPaths.ProgramDataRoot, "data", "Images", "mncms_400x400.jpg");
+
+        MergeRecipientsFile(recipientsSource, recipientsDestination);
+
+        if (File.Exists(imageSource) && !File.Exists(imageDestination))
+        {
+            File.Copy(imageSource, imageDestination);
+        }
+    }
+
+    private static void MergeRecipientsFile(string source, string destination)
+    {
+        if (!File.Exists(source))
+        {
+            return;
+        }
+
+        if (!File.Exists(destination))
+        {
+            File.Copy(source, destination);
+            return;
+        }
+
+        string[] sourceLines = File.ReadAllLines(source);
+        string[] destinationLines = File.ReadAllLines(destination);
+        if (sourceLines.Length == 0)
+        {
+            return;
+        }
+
+        HashSet<string> destinationEmails = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string line in destinationLines.Skip(1))
+        {
+            string email = GetEmail(line);
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                destinationEmails.Add(email);
+            }
+        }
+
+        List<string> missing = new();
+        foreach (string line in sourceLines.Skip(1))
+        {
+            string email = GetEmail(line);
+            if (!string.IsNullOrWhiteSpace(email) && !destinationEmails.Contains(email))
+            {
+                missing.Add(line);
+                destinationEmails.Add(email);
+            }
+        }
+
+        if (missing.Count > 0)
+        {
+            File.AppendAllLines(destination, missing);
+        }
+    }
+
+    private static string GetEmail(string csvLine)
+    {
+        string[] parts = csvLine.Split(',');
+        return parts.Length > 8 ? parts[8].Trim() : string.Empty;
+    }
+
+    private static void WriteConfig(string handoffRoot)
+    {
+        object config = new
+        {
+            IncomingRoot = Path.Combine(InstallerPaths.ProgramDataRoot, "work", "incoming"),
+            ProcessedRoot = Path.Combine(InstallerPaths.ProgramDataRoot, "processed"),
+            DeferredRoot = Path.Combine(InstallerPaths.ProgramDataRoot, "deferred"),
+            LocalOutboxRoot = Path.Combine(InstallerPaths.ProgramDataRoot, "pending-outbox"),
+            PublishedRoot = Path.Combine(InstallerPaths.ProgramDataRoot, "published"),
+            FailedRoot = Path.Combine(InstallerPaths.ProgramDataRoot, "failed"),
+            LogsRoot = Path.Combine(InstallerPaths.ProgramDataRoot, "logs"),
+            TempRoot = Path.Combine(InstallerPaths.ProgramDataRoot, "temp"),
+            HandoffRoot = handoffRoot,
+            PayloadStableSeconds = 1,
+            RequireJobOwnerMatch = true,
+            AllowMissingSubmittingSid = false,
+            RetryIntervalSeconds = 1,
+            MaxLogBytes = 5242880,
+            MaxLogFiles = 3
+        };
+
+        string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText(InstallerPaths.ConfigPath, json);
+    }
+
+    private static void RegisterScheduledTask()
+    {
+        string exe = InstallerPaths.InstalledExePath;
+        string config = InstallerPaths.ConfigPath;
+        string user = Environment.UserDomainName + "\\" + Environment.UserName;
+        string command = @"
+$action = New-ScheduledTaskAction -Execute '" + EscapeSingleQuoted(exe) + @"' -Argument '--watch --config """ + EscapeForPowerShellDoubleQuoted(config) + @"""'
+$logonTrigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+$watchdogTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1) -RepetitionDuration (New-TimeSpan -Days 999)
+$principal = New-ScheduledTaskPrincipal -UserId '" + EscapeSingleQuoted(user) + @"' -LogonType Interactive -RunLevel Limited
+$settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit (New-TimeSpan -Days 999) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
+Register-ScheduledTask -TaskName '" + InstallerPaths.TaskName + @"' -Action $action -Trigger @($logonTrigger, $watchdogTrigger) -Principal $principal -Settings $settings -Force | Out-Null
+Start-ScheduledTask -TaskName '" + InstallerPaths.TaskName + @"'
+";
+        ProcessRunner.PowerShell(command);
+    }
+
+    private static void InstallCapturePrinter()
+    {
+        string script = Path.Combine(InstallerPaths.PayloadToolsRoot, "Install-PrintRxerCapturePrinter.ps1");
+        if (!File.Exists(script))
+        {
+            throw new FileNotFoundException("The capture printer install payload is missing.", script);
+        }
+
+        ProcessRunner.PowerShellFile(script);
+    }
+
+    private static void VerifyCapturePrinter()
+    {
+        string command = @"
+$printer = Get-Printer -Name 'printRxer' -ErrorAction SilentlyContinue
+$port = Get-PrinterPort -Name 'printrx:' -ErrorAction SilentlyContinue
+$driver = Get-PrinterDriver -Name 'PrintRxer XPS Driver' -ErrorAction SilentlyContinue
+if (-not $printer) { throw 'The printRxer printer is not visible in Windows after installation.' }
+if (-not $port) { throw 'The printrx: capture port is not visible in Windows after installation.' }
+if (-not $driver) { throw 'The PrintRxer XPS Driver is not visible in Windows after installation.' }
+if ($printer.PortName -ne 'printrx:') { throw ('The printRxer printer is using port ' + $printer.PortName + ' instead of printrx:.') }
+if ($printer.DriverName -ne 'PrintRxer XPS Driver') { throw ('The printRxer printer is using driver ' + $printer.DriverName + ' instead of PrintRxer XPS Driver.') }
+";
+        ProcessRunner.PowerShell(command);
+    }
+
+    private static string EscapeSingleQuoted(string value)
+    {
+        return value.Replace("'", "''", StringComparison.Ordinal);
+    }
+
+    private static string EscapeForPowerShellDoubleQuoted(string value)
+    {
+        return value.Replace("`", "``", StringComparison.Ordinal).Replace("\"", "`\"", StringComparison.Ordinal);
+    }
+
+    private static void CopyDirectory(string source, string destination)
+    {
+        Directory.CreateDirectory(destination);
+        foreach (string directory in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
+        {
+            Directory.CreateDirectory(Path.Combine(destination, Path.GetRelativePath(source, directory)));
+        }
+
+        foreach (string file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
+        {
+            string target = Path.Combine(destination, Path.GetRelativePath(source, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(file, target, overwrite: true);
+        }
+    }
+}

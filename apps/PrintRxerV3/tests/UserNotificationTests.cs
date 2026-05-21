@@ -1,0 +1,22 @@
+using PrintRxerV3.Notifications;
+using Xunit;
+
+namespace PrintRxerV3.Tests;
+
+public sealed class UserNotificationTests
+{
+    [Fact]
+    public void BuildPackageReadyMessage_names_handoff_folder_and_scheduled_sending()
+    {
+        string packageFolder = @"C:\ProgramData\printrxer_v3\handoff\pkg-1";
+
+        UserNotificationMessage message = UserNotificationMessageBuilder.BuildPackageReadyMessage(packageFolder);
+
+        Assert.Equal("PrintRxer v3 package ready", message.Title);
+        Assert.Contains(packageFolder, message.Body);
+        Assert.Contains("clinical document", message.Body, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("HealthMailer", message.Body, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("scheduled sending", message.Body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("sent", message.Body, StringComparison.OrdinalIgnoreCase);
+    }
+}

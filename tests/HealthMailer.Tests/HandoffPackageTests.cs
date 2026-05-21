@@ -1,0 +1,117 @@
+using System.Text.Json;
+using HealthMailer;
+using Xunit;
+
+namespace HealthMailer.Tests;
+
+public sealed class HandoffPackageTests
+{
+    [Fact]
+    public void TryLoadReadyPackage_rejects_directory_without_ready_marker()
+    {
+        string packageDirectory = CreatePackage(includeReady: false);
+
+        PackageLoadResult result = HandoffPackageLoader.TryLoad(packageDirectory);
+
+        Assert.False(result.Success);
+        Assert.Contains("READY", result.Error, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void TryLoadReadyPackage_rejects_hash_mismatch()
+    {
+        string packageDirectory = CreatePackage();
+        File.WriteAllText(Path.Combine(packageDirectory, "request.sha256"), "bad  prescription.pdf");
+
+        PackageLoadResult result = HandoffPackageLoader.TryLoad(packageDirectory);
+
+        Assert.False(result.Success);
+        Assert.Contains("SHA256", result.Error, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void TryLoadReadyPackage_maps_v3_request_to_delivery_package()
+    {
+        string packageDirectory = CreatePackage();
+
+        PackageLoadResult result = HandoffPackageLoader.TryLoad(packageDirectory);
+
+        Assert.True(result.Success, result.Error);
+        Assert.NotNull(result.Package);
+        Assert.Equal("alpha@example.ie", result.Package.RecipientEmail);
+        Assert.Equal("Prescription for review", result.Package.Subject);
+        Assert.Equal("Jane Doe", result.Package.PatientName);
+        Assert.Equal("MRN123", result.Package.Mrn);
+        Assert.EndsWith("prescription.pdf", result.Package.AttachmentPath);
+    }
+
+    [Fact]
+    public void TryLoadReadyPackage_completed_hash_is_deterministic()
+    {
+        string packageDirectory = CreatePackage();
+
+        PackageLoadResult first = HandoffPackageLoader.TryLoad(packageDirectory);
+        PackageLoadResult second = HandoffPackageLoader.TryLoad(packageDirectory);
+
+        Assert.True(first.Success, first.Error);
+        Assert.True(second.Success, second.Error);
+        Assert.Equal(first.Package!.CompletedPackageHash, second.Package!.CompletedPackageHash);
+    }
+
+    [Fact]
+    public void ChartCopy_uses_phi_minimised_unique_filename_and_sidecar_metadata()
+    {
+        string packageDirectory = CreatePackage();
+        DeliveryPackage package = HandoffPackageLoader.TryLoad(packageDirectory).Package!;
+        string destinationRoot = Path.Combine(Path.GetTempPath(), "healthmailer-chart-" + Guid.NewGuid().ToString("N"));
+
+        string copiedPath = new ChartCopyWriter().CopyToChartFolder(package, new ChartCopyOptions
+        {
+            Enabled = true,
+            DestinationRoot = destinationRoot
+        });
+
+        Assert.Equal("Rx-MRN123-" + package.PackageId + ".pdf", Path.GetFileName(copiedPath));
+        Assert.True(File.Exists(copiedPath));
+        Assert.True(File.Exists(Path.ChangeExtension(copiedPath, ".json")));
+    }
+
+    private static string CreatePackage(bool includeReady = true)
+    {
+        string packageDirectory = Path.Combine(Path.GetTempPath(), "healthmailer-package-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(packageDirectory);
+        string pdfPath = Path.Combine(packageDirectory, "prescription.pdf");
+        File.WriteAllText(pdfPath, "%PDF-1.4\n% test\n");
+        string hash = SecurityUtilities.ComputeSha256(pdfPath);
+        object request = new
+        {
+            packageId = "pkg-123",
+            selectedRecipientEmail = "alpha@example.ie",
+            selectedRecipientName = "Alpha Pharmacy",
+            subject = "Prescription for review",
+            body = "Please see attached.",
+            pdfSha256 = hash,
+            patientName = "Jane Doe",
+            mrn = "MRN123",
+            pickerSelection = new
+            {
+                recipientName = "Alpha Pharmacy",
+                recipientEmail = "alpha@example.ie",
+                subject = "Prescription for review",
+                body = "Please see attached."
+            },
+            printJobOrigin = new
+            {
+                documentName = "Rx Jane Doe MRN123"
+            }
+        };
+        File.WriteAllText(Path.Combine(packageDirectory, "request.json"), JsonSerializer.Serialize(request));
+        File.WriteAllText(Path.Combine(packageDirectory, "request.sha256"), hash + "  prescription.pdf" + Environment.NewLine);
+        if (includeReady)
+        {
+            File.WriteAllText(Path.Combine(packageDirectory, "READY"), string.Empty);
+        }
+
+        return packageDirectory;
+    }
+}

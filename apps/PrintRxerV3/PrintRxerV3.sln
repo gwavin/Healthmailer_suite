@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintRxerV3", "src\PrintRxerV3.csproj", "{3DDB1F94-2034-42BC-917A-94E58C99B750}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintRxerV3.Tests", "tests\PrintRxerV3.Tests.csproj", "{D04E378A-D8D6-46DE-A80E-14C0458CDDCB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrintRxerV3.App", "app\PrintRxerV3.App.csproj", "{5582E80A-E06C-4D24-935D-FDBDBF06A7AF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3DDB1F94-2034-42BC-917A-94E58C99B750}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DDB1F94-2034-42BC-917A-94E58C99B750}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DDB1F94-2034-42BC-917A-94E58C99B750}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DDB1F94-2034-42BC-917A-94E58C99B750}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D04E378A-D8D6-46DE-A80E-14C0458CDDCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D04E378A-D8D6-46DE-A80E-14C0458CDDCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D04E378A-D8D6-46DE-A80E-14C0458CDDCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D04E378A-D8D6-46DE-A80E-14C0458CDDCB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5582E80A-E06C-4D24-935D-FDBDBF06A7AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5582E80A-E06C-4D24-935D-FDBDBF06A7AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5582E80A-E06C-4D24-935D-FDBDBF06A7AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5582E80A-E06C-4D24-935D-FDBDBF06A7AF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
