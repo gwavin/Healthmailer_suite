@@ -9,8 +9,8 @@ internal static class SuitePaths
 
     public static string BundleRoot => AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
     public static string PayloadRoot => Path.Combine(BundleRoot, "payload");
-    public static string PrintRxerSetupPath => Path.Combine(PayloadRoot, "installers", "printRxer", "printRxerSetup.exe");
-    public static string HealthMailerSetupPath => Path.Combine(PayloadRoot, "installers", "HealthMailer", "HealthMailerSetup.exe");
+    public static string PrintRxerSetupPath => Path.Combine(BundleRoot, "printRxerSetup.exe");
+    public static string HealthMailerSetupPath => Path.Combine(BundleRoot, "HealthMailerSetup.exe");
     public static string ToolsRoot => Path.Combine(PayloadRoot, "tools");
     public static string ValidationScriptPath => Path.Combine(ToolsRoot, "Test-PrintRxerSuiteHealth.ps1");
     public static string SupportBundleScriptPath => Path.Combine(ToolsRoot, "New-PrintRxerSupportBundle.ps1");

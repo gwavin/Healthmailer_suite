@@ -38,9 +38,20 @@ function Copy-RequiredDirectory {
         throw "Required bundle directory was not found: $Source"
     }
 
-    $parent = Split-Path -Parent $Destination
-    New-Item -ItemType Directory -Force -Path $parent | Out-Null
-    Copy-Item -LiteralPath $Source -Destination $Destination -Recurse -Force
+    New-Item -ItemType Directory -Force -Path $Destination | Out-Null
+    $sourceRoot = (Get-Item -LiteralPath $Source).FullName.TrimEnd('\') + '\'
+
+    Get-ChildItem -LiteralPath $Source -Recurse -Directory -Force | ForEach-Object {
+        $relative = $_.FullName.Substring($sourceRoot.Length)
+        New-Item -ItemType Directory -Force -Path (Join-Path $Destination $relative) | Out-Null
+    }
+
+    Get-ChildItem -LiteralPath $Source -Recurse -File -Force | ForEach-Object {
+        $relative = $_.FullName.Substring($sourceRoot.Length)
+        $target = Join-Path $Destination $relative
+        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null
+        Copy-Item -LiteralPath $_.FullName -Destination $target -Force
+    }
 }
 
 function Write-Manifest {
@@ -204,8 +215,8 @@ try {
 
     Write-Step "Creating suite bundle."
     Copy-RequiredFile (Join-Path $suiteInstallerPublish 'PrintRxerSuiteInstaller.exe') (Join-Path $suiteRoot 'PrintRxerSuiteInstaller.exe')
-    Copy-RequiredFile (Join-Path $installerPublish 'printRxerInstaller.exe') (Join-Path $suiteRoot 'payload\installers\printRxer\printRxerSetup.exe')
-    Copy-RequiredFile (Join-Path $healthMailerInstallerPublish 'HealthMailerInstaller.exe') (Join-Path $suiteRoot 'payload\installers\HealthMailer\HealthMailerSetup.exe')
+    Copy-RequiredFile (Join-Path $installerPublish 'printRxerInstaller.exe') (Join-Path $suiteRoot 'printRxerSetup.exe')
+    Copy-RequiredFile (Join-Path $healthMailerInstallerPublish 'HealthMailerInstaller.exe') (Join-Path $suiteRoot 'HealthMailerSetup.exe')
     Copy-RequiredDirectory $printRxerPublish (Join-Path $suiteRoot 'payload\publish\printRxer')
     Copy-RequiredDirectory $healthMailerPublish (Join-Path $suiteRoot 'payload\publish\HealthMailer')
     Copy-RequiredDirectory '.\assets' (Join-Path $suiteRoot 'payload\assets')
@@ -236,6 +247,7 @@ Do not build from source for a normal install.
 Do not run PowerShell scripts directly unless instructed by support.
 
 The GUI can install printRxer, install HealthMailer, install printer capture, validate the installation, open logs, create a support bundle, and start uninstall/repair actions.
+The component installers are included at the ZIP root because they use the root payload folder.
 
 Support smoke test:
   PrintRxerSuiteInstaller.exe --smoke-test
