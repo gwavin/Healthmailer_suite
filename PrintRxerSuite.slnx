@@ -18,6 +18,9 @@
   <Folder Name="/installers/HealthMailerInstaller/">
     <Project Path="installers/HealthMailerInstaller/HealthMailerInstaller.csproj" />
   </Folder>
+  <Folder Name="/installers/PrintRxerSuiteInstaller/">
+    <Project Path="installers/PrintRxerSuiteInstaller/PrintRxerSuiteInstaller.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/HealthMailer.Tests/HealthMailer.Tests.csproj" />
   </Folder>

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RollForward>Major</RollForward>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>PrintRxerSuiteInstaller</AssemblyName>
+    <RootNamespace>PrintRxerSuiteInstaller</RootNamespace>
+    <ApplicationIcon>..\..\assets\branding\mncms.ico</ApplicationIcon>
+    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="..\..\assets\branding\mncms.ico" Link="mncms.ico" />
+  </ItemGroup>
+</Project>

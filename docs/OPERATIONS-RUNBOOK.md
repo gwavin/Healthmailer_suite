@@ -80,7 +80,15 @@ Publication log outcomes are `PackageQueuedLocal`, `PackagePublished`, `PackageP
 
 ## Support Bundle
 
-Collect:
+Preferred path:
+
+1. Run `PrintRxerSuiteInstaller.exe` from the extracted release ZIP.
+2. Choose `Create support bundle`.
+3. Review the generated bundle before sending it outside approved support channels.
+
+The support bundle excludes PDF payloads by default and includes available configs, logs, recent failed/quarantine evidence, scheduled task status, printer status, process status, and a SHA256 manifest.
+
+If collecting manually, gather:
 
 ```text
 healthmailer.settings.json

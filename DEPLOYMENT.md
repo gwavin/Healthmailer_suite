@@ -62,10 +62,27 @@ From the repository root:
 
 ```powershell
 dotnet test .\PrintRxerSuite.slnx
-powershell -ExecutionPolicy Bypass -File .\tools\Publish-HealthMailer.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\New-PrintRxerSuiteReleaseBundle.ps1
 ```
 
-printRxer can be built from its app project:
+This creates `dist\printRxerSuite-<version>.zip` for normal installation. The target install machine should not need the SDK, WDK, Visual Studio, or C++ build tools.
+
+## GUI-First Release Install
+
+Normal user-facing install path:
+
+1. Download the release ZIP.
+2. Extract it.
+3. Run `PrintRxerSuiteInstaller.exe`.
+4. Use the launcher to install printRxer, install HealthMailer, install printer capture, validate installation, open logs, create a support bundle, or start uninstall/repair.
+
+Do not ask normal users to run PowerShell scripts directly. Scripts in `payload\tools` are support internals used by the GUI or by instructed support sessions.
+
+Component ZIPs may still be published for targeted support, but the suite ZIP is the preferred release path.
+
+## Developer Publish Notes
+
+printRxer can be built from its app project during development:
 
 ```powershell
 dotnet publish .\apps\printRxer\app\printRxer.App.csproj -c Release -r win-x64 --self-contained true
@@ -73,20 +90,7 @@ dotnet publish .\apps\printRxer\app\printRxer.App.csproj -c Release -r win-x64 -
 
 ## HealthMailer Install
 
-Interactive install:
-
-```powershell
-.\publish\HealthMailer\HealthMailer.exe --install
-```
-
-printRxer can be installed interactively, or non-interactively for UNC paths:
-
-```powershell
-.\publish\printRxer\printRxer.exe --install `
-  --incoming 'C:\ProgramData\printRxer\work\incoming' `
-  --data-root 'C:\ProgramData\printRxer' `
-  --output '\\server\HealthMailerDrop$\incoming'
-```
+Use the suite launcher from the release ZIP. It starts the HealthMailer component installer and asks for the handoff folder and optional ViewPoint/chart folder.
 
 The wizard asks for:
 
@@ -103,14 +107,6 @@ and registers the scheduled task:
 
 ```text
 HealthMailer
-```
-
-Scripted task install or refresh:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Install-HealthMailerTask.ps1 `
-  -ExePath 'C:\Program Files\HealthMailer\HealthMailer.exe' `
-  -ConfigPath 'C:\ProgramData\HealthMailer\healthmailer.settings.json'
 ```
 
 ## Validation
@@ -138,22 +134,6 @@ Send-enabled validation requires Outlook COM registration:
 
 ## Rollback
 
-Stop HealthMailer:
-
-```powershell
-Stop-ScheduledTask -TaskName HealthMailer
-```
-
-Uninstall while preserving data:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-HealthMailer.ps1
-```
-
-Remove local data only when explicitly approved:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-HealthMailer.ps1 -RemoveData
-```
+Run `PrintRxerSuiteInstaller.exe`, choose `Uninstall / repair`, and uninstall the relevant component. Component uninstall preserves local data by default. Remove local data only when explicitly approved by governance/support.
 
 

@@ -23,6 +23,7 @@ Do not redistribute or reuse without explicit permission from the repository own
 - `apps/PrintRxerV3`: currently retained source path for the printRxer package creator. It does not send mail.
 - `apps/HealthMailer`: consumes ready handoff packages, validates them, sends via local Outlook COM, and archives them.
 - `native` and `assets/print-capture`: the Windows print-capture layer that creates the local `printRxer` printer queue and writes captured jobs into the printRxer incoming folder.
+- `installers/PrintRxerSuiteInstaller`: the GUI-first release launcher for normal installs, validation, support bundles, and uninstall/repair entry points.
 - `assets/recipients` and `assets/branding`: baseline picker data copied into ProgramData during printRxer install if local files do not already exist.
 - `tests/HealthMailer.Tests`: HealthMailer contract and processing tests.
 - `apps/PrintRxerV3/tests`: printRxer tests.
@@ -107,14 +108,15 @@ powershell -ExecutionPolicy Bypass -File .\tools\New-PrintRxerSuiteReleaseBundle
 
 The generated ZIPs are written under `dist\`:
 
+- `printRxerSuite-<version>.zip`: GUI-first release bundle. Extract it and run `PrintRxerSuiteInstaller.exe`.
 - `printRxer-<version>.zip`: minimum files to install/uninstall the print/picker side.
 - `HealthMailer-<version>.zip`: minimum files to install/uninstall the Outlook sending side.
 
-Generated app EXEs stay out of git; use GitHub Releases for distribution. The printRxer bundle exposes only installer/uninstaller EXEs plus guidance at the root; implementation files live under its internal `payload\` folder.
+Generated app EXEs stay out of git; use GitHub Releases for distribution. Normal installs should use the suite ZIP and GUI launcher. Component ZIPs and PowerShell scripts remain support/internal paths unless support explicitly instructs otherwise.
 
 ## Release Bundles
 
-For install-only handoff to IT, publish a GitHub Release rather than asking the target machine to rebuild from source. Pushing a tag such as `v0.1.0` runs `.github/workflows/release-bundle.yml`, builds/tests/publishes the suite, creates the two role-specific ZIPs, and attaches them to the release.
+For install-only handoff to IT, publish a GitHub Release rather than asking the target machine to rebuild from source. Pushing a tag such as `v0.1.0` runs `.github/workflows/release-bundle.yml`, builds/tests/publishes the suite, creates the suite ZIP plus the two role-specific ZIPs, and attaches them to the release.
 
 The release bundle is intended for machines without Visual Studio, the .NET SDK, or WDK. Rebuilding native printer components still requires the appropriate build tools on a development machine.
 
@@ -122,41 +124,20 @@ The release bundle is intended for machines without Visual Studio, the .NET SDK,
 
 HealthMailer and printRxer may be installed on the same machine or on different machines. Both installers/configs ask for the same handoff folder, which may be local or UNC. Use UNC paths directly for two-machine deployments; do not rely on mapped drives.
 
-Install or refresh the printRxer watcher:
+Normal install path:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Install-printRxerTask.ps1
-```
-
-Install or refresh the local Windows print-capture printer on the printing workstation:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Install-PrintRxerCapturePrinter.ps1
-```
+1. Download `printRxerSuite-<version>.zip` from the GitHub Release.
+2. Extract the ZIP.
+3. Run `PrintRxerSuiteInstaller.exe`.
+4. Use the GUI to install printRxer, install HealthMailer, install the printer capture component, and validate the installation.
 
 This step requires Administrator/UAC approval because it installs a native Windows port monitor, a local XPS driver, and the `printRxer` printer queue. The watcher and the printer layer are separate deliberately: printRxer can be tested with imported captures, but live printing requires the capture printer.
 
 printRxer writes `C:\ProgramData\printRxer\config\printRxer.settings.json`, builds packages in a durable local outbox first, then publishes complete `READY` packages to the configured handoff folder. If the share is down, packages remain local and are retried at the configured interval.
 
-Install or refresh the HealthMailer scheduled watcher:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Install-HealthMailerTask.ps1
-```
-
 ## Uninstall Both Apps
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-printRxer.ps1 -PlanOnly
-powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-HealthMailer.ps1 -PlanOnly
-```
-
-Standard uninstall preserves local data/logs/archives by default:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-printRxer.ps1
-powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-HealthMailer.ps1
-```
+Use `PrintRxerSuiteInstaller.exe`, then choose `Uninstall / repair`. Standard uninstall preserves local data/logs/archives by default.
 
 ## Deployment Shape
 

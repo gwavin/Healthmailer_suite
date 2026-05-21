@@ -119,6 +119,7 @@ try {
     $healthMailerPublish = Join-Path $publishBuildRoot 'HealthMailer'
     $installerPublish = Join-Path $publishBuildRoot 'printRxerInstaller'
     $healthMailerInstallerPublish = Join-Path $publishBuildRoot 'HealthMailerInstaller'
+    $suiteInstallerPublish = Join-Path $publishBuildRoot 'PrintRxerSuiteInstaller'
 
     if (-not $SkipPublish) {
         Write-Step "Publishing printRxer."
@@ -150,13 +151,67 @@ try {
         if ($LASTEXITCODE -ne 0) {
             throw "HealthMailer installer publish failed with exit code $LASTEXITCODE"
         }
+
+        Write-Step "Publishing printRxer suite installer."
+        dotnet publish .\installers\PrintRxerSuiteInstaller\PrintRxerSuiteInstaller.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o $suiteInstallerPublish
+        if ($LASTEXITCODE -ne 0) {
+            throw "printRxer suite installer publish failed with exit code $LASTEXITCODE"
+        }
     }
 
+    $suiteRoot = Join-Path $stagingRoot ("printRxerSuite-" + $safeVersion)
     $printRxerRoot = Join-Path $stagingRoot ("printRxer-" + $safeVersion)
     $healthMailerRoot = Join-Path $stagingRoot ("HealthMailer-" + $safeVersion)
-    foreach ($root in @($printRxerRoot, $healthMailerRoot)) {
+    foreach ($root in @($suiteRoot, $printRxerRoot, $healthMailerRoot)) {
         New-Item -ItemType Directory -Force -Path $root | Out-Null
     }
+
+    Write-Step "Creating suite bundle."
+    Copy-RequiredFile (Join-Path $suiteInstallerPublish 'PrintRxerSuiteInstaller.exe') (Join-Path $suiteRoot 'PrintRxerSuiteInstaller.exe')
+    Copy-RequiredFile (Join-Path $installerPublish 'printRxerInstaller.exe') (Join-Path $suiteRoot 'payload\installers\printRxer\printRxerSetup.exe')
+    Copy-RequiredFile (Join-Path $healthMailerInstallerPublish 'HealthMailerInstaller.exe') (Join-Path $suiteRoot 'payload\installers\HealthMailer\HealthMailerSetup.exe')
+    Copy-RequiredDirectory $printRxerPublish (Join-Path $suiteRoot 'payload\publish\printRxer')
+    Copy-RequiredDirectory $healthMailerPublish (Join-Path $suiteRoot 'payload\publish\HealthMailer')
+    Copy-RequiredDirectory '.\assets' (Join-Path $suiteRoot 'payload\assets')
+    Copy-RequiredDirectory '.\docs' (Join-Path $suiteRoot 'docs')
+    foreach ($tool in @(
+        'Install-PrintRxerCapturePrinter.ps1',
+        'Install-PrintRxerPortMonitor.ps1',
+        'Install-PrintRxerDriver.ps1',
+        'Install-PrintRxerQueue.ps1',
+        'Uninstall-PrintRxerCapturePrinter.ps1',
+        'Test-PrintRxerSuiteHealth.ps1',
+        'New-PrintRxerSupportBundle.ps1'
+    )) {
+        Copy-RequiredFile (Join-Path '.\tools' $tool) (Join-Path $suiteRoot ('payload\tools\' + $tool))
+    }
+    Get-ChildItem -LiteralPath (Join-Path $suiteRoot 'payload\publish') -Filter '*.pdb' -File -Recurse -ErrorAction SilentlyContinue |
+        Remove-Item -Force
+
+    Write-Text (Join-Path $suiteRoot 'INSTALL-BUNDLE-README.txt') @"
+printRxer suite release bundle
+Version: $Version
+
+Install:
+  1. Extract this ZIP.
+  2. Run PrintRxerSuiteInstaller.exe.
+
+Do not build from source for a normal install.
+Do not run PowerShell scripts directly unless instructed by support.
+
+The GUI can install printRxer, install HealthMailer, install printer capture, validate the installation, open logs, create a support bundle, and start uninstall/repair actions.
+
+Safety notes:
+  printRxer creates validated handoff packages and does not send mail.
+  HealthMailer sends through local Outlook/Healthmail on the sender machine.
+  The support bundle excludes PDF payloads by default. Review logs before sharing them outside approved support channels.
+"@
 
     Write-Step "Creating printRxer-only bundle."
     Copy-RequiredFile (Join-Path $installerPublish 'printRxerInstaller.exe') (Join-Path $printRxerRoot 'printRxerSetup.exe')
@@ -237,11 +292,14 @@ Notes:
 
     $printRxerZip = Join-Path $outputRootFull ("printRxer-" + $safeVersion + ".zip")
     $healthMailerZip = Join-Path $outputRootFull ("HealthMailer-" + $safeVersion + ".zip")
+    $suiteZip = Join-Path $outputRootFull ("printRxerSuite-" + $safeVersion + ".zip")
 
+    New-ZipFromFolder $suiteRoot $suiteZip
     New-ZipFromFolder $printRxerRoot $printRxerZip
     New-ZipFromFolder $healthMailerRoot $healthMailerZip
 
     Write-Step "Bundles created:"
+    Write-Output $suiteZip
     Write-Output $printRxerZip
     Write-Output $healthMailerZip
 } finally {
