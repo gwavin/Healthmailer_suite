@@ -3,13 +3,26 @@
 ## Build
 
 - [ ] `dotnet test .\PrintRxerSuite.slnx`
-- [ ] Publish HealthMailer.
-- [ ] Publish printRxer.
+- [ ] `powershell -ExecutionPolicy Bypass -File .\tools\New-PrintRxerSuiteReleaseBundle.ps1 -Version <version>`
+- [ ] Confirm `dist\printRxerSuite-<version>.zip` exists.
+- [ ] Extract `dist\printRxerSuite-<version>.zip` to a temporary folder.
+- [ ] Run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted folder using `Start-Process -Wait -PassThru`.
+- [ ] Confirm `PrintRxerSuiteInstaller.exe`, `INSTALL-BUNDLE-README.txt`, and `SHA256SUMS.txt` are present at the ZIP root.
+- [ ] Confirm component ZIPs exist for support/internal use.
 - [ ] Confirm version/build artifacts are from a clean checkout.
 
 ## Install
 
 - [ ] Clean install on a test workstation.
+- [ ] Download/extract the suite ZIP rather than building from source on the target machine.
+- [ ] Open `PrintRxerSuiteInstaller.exe`.
+- [ ] `Validate installation` runs before install and reports expected missing/not-installed items without crashing.
+- [ ] `Install printRxer` opens the printRxer component installer.
+- [ ] `Install HealthMailer` opens the HealthMailer component installer.
+- [ ] `Install printRxer printer capture` asks for administrator approval only for printer capture.
+- [ ] `Open logs folder` opens an existing logs folder or ProgramData fallback.
+- [ ] `Create support bundle` creates a ZIP and excludes PDF payloads by default.
+- [ ] `Uninstall / repair` offers separate printRxer and HealthMailer actions.
 - [ ] printRxer installed alone with local handoff folder.
 - [ ] printRxer installed alone with UNC handoff folder.
 - [ ] HealthMailer installed alone watching local folder.

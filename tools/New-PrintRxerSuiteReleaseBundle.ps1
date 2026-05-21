@@ -2,7 +2,8 @@ param(
     [string]$Version = "",
     [string]$OutputRoot = ".\dist",
     [switch]$SkipTests,
-    [switch]$SkipPublish
+    [switch]$SkipPublish,
+    [switch]$SkipSmokeTest
 )
 
 $ErrorActionPreference = 'Stop'
@@ -81,6 +82,35 @@ function Write-Text {
     $parent = Split-Path -Parent $Path
     New-Item -ItemType Directory -Force -Path $parent | Out-Null
     Set-Content -LiteralPath $Path -Value $Content -Encoding UTF8
+}
+
+function Test-SuiteZipSmoke {
+    param(
+        [string]$ZipPath,
+        [string]$StagingRoot
+    )
+
+    if (-not (Test-Path -LiteralPath $ZipPath)) {
+        throw "Suite ZIP was not found for smoke test: $ZipPath"
+    }
+
+    $smokeRoot = Join-Path $StagingRoot '_suite-smoke-test'
+    if (Test-Path -LiteralPath $smokeRoot) {
+        Remove-Item -LiteralPath $smokeRoot -Recurse -Force
+    }
+
+    New-Item -ItemType Directory -Force -Path $smokeRoot | Out-Null
+    Expand-Archive -LiteralPath $ZipPath -DestinationPath $smokeRoot -Force
+
+    $installerPath = Join-Path $smokeRoot 'PrintRxerSuiteInstaller.exe'
+    if (-not (Test-Path -LiteralPath $installerPath)) {
+        throw "Suite ZIP smoke test did not find PrintRxerSuiteInstaller.exe."
+    }
+
+    $process = Start-Process -FilePath $installerPath -ArgumentList '--smoke-test' -Wait -PassThru -NoNewWindow
+    if ($process.ExitCode -ne 0) {
+        throw "Suite installer smoke test failed with exit code $($process.ExitCode)."
+    }
 }
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -302,6 +332,11 @@ Notes:
     New-ZipFromFolder $suiteRoot $suiteZip
     New-ZipFromFolder $printRxerRoot $printRxerZip
     New-ZipFromFolder $healthMailerRoot $healthMailerZip
+
+    if (-not $SkipSmokeTest) {
+        Write-Step "Running suite installer smoke test."
+        Test-SuiteZipSmoke -ZipPath $suiteZip -StagingRoot $stagingRoot
+    }
 
     Write-Step "Bundles created:"
     Write-Output $suiteZip

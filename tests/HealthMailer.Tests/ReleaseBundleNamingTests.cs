@@ -12,6 +12,8 @@ public sealed class ReleaseBundleNamingTests
 
         Assert.Contains("printRxerSuite-", script, StringComparison.Ordinal);
         Assert.Contains("PrintRxerSuiteInstaller.exe", script, StringComparison.Ordinal);
+        Assert.Contains("Test-SuiteZipSmoke", script, StringComparison.Ordinal);
+        Assert.Contains("--smoke-test", script, StringComparison.Ordinal);
         Assert.Contains("INSTALL-BUNDLE-README.txt", script, StringComparison.Ordinal);
         Assert.Contains("payload\\installers\\printRxer\\printRxerSetup.exe", script, StringComparison.Ordinal);
         Assert.Contains("payload\\installers\\HealthMailer\\HealthMailerSetup.exe", script, StringComparison.Ordinal);
@@ -20,6 +22,17 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("payload\\publish\\printRxer", script, StringComparison.Ordinal);
         Assert.DoesNotContain("PrintRxerV3Setup.exe", script, StringComparison.Ordinal);
         Assert.DoesNotContain("PrintRxerV3 install bundle", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Release_workflow_uploads_suite_zip()
+    {
+        string repoRoot = FindRepoRoot();
+        string workflow = File.ReadAllText(Path.Combine(repoRoot, ".github", "workflows", "release-bundle.yml"));
+
+        Assert.Contains("dist/printRxerSuite-*.zip", workflow, StringComparison.Ordinal);
+        Assert.Contains("dist/printRxer-*.zip", workflow, StringComparison.Ordinal);
+        Assert.Contains("dist/HealthMailer-*.zip", workflow, StringComparison.Ordinal);
     }
 
     [Fact]
