@@ -122,6 +122,7 @@ function Test-SuiteZipSmoke {
     if ($process.ExitCode -ne 0) {
         throw "Suite installer smoke test failed with exit code $($process.ExitCode)."
     }
+
 }
 
 $repoRoot = Split-Path -Parent $PSScriptRoot

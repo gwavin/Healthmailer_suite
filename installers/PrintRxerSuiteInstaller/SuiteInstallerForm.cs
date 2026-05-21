@@ -127,8 +127,8 @@ internal sealed class SuiteInstallerForm : Form
         RunUserAction(() =>
         {
             AppendStatus("Starting elevated " + Path.GetFileName(setupPath) + ".");
-            ProcessRunner.Run(setupPath, arguments, elevate: true);
-            AppendStatus(Path.GetFileName(setupPath) + " completed.");
+            ProcessRunner.StartElevated(setupPath, arguments);
+            AppendStatus(Path.GetFileName(setupPath) + " was started. Complete that setup window to continue.");
         });
     }
 

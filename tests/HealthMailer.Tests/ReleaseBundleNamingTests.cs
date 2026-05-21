@@ -50,7 +50,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("Uninstall / repair", form, StringComparison.Ordinal);
         Assert.Contains("excludes PDF payloads by default", form, StringComparison.Ordinal);
         Assert.Contains("administrator approval to run this component installer", form, StringComparison.Ordinal);
-        Assert.Contains("ProcessRunner.Run(setupPath, arguments, elevate: true)", form, StringComparison.Ordinal);
+        Assert.Contains("ProcessRunner.StartElevated(setupPath, arguments)", form, StringComparison.Ordinal);
         Assert.Contains("MinimumSize = new Size(560, 360)", form, StringComparison.Ordinal);
         Assert.Contains("TableLayoutPanel panel", form, StringComparison.Ordinal);
     }

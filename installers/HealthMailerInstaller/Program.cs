@@ -14,8 +14,21 @@ internal static class Program
         bool uninstall = args.Any(arg => string.Equals(arg, "--uninstall", StringComparison.OrdinalIgnoreCase));
         bool removeData = args.Any(arg => string.Equals(arg, "--remove-data", StringComparison.OrdinalIgnoreCase));
         bool quiet = args.Any(arg => string.Equals(arg, "--quiet", StringComparison.OrdinalIgnoreCase));
+        bool smokeTest = args.Any(arg => string.Equals(arg, "--smoke-test", StringComparison.OrdinalIgnoreCase));
         try
         {
+            if (smokeTest)
+            {
+                if (!Directory.Exists(InstallerPaths.PayloadPublishRoot))
+                {
+                    Console.WriteLine("MISS " + InstallerPaths.PayloadPublishRoot);
+                    return 2;
+                }
+
+                Console.WriteLine("OK   " + InstallerPaths.PayloadPublishRoot);
+                return 0;
+            }
+
             if (uninstall && (quiet || removeData))
             {
                 if (HealthMailerUninstaller.IsInstalled())

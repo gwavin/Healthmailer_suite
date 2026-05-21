@@ -52,4 +52,21 @@ internal static class ProcessRunner
     {
         return Run("powershell.exe", "-NoProfile -ExecutionPolicy Bypass -File \"" + scriptPath + "\" " + arguments, requireSuccess, elevate);
     }
+
+    public static void StartElevated(string fileName, string arguments = "")
+    {
+        using Process process = new()
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                UseShellExecute = true,
+                Verb = "runas",
+                WorkingDirectory = SuitePaths.BundleRoot
+            }
+        };
+
+        process.Start();
+    }
 }
