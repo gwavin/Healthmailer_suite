@@ -131,6 +131,8 @@ Normal install path:
 3. Run `PrintRxerSuiteInstaller.exe`.
 4. Use the GUI to install printRxer, install HealthMailer, install the printer capture component, and validate the installation.
 
+Support can run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted ZIP to verify the release bundle layout without installing anything. Automation that needs the exit code should run it with `Start-Process -Wait -PassThru`.
+
 This step requires Administrator/UAC approval because it installs a native Windows port monitor, a local XPS driver, and the `printRxer` printer queue. The watcher and the printer layer are separate deliberately: printRxer can be tested with imported captures, but live printing requires the capture printer.
 
 printRxer writes `C:\ProgramData\printRxer\config\printRxer.settings.json`, builds packages in a durable local outbox first, then publishes complete `READY` packages to the configured handoff folder. If the share is down, packages remain local and are retried at the configured interval.

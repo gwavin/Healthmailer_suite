@@ -78,6 +78,8 @@ Normal user-facing install path:
 
 Do not ask normal users to run PowerShell scripts directly. Scripts in `payload\tools` are support internals used by the GUI or by instructed support sessions.
 
+Support can run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted ZIP to verify the bundle layout without installing any component. Automation that needs the exit code should run it with `Start-Process -Wait -PassThru`.
+
 Component ZIPs may still be published for targeted support, but the suite ZIP is the preferred release path.
 
 ## Developer Publish Notes

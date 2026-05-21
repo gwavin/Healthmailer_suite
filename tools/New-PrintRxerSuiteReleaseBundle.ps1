@@ -207,6 +207,11 @@ Do not run PowerShell scripts directly unless instructed by support.
 
 The GUI can install printRxer, install HealthMailer, install printer capture, validate the installation, open logs, create a support bundle, and start uninstall/repair actions.
 
+Support smoke test:
+  PrintRxerSuiteInstaller.exe --smoke-test
+  This checks the release bundle layout without installing anything.
+  Automation that needs an exit code should run it with Start-Process -Wait -PassThru.
+
 Safety notes:
   printRxer creates validated handoff packages and does not send mail.
   HealthMailer sends through local Outlook/Healthmail on the sender machine.

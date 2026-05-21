@@ -14,4 +14,9 @@
   <ItemGroup>
     <Content Include="..\..\assets\branding\mncms.ico" Link="mncms.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>HealthMailer.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 </Project>

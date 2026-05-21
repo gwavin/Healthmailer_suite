@@ -3,6 +3,7 @@ using Xunit;
 
 namespace HealthMailer.Tests;
 
+[Collection(ProcessHandleMeasurementCollection.Name)]
 public sealed class PackageProcessorTests
 {
     [Fact]
