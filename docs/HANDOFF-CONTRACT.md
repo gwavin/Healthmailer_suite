@@ -1,6 +1,6 @@
-# Handoff Contract
+﻿# Handoff Contract
 
-PrintRxerV3 creates a package folder for HealthMailer.
+printRxer creates a package folder for HealthMailer.
 
 ## Package Structure
 
@@ -111,3 +111,4 @@ C:\ProgramData\HealthMailer\processed-ledger.jsonl
 ```
 
 This prevents duplicate sends by package ID or completed package hash.
+

@@ -7,15 +7,15 @@ namespace PrintRxerV3.Capture;
 
 public sealed class PrintRxerV3Config
 {
-    public string IncomingRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "work", "incoming");
-    public string ProcessedRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "processed");
-    public string DeferredRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "deferred");
-    public string LocalOutboxRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "pending-outbox");
-    public string PublishedRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "published");
-    public string FailedRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "failed");
-    public string LogsRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "logs");
-    public string TempRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "temp");
-    public string HandoffRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "handoff");
+    public string IncomingRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "work", "incoming");
+    public string ProcessedRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "processed");
+    public string DeferredRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "deferred");
+    public string LocalOutboxRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "pending-outbox");
+    public string PublishedRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "published");
+    public string FailedRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "failed");
+    public string LogsRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "logs");
+    public string TempRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "temp");
+    public string HandoffRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "handoff");
     public int PayloadStableSeconds { get; set; } = 1;
     public int MetadataGraceSeconds { get; set; } = 60;
     public bool RequireJobOwnerMatch { get; set; } = true;
@@ -27,7 +27,7 @@ public sealed class PrintRxerV3Config
     [JsonIgnore]
     public string ConfigPath => DefaultConfigPath;
 
-    public static string DefaultConfigPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "config", "printrxer_v3.settings.json");
+    public static string DefaultConfigPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "config", "printRxer.settings.json");
 
     public static PrintRxerV3Config Load(string? path = null)
     {
@@ -103,7 +103,7 @@ public sealed class PrintRxerV3Config
 
         if (string.IsNullOrWhiteSpace(TempRoot))
         {
-            TempRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "temp");
+            TempRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "temp");
         }
 
         if (MaxLogBytes <= 0)

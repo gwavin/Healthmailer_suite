@@ -26,7 +26,7 @@ internal sealed class UninstallForm : Form
 
     public UninstallForm()
     {
-        Text = "PrintRxerV3 uninstaller";
+        Text = "printRxer uninstaller";
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(700, 400);
         Size = new Size(760, 470);
@@ -34,7 +34,7 @@ internal sealed class UninstallForm : Form
 
         Label title = new()
         {
-            Text = "Uninstall PrintRxerV3",
+            Text = "Uninstall printRxer",
             Font = new Font(Font.FontFamily, 14, FontStyle.Bold),
             AutoSize = true,
             Location = new Point(18, 18)
@@ -42,7 +42,7 @@ internal sealed class UninstallForm : Form
 
         Label description = new()
         {
-            Text = "This removes the PrintRxerV3 watcher and the visible printRxer capture printer. Local ProgramData evidence is preserved by default.",
+            Text = "This removes the printRxer watcher and the visible printRxer capture printer. Local ProgramData evidence is preserved by default.",
             AutoSize = false,
             Location = new Point(20, 55),
             Size = new Size(700, 46)
@@ -73,15 +73,15 @@ internal sealed class UninstallForm : Form
             _statusText.Clear();
             if (!_removeData.Checked || !PrintRxerUninstaller.HasLocalData())
             {
-                AppendStatus("PrintRxerV3 is not installed on this machine.");
-                MessageBox.Show(this, "PrintRxerV3 is not installed on this machine. Nothing needs to be removed.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                AppendStatus("printRxer is not installed on this machine.");
+                MessageBox.Show(this, "printRxer is not installed on this machine. Nothing needs to be removed.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
         }
 
         string message = _removeData.Checked
-            ? "This will remove PrintRxerV3 and delete C:\\ProgramData\\printrxer_v3. Continue?"
-            : "This will remove PrintRxerV3 while preserving C:\\ProgramData\\printrxer_v3. Continue?";
+            ? "This will remove printRxer and delete C:\\ProgramData\\printRxer. Continue?"
+            : "This will remove printRxer while preserving C:\\ProgramData\\printRxer. Continue?";
 
         DialogResult confirm = MessageBox.Show(this, message, Text, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
         if (confirm != DialogResult.Yes)
@@ -96,14 +96,14 @@ internal sealed class UninstallForm : Form
         {
             PrintRxerUninstaller.Uninstall(_removeData.Checked, AppendStatus);
             AppendStatus("Uninstall completed successfully.");
-            MessageBox.Show(this, "PrintRxerV3 uninstall completed. Click OK to close setup.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, "printRxer uninstall completed. Click OK to close setup.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
             Close();
         }
         catch (Exception ex)
         {
             string reviewMessage = FriendlyMessage(ex);
             AppendStatus("Uninstall needs review: " + reviewMessage);
-            MessageBox.Show(this, reviewMessage, "PrintRxerV3 uninstall needs review", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(this, reviewMessage, "printRxer uninstall needs review", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
         finally
         {
@@ -134,7 +134,7 @@ internal sealed class UninstallForm : Form
         if (message.Contains("powershell.exe", StringComparison.OrdinalIgnoreCase) ||
             message.Contains("exited with code", StringComparison.OrdinalIgnoreCase))
         {
-            return "Windows reported a printer cleanup problem. PrintRxerV3 attempted to remove the application, task, printer, driver, port, and monitor. If any printer component remains visible, restart Windows and run uninstall once more.";
+            return "Windows reported a printer cleanup problem. printRxer attempted to remove the application, task, printer, driver, port, and monitor. If any printer component remains visible, restart Windows and run uninstall once more.";
         }
 
         return message;

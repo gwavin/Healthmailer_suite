@@ -13,7 +13,7 @@ public static class WindowsInformationAlert
         using NotifyIcon notifyIcon = new()
         {
             Icon = SystemIcons.Information,
-            Text = "PrintRxer v3",
+            Text = "printRxer",
             Visible = true,
             BalloonTipTitle = message.Title,
             BalloonTipText = message.Body,

@@ -225,10 +225,10 @@ public static class Program
 
         using FolderBrowserDialog handoffDialog = new()
         {
-            Description = "Select the PrintRxer v3 handoff folder. This may be a secured shared folder.",
+            Description = "Select the printRxer handoff folder. This may be a secured shared folder.",
             UseDescriptionForTitle = true,
             ShowNewFolderButton = true,
-            SelectedPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "handoff")
+            SelectedPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "handoff")
         };
         if (handoffDialog.ShowDialog() != DialogResult.OK)
         {

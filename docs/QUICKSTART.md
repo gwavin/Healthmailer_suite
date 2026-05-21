@@ -1,4 +1,4 @@
-# Quickstart
+﻿# Quickstart
 
 This is the shortest local test path for the two-exe suite.
 
@@ -11,7 +11,7 @@ dotnet test .\PrintRxerSuite.slnx
 ## 2. Publish Apps
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Publish-PrintRxerV3.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\Publish-printRxer.ps1
 powershell -ExecutionPolicy Bypass -File .\tools\Publish-HealthMailer.ps1
 ```
 
@@ -20,7 +20,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\Publish-HealthMailer.ps1
 Use the same handoff folder in both app configs. For a same-machine test:
 
 ```text
-C:\ProgramData\printrxer_v3\handoff
+C:\ProgramData\printRxer\handoff
 ```
 
 HealthMailer default config also watches that folder.
@@ -31,16 +31,16 @@ For two machines, use a UNC path directly, for example:
 \\server\HealthMailerDrop$\incoming
 ```
 
-## 4. Install PrintRxerV3 Watcher
+## 4. Install printRxer Watcher
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Install-PrintRxerV3Task.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\Install-printRxerTask.ps1
 ```
 
-For a separate PrintRxerV3-only machine, provide the UNC handoff path:
+For a separate printRxer-only machine, provide the UNC handoff path:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Install-PrintRxerV3Task.ps1 `
+powershell -ExecutionPolicy Bypass -File .\tools\Install-printRxerTask.ps1 `
   -HandoffRoot '\\server\HealthMailerDrop$\incoming'
 ```
 
@@ -76,16 +76,16 @@ For a harmless first test, set `SendMail=false` in
 `C:\ProgramData\HealthMailer\healthmailer.settings.json` unless Outlook sending
 has already been approved for the test mailbox.
 
-Create a PrintRxerV3 preview package:
+Create a printRxer preview package:
 
 ```powershell
-.\publish\PrintRxerV3\printrxer_v3.exe --output C:\ProgramData\printrxer_v3\handoff
+.\publish\printRxer\printRxer.exe --output C:\ProgramData\printRxer\handoff
 ```
 
 Or process one captured print job:
 
 ```powershell
-.\publish\PrintRxerV3\printrxer_v3.exe --process-once
+.\publish\printRxer\printRxer.exe --process-once
 ```
 
 ## 8. Validate Results
@@ -109,13 +109,14 @@ Get-ChildItem C:\ProgramData\HealthMailer\sent -Recurse -Filter result.json | Se
 Preview:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-PrintRxerV3.ps1 -PlanOnly
+powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-printRxer.ps1 -PlanOnly
 powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-HealthMailer.ps1 -PlanOnly
 ```
 
 Remove tasks/processes while preserving data:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-PrintRxerV3.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-printRxer.ps1
 powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-HealthMailer.ps1
 ```
+

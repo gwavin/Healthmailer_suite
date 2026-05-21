@@ -99,7 +99,7 @@ try {
     $outputRootFull = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputRoot)
     New-Item -ItemType Directory -Force -Path $outputRootFull | Out-Null
 
-    $stagingRoot = Join-Path $outputRootFull ("PrintRxerSuite-release-" + $safeVersion)
+    $stagingRoot = Join-Path $outputRootFull ("printRxerSuite-release-" + $safeVersion)
     if (Test-Path -LiteralPath $stagingRoot) {
         Remove-Item -LiteralPath $stagingRoot -Recurse -Force
     }
@@ -115,19 +115,19 @@ try {
     }
 
     $publishBuildRoot = Join-Path $stagingRoot '_publish'
-    $printRxerPublish = Join-Path $publishBuildRoot 'PrintRxerV3'
+    $printRxerPublish = Join-Path $publishBuildRoot 'printRxer'
     $healthMailerPublish = Join-Path $publishBuildRoot 'HealthMailer'
-    $installerPublish = Join-Path $publishBuildRoot 'PrintRxerV3Installer'
+    $installerPublish = Join-Path $publishBuildRoot 'printRxerInstaller'
     $healthMailerInstallerPublish = Join-Path $publishBuildRoot 'HealthMailerInstaller'
 
     if (-not $SkipPublish) {
-        Write-Step "Publishing PrintRxerV3."
-        & .\tools\Publish-PrintRxerV3.ps1 -Output $printRxerPublish -DoNotStopRunningWatcher
+        Write-Step "Publishing printRxer."
+        & .\tools\Publish-printRxer.ps1 -Output $printRxerPublish -DoNotStopRunningWatcher
 
         Write-Step "Publishing HealthMailer."
         & .\tools\Publish-HealthMailer.ps1 -Output $healthMailerPublish
 
-        Write-Step "Publishing PrintRxerV3 installer."
+        Write-Step "Publishing printRxer installer."
         dotnet publish .\installers\PrintRxerV3Installer\PrintRxerV3Installer.csproj `
             -c Release `
             -r win-x64 `
@@ -136,7 +136,7 @@ try {
             -p:IncludeNativeLibrariesForSelfExtract=true `
             -o $installerPublish
         if ($LASTEXITCODE -ne 0) {
-            throw "PrintRxerV3 installer publish failed with exit code $LASTEXITCODE"
+            throw "printRxer installer publish failed with exit code $LASTEXITCODE"
         }
 
         Write-Step "Publishing HealthMailer installer."
@@ -152,15 +152,15 @@ try {
         }
     }
 
-    $printRxerRoot = Join-Path $stagingRoot ("PrintRxerV3-" + $safeVersion)
+    $printRxerRoot = Join-Path $stagingRoot ("printRxer-" + $safeVersion)
     $healthMailerRoot = Join-Path $stagingRoot ("HealthMailer-" + $safeVersion)
     foreach ($root in @($printRxerRoot, $healthMailerRoot)) {
         New-Item -ItemType Directory -Force -Path $root | Out-Null
     }
 
-    Write-Step "Creating PrintRxerV3-only bundle."
-    Copy-RequiredFile (Join-Path $installerPublish 'PrintRxerV3Installer.exe') (Join-Path $printRxerRoot 'PrintRxerV3Setup.exe')
-    Copy-RequiredDirectory $printRxerPublish (Join-Path $printRxerRoot 'payload\publish\PrintRxerV3')
+    Write-Step "Creating printRxer-only bundle."
+    Copy-RequiredFile (Join-Path $installerPublish 'printRxerInstaller.exe') (Join-Path $printRxerRoot 'printRxerSetup.exe')
+    Copy-RequiredDirectory $printRxerPublish (Join-Path $printRxerRoot 'payload\publish\printRxer')
     Copy-RequiredDirectory '.\assets\branding' (Join-Path $printRxerRoot 'payload\assets\branding')
     Copy-RequiredDirectory '.\assets\recipients' (Join-Path $printRxerRoot 'payload\assets\recipients')
     Copy-RequiredDirectory '.\assets\print-capture' (Join-Path $printRxerRoot 'payload\assets\print-capture')
@@ -173,33 +173,33 @@ try {
     )) {
         Copy-RequiredFile (Join-Path '.\tools' $tool) (Join-Path $printRxerRoot ('payload\tools\' + $tool))
     }
-    Copy-RequiredFile '.\docs\PrintRxer_HealthMailer_IT_QRG_v2.docx' (Join-Path $printRxerRoot 'PrintRxerV3-Install-Guide.docx')
-    Get-ChildItem -LiteralPath (Join-Path $printRxerRoot 'payload\publish\PrintRxerV3') -Filter '*.pdb' -File -ErrorAction SilentlyContinue |
+    Copy-RequiredFile '.\docs\PrintRxer_HealthMailer_IT_QRG_v2.docx' (Join-Path $printRxerRoot 'printRxer-Install-Guide.docx')
+    Get-ChildItem -LiteralPath (Join-Path $printRxerRoot 'payload\publish\printRxer') -Filter '*.pdb' -File -ErrorAction SilentlyContinue |
         Remove-Item -Force
 
     Write-Text (Join-Path $printRxerRoot 'INSTALL-UNINSTALL.txt') @"
-PrintRxerV3 install bundle
+printRxer install bundle
 Version: $Version
 
 Purpose:
   Install only the printing/capture side. This machine does not need Outlook.
 
 Install from this folder:
-  PrintRxerV3Setup.exe
+  printRxerSetup.exe
 
 Uninstall:
-  PrintRxerV3Setup.exe
+  printRxerSetup.exe
   Then choose Uninstall.
   If the GUI does not appear, run:
-  PrintRxerV3Setup.exe --uninstall --quiet
+  printRxerSetup.exe --uninstall --quiet
   For a clean lab reset, run:
-  PrintRxerV3Setup.exe --uninstall --remove-data --quiet
+  printRxerSetup.exe --uninstall --remove-data --quiet
 
 Notes:
   The installer asks for the handoff folder. Use the default local folder for same-machine testing, or choose/type a UNC path for a shared HealthMailer handoff.
   Installing or removing the printRxer printer requires administrator approval.
   ProgramData files are preserved by default. Use --remove-data only for a clean lab reset.
-  Full guidance: PrintRxerV3-Install-Guide.docx
+  Full guidance: printRxer-Install-Guide.docx
 "@
 
     Write-Step "Creating HealthMailer-only bundle."
@@ -215,7 +215,7 @@ HealthMailer install bundle
 Version: $Version
 
 Purpose:
-  Install only the Outlook/Healthmail sending side. This machine does not need PrintRxerV3.
+  Install only the Outlook/Healthmail sending side. This machine does not need printRxer.
 
 Install from this folder:
   HealthMailerSetup.exe
@@ -230,12 +230,12 @@ Uninstall:
 
 Notes:
   Outlook must be installed and signed in as the approved sender user if SendMail=true.
-  The installer asks for the handoff folder. Use the same folder configured for PrintRxerV3.
+  The installer asks for the handoff folder. Use the same folder configured for printRxer.
   ProgramData files are preserved by default. Use --remove-data only for a clean lab reset.
   Full guidance: HealthMailer-Install-Guide.docx
 "@
 
-    $printRxerZip = Join-Path $outputRootFull ("PrintRxerV3-" + $safeVersion + ".zip")
+    $printRxerZip = Join-Path $outputRootFull ("printRxer-" + $safeVersion + ".zip")
     $healthMailerZip = Join-Path $outputRootFull ("HealthMailer-" + $safeVersion + ".zip")
 
     New-ZipFromFolder $printRxerRoot $printRxerZip

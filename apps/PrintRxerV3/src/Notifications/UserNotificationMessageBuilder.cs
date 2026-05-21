@@ -11,7 +11,7 @@ public static class UserNotificationMessageBuilder
 
         return new UserNotificationMessage
         {
-            Title = "PrintRxer v3 package ready",
+            Title = "printRxer package ready",
             Body = "Your clinical document has been prepared for HealthMailer scheduled sending and placed in: " + packageFolder
         };
     }
@@ -25,7 +25,7 @@ public static class UserNotificationMessageBuilder
 
         return new UserNotificationMessage
         {
-            Title = "PrintRxer v3 package queued",
+            Title = "printRxer package queued",
             Body = "Package queued locally; handoff folder unavailable; will retry automatically. Local package: " + localPackageFolder
         };
     }

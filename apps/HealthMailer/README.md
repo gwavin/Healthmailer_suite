@@ -1,13 +1,13 @@
-# HealthMailer
+﻿# HealthMailer
 
-HealthMailer is the local Outlook courier for PrintRxer v3 handoff packages.
+HealthMailer is the local Outlook courier for printRxer handoff packages.
 
-It watches a configured handoff folder, validates a completed PrintRxer v3 package, sends the PDF through the logged-in user's Outlook profile, optionally copies the PDF to a ViewPoint/chart import folder, writes terminal audit records, and archives the package locally.
+It watches a configured handoff folder, validates a completed printRxer package, sends the PDF through the logged-in user's Outlook profile, optionally copies the PDF to a ViewPoint/chart import folder, writes terminal audit records, and archives the package locally.
 
 ## Runtime Flow
 
 ```text
-PrintRxer v3 package folder
+printRxer package folder
   request.json
   prescription.pdf
   request.sha256
@@ -28,7 +28,7 @@ local sent/failed/quarantine archive
 
 HealthMailer does not use SMTP, Microsoft Graph, a relay service, or embedded credentials.
 
-HealthMailer can be installed by itself on the Outlook/Healthmail machine. It does not require PrintRxerV3 to be installed locally; it only needs access to the configured handoff folder.
+HealthMailer can be installed by itself on the Outlook/Healthmail machine. It does not require printRxer to be installed locally; it only needs access to the configured handoff folder.
 
 ## Install
 
@@ -46,7 +46,7 @@ Run the setup wizard:
 
 The wizard asks the user to browse to:
 
-- the PrintRxer v3 handoff folder
+- the printRxer handoff folder
 - optionally, the ViewPoint/chart import folder
 
 It writes config to:
@@ -95,7 +95,7 @@ validate -> mail send -> chart/ViewPoint copy -> result.json -> archive
 Chart/ViewPoint copy therefore happens only after a successful mail handoff
 unless code is explicitly changed to use a different policy.
 
-For local folders, the installer attempts to harden ACLs for the HealthMailer root and configured folders. For shared folders, ACLs must still be set correctly on the file server. The share should be restricted to the PrintRxer v3 writer identity, the HealthMailer runtime user, local admins, and authorised support admins only.
+For local folders, the installer attempts to harden ACLs for the HealthMailer root and configured folders. For shared folders, ACLs must still be set correctly on the file server. The share should be restricted to the printRxer writer identity, the HealthMailer runtime user, local admins, and authorised support admins only.
 
 Processed packages are moved out of the handoff folder into:
 
@@ -148,3 +148,4 @@ Rx-{MRN}-{PackageId}.pdf
 and writes a JSON sidecar containing package ID, MRN, patient name, copied timestamp, and PDF SHA256.
 
 The exact ViewPoint import filename convention still needs confirmation from the local ViewPoint documentation or vendor/admin configuration. Until that is confirmed, the filename template should be treated as a safe placeholder rather than a guaranteed chart-ingestion contract.
+

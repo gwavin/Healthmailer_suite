@@ -30,7 +30,7 @@ public sealed class PackageProcessorTests
         }
 
         int after = System.Diagnostics.Process.GetCurrentProcess().HandleCount;
-        Assert.InRange(after - before, 0, 5);
+        Assert.True(after - before <= 5, $"Handle count grew by {after - before}.");
     }
 
     [Fact]
@@ -326,7 +326,7 @@ public sealed class PackageProcessorTests
             mrn = "MRN999"
         }));
         File.WriteAllText(Path.Combine(packageDirectory, "request.sha256"), hash + "  prescription.pdf");
-        File.WriteAllText(Path.Combine(packageDirectory, "summary.txt"), "PrintRxer v3 handoff package");
+        File.WriteAllText(Path.Combine(packageDirectory, "summary.txt"), "printRxer handoff package");
         if (includeReady)
         {
             File.WriteAllText(Path.Combine(packageDirectory, "READY"), string.Empty);

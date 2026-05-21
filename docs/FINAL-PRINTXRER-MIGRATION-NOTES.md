@@ -149,8 +149,27 @@ These references should remain until an explicit compatibility/migration design 
 - Existing namespaces and project folder names, unless renamed in a coordinated code-level pass.
 - Handoff package contract fields and package directory shape.
 
-## Rename Decision For This Pass
+## Rename Decision
 
-This first pass does not perform broad renames. It copies the working suite, documents the current naming surface, and confirms build/test health in the new repository.
+The first migration commit copied the working suite, documented the current naming surface, and confirmed build/test health in the new repository.
 
-Recommended next decision: clean final reset for new installs, with explicit old-pilot cleanup/detection support. New installs should use `printRxer` names and paths. Old `PrintRxerV3` / `printrxer_v3` names should be retained only in compatibility code, uninstall/migration tooling, and this migration note.
+The first naming pass uses a clean final reset for new installs:
+
+- New print-side executable: `printRxer.exe`.
+- New print-side installer alias: `printRxerSetup.exe`.
+- New publish folder: `publish\printRxer`.
+- New release ZIP: `printRxer-<version>.zip`.
+- New scheduled task for clean installs: `printRxer`.
+- New ProgramData root: `C:\ProgramData\printRxer`.
+- New config path: `C:\ProgramData\printRxer\config\printRxer.settings.json`.
+- New log path: `C:\ProgramData\printRxer\logs\printRxer.log`.
+
+The old `PrintRxerV3` / `printrxer_v3` names remain only where broad source-level renaming or old-pilot compatibility has not yet been intentionally changed:
+
+- Source folder and namespace names under `apps/PrintRxerV3`.
+- Installer project folder and namespace names under `installers/PrintRxerV3Installer`.
+- Compatibility removal/detection of the old scheduled task `PrintRxerV3`.
+- Compatibility process cleanup for old `printrxer_v3`.
+- Historical planning notes and this migration note.
+
+Recommended next step: add a suite-level GUI launcher/installer so the release ZIP can become one GUI-first entry point instead of two component ZIPs.

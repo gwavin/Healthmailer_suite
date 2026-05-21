@@ -16,7 +16,7 @@ public sealed class PrintRxerV3Log
     public void Write(string message)
     {
         Directory.CreateDirectory(_logsRoot);
-        string activePath = Path.Combine(_logsRoot, "printrxer_v3.log");
+        string activePath = Path.Combine(_logsRoot, "printRxer.log");
         RotateIfNeeded(activePath);
         File.AppendAllText(activePath, $"[{DateTimeOffset.Now:O}] {message}{Environment.NewLine}");
         RotateIfNeeded(activePath);
@@ -55,6 +55,6 @@ public sealed class PrintRxerV3Log
 
     private string RotatedPath(int index)
     {
-        return Path.Combine(_logsRoot, $"printrxer_v3.{index}.log");
+        return Path.Combine(_logsRoot, $"printRxer.{index}.log");
     }
 }

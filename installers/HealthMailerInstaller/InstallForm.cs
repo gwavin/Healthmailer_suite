@@ -57,7 +57,7 @@ internal sealed class InstallForm : Form
     {
         _contentPanel.Controls.Clear();
 
-        TableLayoutPanel layout = CreateBaseLayout("Install HealthMailer", "Choose the folder HealthMailer should watch for PrintRxerV3 handoff packages.");
+        TableLayoutPanel layout = CreateBaseLayout("Install HealthMailer", "Choose the folder HealthMailer should watch for printRxer handoff packages.");
 
         Label defaultDescription = CreateWrappedLabel("Recommended for a same-machine test. HealthMailer will watch:", 34);
 
@@ -68,7 +68,7 @@ internal sealed class InstallForm : Form
             Dock = DockStyle.Fill
         };
 
-        Label customDescription = CreateWrappedLabel("Use this for a shared folder, for example \\\\server\\HealthMailerDrop$\\incoming. This must match the folder configured in PrintRxerV3.", 48);
+        Label customDescription = CreateWrappedLabel("Use this for a shared folder, for example \\\\server\\HealthMailerDrop$\\incoming. This must match the folder configured in printRxer.", 48);
 
         _customHandoffText.Text = InstallerPaths.DefaultHandoffRoot;
         _customHandoffText.Enabled = false;
@@ -235,7 +235,7 @@ internal sealed class InstallForm : Form
     {
         using FolderBrowserDialog dialog = new()
         {
-            Description = "Select the PrintRxerV3 handoff folder. You may also paste a UNC path directly into the text box.",
+            Description = "Select the printRxer handoff folder. You may also paste a UNC path directly into the text box.",
             SelectedPath = Directory.Exists(_customHandoffText.Text) ? _customHandoffText.Text : InstallerPaths.DefaultHandoffRoot,
             ShowNewFolderButton = true
         };

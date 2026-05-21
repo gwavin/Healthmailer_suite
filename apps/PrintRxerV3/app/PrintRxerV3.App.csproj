@@ -5,7 +5,7 @@
     <RollForward>Major</RollForward>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>printrxer_v3</AssemblyName>
+    <AssemblyName>printRxer</AssemblyName>
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 

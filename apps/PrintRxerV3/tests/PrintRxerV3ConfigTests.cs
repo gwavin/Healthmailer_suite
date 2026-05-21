@@ -38,7 +38,7 @@ public sealed class PrintRxerV3ConfigTests
         }
 
         int after = Process.GetCurrentProcess().HandleCount;
-        Assert.InRange(after - before, 0, 5);
+        Assert.True(after - before <= 5, $"Handle count grew by {after - before}.");
     }
 
     [Fact]
@@ -94,7 +94,17 @@ public sealed class PrintRxerV3ConfigTests
     {
         PrintRxerV3Config config = new();
 
-        Assert.EndsWith(Path.Combine("printrxer_v3", "temp"), config.TempRoot, StringComparison.OrdinalIgnoreCase);
+        Assert.EndsWith(Path.Combine("printRxer", "temp"), config.TempRoot, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Default_paths_use_final_printRxer_product_name_for_new_installs()
+    {
+        PrintRxerV3Config config = new();
+
+        Assert.EndsWith(Path.Combine("printRxer", "work", "incoming"), config.IncomingRoot, StringComparison.OrdinalIgnoreCase);
+        Assert.EndsWith(Path.Combine("printRxer", "handoff"), config.HandoffRoot, StringComparison.OrdinalIgnoreCase);
+        Assert.EndsWith(Path.Combine("printRxer", "config", "printRxer.settings.json"), PrintRxerV3Config.DefaultConfigPath, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -108,10 +118,10 @@ public sealed class PrintRxerV3ConfigTests
             log.Write("rotation test line " + index.ToString(System.Globalization.CultureInfo.InvariantCulture));
         }
 
-        Assert.True(File.Exists(Path.Combine(root, "printrxer_v3.log")));
-        Assert.True(File.Exists(Path.Combine(root, "printrxer_v3.1.log")));
-        Assert.True(File.Exists(Path.Combine(root, "printrxer_v3.2.log")));
-        Assert.False(File.Exists(Path.Combine(root, "printrxer_v3.3.log")));
+        Assert.True(File.Exists(Path.Combine(root, "printRxer.log")));
+        Assert.True(File.Exists(Path.Combine(root, "printRxer.1.log")));
+        Assert.True(File.Exists(Path.Combine(root, "printRxer.2.log")));
+        Assert.False(File.Exists(Path.Combine(root, "printRxer.3.log")));
     }
 
     [Fact]
@@ -119,15 +129,15 @@ public sealed class PrintRxerV3ConfigTests
     {
         string repoRoot = FindRepoRoot();
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-install-script-" + Guid.NewGuid().ToString("N"));
-        string fakeExe = Path.Combine(root, "printrxer_v3.exe");
-        string configPath = Path.Combine(root, "config", "printrxer_v3.settings.json");
+        string fakeExe = Path.Combine(root, "printRxer.exe");
+        string configPath = Path.Combine(root, "config", "printRxer.settings.json");
         Directory.CreateDirectory(root);
         File.WriteAllText(fakeExe, "fake exe");
 
         ProcessStartInfo start = new()
         {
             FileName = "powershell.exe",
-            Arguments = "-NoProfile -ExecutionPolicy Bypass -File \"" + Path.Combine(repoRoot, "tools", "Install-PrintRxerV3Task.ps1") + "\" " +
+            Arguments = "-NoProfile -ExecutionPolicy Bypass -File \"" + Path.Combine(repoRoot, "tools", "Install-printRxerTask.ps1") + "\" " +
                 "-ExePath \"" + fakeExe + "\" " +
                 "-IncomingRoot \"" + Path.Combine(root, "incoming") + "\" " +
                 "-DataRoot \"" + Path.Combine(root, "data") + "\" " +

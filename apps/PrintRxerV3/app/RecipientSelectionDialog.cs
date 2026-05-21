@@ -549,7 +549,7 @@ public sealed class RecipientSelectionDialog : Form
 
     private static string GetBrandImagePath()
     {
-        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "data", "Images", "mncms_400x400.jpg");
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "data", "Images", "mncms_400x400.jpg");
     }
 
     [DllImport("user32.dll")]

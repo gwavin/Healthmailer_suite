@@ -82,7 +82,7 @@ public sealed class OutlookMailHandoff : IMailHandoff
 
 Operational provenance
 ----------------------
-Source application: PrintRxer_v3
+Source application: printRxer
 Courier application: HealthMailer
 Delivery mode: Local Outlook COM handoff
 Package ID: {package.PackageId}

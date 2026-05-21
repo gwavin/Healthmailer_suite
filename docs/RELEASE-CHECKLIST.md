@@ -1,26 +1,26 @@
-# Release Checklist
+﻿# Release Checklist
 
 ## Build
 
 - [ ] `dotnet test .\PrintRxerSuite.slnx`
 - [ ] Publish HealthMailer.
-- [ ] Publish PrintRxerV3.
+- [ ] Publish printRxer.
 - [ ] Confirm version/build artifacts are from a clean checkout.
 
 ## Install
 
 - [ ] Clean install on a test workstation.
-- [ ] PrintRxerV3 installed alone with local handoff folder.
-- [ ] PrintRxerV3 installed alone with UNC handoff folder.
+- [ ] printRxer installed alone with local handoff folder.
+- [ ] printRxer installed alone with UNC handoff folder.
 - [ ] HealthMailer installed alone watching local folder.
 - [ ] HealthMailer installed alone watching UNC folder.
 - [ ] Same-machine local handoff test.
 - [ ] UNC handoff folder test.
 - [ ] Scheduled task starts silently.
 - [ ] Watchdog trigger restarts after process kill.
-- [ ] PrintRxerV3 task install.
-- [ ] PrintRxerV3 `--process-once`.
-- [ ] PrintRxerV3 watcher.
+- [ ] printRxer task install.
+- [ ] printRxer `--process-once`.
+- [ ] printRxer watcher.
 
 ## HealthMailer Validation
 
@@ -37,7 +37,7 @@
 - [ ] `result.json` and `summary.txt` are present for terminal outcomes.
 - [ ] Optional `summary.html` has no scripts or external resources.
 - [ ] HealthMailer log rotation caps `healthmailer.log` and old logs.
-- [ ] PrintRxerV3 log rotation caps `printrxer_v3.log` and old logs.
+- [ ] printRxer log rotation caps `printRxer.log` and old logs.
 - [ ] HealthMailer starts and keeps polling when watched UNC is temporarily unavailable.
 - [ ] HealthMailer does not send partial `.uploading-*` package.
 - [ ] Fresh `.healthmailer.lock` prevents claim.
@@ -50,7 +50,7 @@
 - [ ] Sent, failed, and quarantine archives are not deleted during normal processing.
 - [ ] Local ACL hardening skips UNC paths and applies restricted rules to archives, logs, config, and ledger.
 
-## PrintRxerV3 Validation
+## printRxer Validation
 
 - [ ] Captured payload missing is ignored until grace expires.
 - [ ] Captured payload zero bytes is ignored until grace expires.
@@ -61,17 +61,17 @@
 - [ ] Missing `submittingUserSid` defers by default.
 - [ ] Explicit import/test override for missing SID is documented.
 - [ ] Picker still requires explicit button action; double-click does not send.
-- [ ] Network/share unavailable during PrintRxerV3 publish leaves package in local outbox.
+- [ ] Network/share unavailable during printRxer publish leaves package in local outbox.
 - [ ] Pending local package later publishes after share returns.
-- [ ] PrintRxerV3 watcher uses configured `RetryIntervalSeconds`.
+- [ ] printRxer watcher uses configured `RetryIntervalSeconds`.
 - [ ] Duplicate publish attempt is safe/idempotent.
 
 ## Uninstall
 
 - [ ] `Uninstall-HealthMailer.ps1 -PlanOnly`
-- [ ] `Uninstall-PrintRxerV3.ps1 -PlanOnly`
+- [ ] `Uninstall-printRxer.ps1 -PlanOnly`
 - [ ] Standard uninstall removes task and process but preserves data.
-- [ ] PrintRxerV3 uninstall/reinstall succeeds.
+- [ ] printRxer uninstall/reinstall succeeds.
 - [ ] Both apps uninstall independently.
 - [ ] `Test-HealthMailerUninstallState.ps1` passes.
 - [ ] `-RemoveData` removes local data only when explicitly requested.
@@ -84,3 +84,4 @@
 - [ ] Configuration guide matches `HealthMailerConfig`.
 - [ ] Handoff contract matches code/tests.
 - [ ] Security notes include known limits.
+

@@ -172,7 +172,7 @@ public sealed class HandoffWatcherTests
             pdfSha256 = hash
         }));
         File.WriteAllText(Path.Combine(packageDirectory, "request.sha256"), hash + "  prescription.pdf");
-        File.WriteAllText(Path.Combine(packageDirectory, "summary.txt"), "PrintRxer v3 handoff package");
+        File.WriteAllText(Path.Combine(packageDirectory, "summary.txt"), "printRxer handoff package");
         File.WriteAllText(Path.Combine(packageDirectory, "READY"), string.Empty);
         return packageDirectory;
     }

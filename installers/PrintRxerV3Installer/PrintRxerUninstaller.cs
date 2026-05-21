@@ -17,7 +17,7 @@ internal static class PrintRxerUninstaller
 
     public static void Uninstall(bool removeData, Action<string> log)
     {
-        log("Stopping and removing PrintRxerV3 watcher task.");
+        log("Stopping and removing printRxer watcher task.");
         TryStep(() => RemoveWatcher(log), "Watcher cleanup", log);
 
         log("Removing printRxer capture printer.");
@@ -73,7 +73,7 @@ internal static class PrintRxerUninstaller
 
     private static bool TaskExists()
     {
-        return ProcessRunner.PowerShell("if (Get-ScheduledTask -TaskName 'PrintRxerV3' -ErrorAction SilentlyContinue) { 'true' }", requireSuccess: false).Contains("true", StringComparison.OrdinalIgnoreCase);
+        return ProcessRunner.PowerShell("if (Get-ScheduledTask -TaskName 'printRxer' -ErrorAction SilentlyContinue) { 'true'; exit }; if (Get-ScheduledTask -TaskName 'PrintRxerV3' -ErrorAction SilentlyContinue) { 'true' }", requireSuccess: false).Contains("true", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool PrinterStackExists()
@@ -131,13 +131,14 @@ if (Test-Path (Join-Path $env:WINDIR 'System32\PrintRxerPortMonitor.dll')) { 'tr
     private static void RemoveWatcher(Action<string> log)
     {
         string command = @"
-$taskNames = @('PrintRxerV3', 'PrintRxer Agent')
+$taskNames = @('printRxer', 'PrintRxerV3', 'PrintRxer Agent')
 foreach ($taskName in $taskNames) {
     Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue | ForEach-Object {
         Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
         Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
     }
 }
+Get-Process -Name 'printRxer' -ErrorAction SilentlyContinue | Stop-Process -Force
 Get-Process -Name 'printrxer_v3' -ErrorAction SilentlyContinue | Stop-Process -Force
 Get-Process -Name 'PrintRxer.Agent' -ErrorAction SilentlyContinue | Stop-Process -Force
 ";

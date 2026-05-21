@@ -1,4 +1,4 @@
-# HealthMailer Configuration
+﻿# HealthMailer Configuration
 
 HealthMailer configuration lives at:
 
@@ -18,7 +18,7 @@ The installer asks for the handoff folder and optional ViewPoint/chart folder, w
 
 | Setting | Purpose | Default |
 | --- | --- | --- |
-| `HandoffRoot` | Folder watched for PrintRxerV3 packages. Can be local or UNC. | `C:\ProgramData\printrxer_v3\handoff` |
+| `HandoffRoot` | Folder watched for printRxer packages. Can be local or UNC. | `C:\ProgramData\printRxer\handoff` |
 | `LocalRoot` | HealthMailer config, logs, archives, quarantine, and ledger root. | `C:\ProgramData\HealthMailer` |
 | `PollIntervalSeconds` | Fallback polling interval in addition to file watcher events. | `5` |
 | `StaleLockMinutes` | Age after which `.healthmailer.lock` may be retried. | `30` |
@@ -45,7 +45,7 @@ processed-ledger.jsonl
 
 ```json
 {
-  "HandoffRoot": "C:\\ProgramData\\printrxer_v3\\handoff",
+  "HandoffRoot": "C:\\ProgramData\\printRxer\\handoff",
   "LocalRoot": "C:\\ProgramData\\HealthMailer",
   "PollIntervalSeconds": 5,
   "StaleLockMinutes": 30,
@@ -91,14 +91,14 @@ UNC paths are preferred over mapped drive letters for scheduled tasks.
 
 Local ACL hardening is best-effort and applies only to local NTFS paths. HealthMailer does not create or harden unavailable UNC handoff roots; UNC share and NTFS permissions must be configured server-side by IT.
 
-Local HealthMailer archives, failed packages, quarantine, logs, config, and ledger are restricted evidence stores. The local handoff/drop folder is the only category that may intentionally allow broader local write access for same-machine PrintRxerV3 to HealthMailer compatibility.
+Local HealthMailer archives, failed packages, quarantine, logs, config, and ledger are restricted evidence stores. The local handoff/drop folder is the only category that may intentionally allow broader local write access for same-machine printRxer to HealthMailer compatibility.
 
 Automatic archive deletion is disabled by default. Sent, failed, and quarantine packages are not cleaned up during normal processing.
 
-PrintRxerV3 has its own config at:
+printRxer has its own config at:
 
 ```text
-C:\ProgramData\printrxer_v3\config\printrxer_v3.settings.json
+C:\ProgramData\printRxer\config\printRxer.settings.json
 ```
 
 Key fields include `IncomingRoot`, `ProcessedRoot`, `DeferredRoot`, `LocalOutboxRoot`, `PublishedRoot`, `FailedRoot`, `LogsRoot`, `HandoffRoot`, `PayloadStableSeconds`, `RequireJobOwnerMatch`, `AllowMissingSubmittingSid`, `RetryIntervalSeconds`, `MaxLogBytes`, and `MaxLogFiles`. The `HandoffRoot` value must match the folder watched by HealthMailer.
@@ -126,3 +126,4 @@ powershell -ExecutionPolicy Bypass -File .\tools\Install-HealthMailerTask.ps1 `
   -ExePath 'C:\Program Files\HealthMailer\HealthMailer.exe' `
   -ConfigPath 'C:\ProgramData\HealthMailer\healthmailer.settings.json'
 ```
+

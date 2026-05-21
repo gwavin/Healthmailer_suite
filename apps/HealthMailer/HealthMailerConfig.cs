@@ -5,7 +5,7 @@ namespace HealthMailer;
 
 public sealed class HealthMailerConfig
 {
-    public string HandoffRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "handoff");
+    public string HandoffRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "handoff");
     public string LocalRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "HealthMailer");
     public int PollIntervalSeconds { get; set; } = 5;
     public int StaleLockMinutes { get; set; } = 30;
@@ -92,7 +92,7 @@ public sealed class HealthMailerConfig
         HealthMailerConfig config = JsonSerializer.Deserialize<HealthMailerConfig>(File.ReadAllText(configPath), options) ?? new HealthMailerConfig();
         if (string.IsNullOrWhiteSpace(config.HandoffRoot))
         {
-            config.HandoffRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "handoff");
+            config.HandoffRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "handoff");
         }
 
         if (string.IsNullOrWhiteSpace(config.LocalRoot))

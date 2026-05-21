@@ -6,7 +6,7 @@ public static class RecipientSource
 {
     public static IReadOnlyList<RecipientRecord> LoadDefault()
     {
-        string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "data", "recipients");
+        string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "data", "recipients");
         if (Directory.Exists(folder))
         {
             string canonicalCsv = Path.Combine(folder, "recipients.csv");

@@ -71,7 +71,7 @@ public sealed class PackagingTests
         Assert.Equal("Alpha Pharmacy", request.SelectedRecipient.Name);
         Assert.Equal("alpha@example.ie", request.SelectedRecipient.Email);
         Assert.Equal("RecipientSelected", request.PickerOutcome);
-        Assert.Equal("PrintRxer v3 created this HealthMailer handoff package as workstation audit evidence; it did not send mail.", request.AuditNote);
+        Assert.Equal("printRxer created this HealthMailer handoff package as workstation audit evidence; it did not send mail.", request.AuditNote);
     }
 
     [Fact]

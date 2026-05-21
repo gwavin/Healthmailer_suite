@@ -1,4 +1,4 @@
-# Troubleshooting
+﻿# Troubleshooting
 
 ## Watcher Not Running
 
@@ -29,42 +29,42 @@ Check for:
 - malformed `request.json`
 - PDF hash mismatch
 - package already sent
-- package still queued in PrintRxerV3 local outbox because the share was unavailable
+- package still queued in printRxer local outbox because the share was unavailable
 
 Inspect:
 
 ```powershell
-Get-ChildItem C:\ProgramData\printrxer_v3\handoff -Force
+Get-ChildItem C:\ProgramData\printRxer\handoff -Force
 Get-Content C:\ProgramData\HealthMailer\logs\healthmailer.log -Tail 80
-Get-ChildItem C:\ProgramData\printrxer_v3\pending-outbox
-Get-Content C:\ProgramData\printrxer_v3\logs\printrxer_v3.log -Tail 80
+Get-ChildItem C:\ProgramData\printRxer\pending-outbox
+Get-Content C:\ProgramData\printRxer\logs\printRxer.log -Tail 80
 ```
 
 If HealthMailer logs that the handoff folder is unavailable, restore UNC/share access; the watcher should remain alive and retry by polling.
 
 ## Picker Does Not Open For A Captured Job
 
-PrintRxerV3 intentionally waits before opening the picker if the capture is not safe to process. Check:
+printRxer intentionally waits before opening the picker if the capture is not safe to process. Check:
 
 - `metadata.json` exists.
 - `job.xps` or `job.oxps` exists, is non-empty, and is no longer being written.
 - `submittingUserSid` matches the current Windows user.
-- The capture has not been moved to `C:\ProgramData\printrxer_v3\deferred`.
+- The capture has not been moved to `C:\ProgramData\printRxer\deferred`.
 
-Deferred captures include `printrxer_v3_failure.txt` with outcomes such as `JobOwnerMismatch` or `PayloadNotReady`.
+Deferred captures include `printRxer_failure.txt` with outcomes such as `JobOwnerMismatch` or `PayloadNotReady`.
 
 ## PrintRxer Package Queued Locally
 
 If the user sees a local queue notification, the PDF package has been built but could not be copied to the HealthMailer handoff folder. Check:
 
 - the configured `HandoffRoot`
-- UNC reachability from the PrintRxerV3 machine
+- UNC reachability from the printRxer machine
 - server-side ACLs
-- `C:\ProgramData\printrxer_v3\pending-outbox`
+- `C:\ProgramData\printRxer\pending-outbox`
 
 Do not delete pending packages unless support has confirmed they are no longer needed.
 
-Relevant PrintRxerV3 log outcomes:
+Relevant printRxer log outcomes:
 
 - `PackageQueuedLocal`: package was created locally before publish.
 - `PackagePublished`: package reached the configured handoff folder.
@@ -120,5 +120,6 @@ HealthMailer logs are capped and rotated. If `healthmailer.log` is short, also i
 
 ```powershell
 Get-ChildItem C:\ProgramData\HealthMailer\logs\healthmailer*.log
-Get-ChildItem C:\ProgramData\printrxer_v3\logs\printrxer_v3*.log
+Get-ChildItem C:\ProgramData\printRxer\logs\printRxer*.log
 ```
+

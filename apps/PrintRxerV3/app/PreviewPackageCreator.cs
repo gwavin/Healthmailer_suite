@@ -15,7 +15,7 @@ public static class PreviewPackageCreator
         Directory.CreateDirectory(outputRoot);
         DateTimeOffset now = DateTimeOffset.UtcNow;
         string packageId = PackageIdGenerator.Create(now);
-        string workingDirectory = Path.Combine(Path.GetTempPath(), "printrxer-v3-preview-" + packageId);
+        string workingDirectory = Path.Combine(Path.GetTempPath(), "printRxer-preview-" + packageId);
         Directory.CreateDirectory(workingDirectory);
 
         string pdfPath = Path.Combine(workingDirectory, "prescription.pdf");
@@ -30,7 +30,7 @@ public static class PreviewPackageCreator
             new PrintJobOrigin
             {
                 Source = "preview-cli",
-                PrinterName = "printrxer_v3 preview",
+                PrinterName = "printRxer preview",
                 DocumentName = "Sample prescription preview",
                 PrintJobId = "preview",
                 CapturedAtUtc = now,
@@ -43,7 +43,7 @@ public static class PreviewPackageCreator
                 RecipientName = "Sample HealthMailer Recipient",
                 RecipientEmail = "sample.recipient@example.invalid",
                 Subject = "Sample prescription handoff",
-                Body = "This is a PrintRxer v3 preview package. HealthMailer would own downstream delivery.",
+                Body = "This is a printRxer preview package. HealthMailer would own downstream delivery.",
                 SelectedAt = now
             });
 
@@ -85,7 +85,7 @@ public static class PreviewPackageCreator
             4 0 obj
             << /Length 88 >>
             stream
-            BT /F1 18 Tf 72 720 Td (PrintRxer v3 preview prescription package) Tj ET
+            BT /F1 18 Tf 72 720 Td (printRxer preview prescription package) Tj ET
             endstream
             endobj
             5 0 obj

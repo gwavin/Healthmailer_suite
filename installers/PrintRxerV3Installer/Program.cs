@@ -12,15 +12,15 @@ internal static class Program
         ApplicationConfiguration.Initialize();
 
         bool uninstall = args.Any(arg => string.Equals(arg, "--uninstall", StringComparison.OrdinalIgnoreCase)) ||
-            string.Equals(Path.GetFileNameWithoutExtension(Environment.ProcessPath), "PrintRxerV3Uninstall", StringComparison.OrdinalIgnoreCase);
+            string.Equals(Path.GetFileNameWithoutExtension(Environment.ProcessPath), "printRxerUninstall", StringComparison.OrdinalIgnoreCase);
         bool removeData = args.Any(arg => string.Equals(arg, "--remove-data", StringComparison.OrdinalIgnoreCase));
         bool quiet = args.Any(arg => string.Equals(arg, "--quiet", StringComparison.OrdinalIgnoreCase));
 
         if (args.Any(arg => string.Equals(arg, "--help", StringComparison.OrdinalIgnoreCase) || string.Equals(arg, "/?", StringComparison.OrdinalIgnoreCase)))
         {
             MessageBox.Show(
-                "PrintRxerV3Installer.exe installs PrintRxerV3.\nPrintRxerV3Uninstall.exe removes PrintRxerV3.\n\nRun as administrator for printer installation/removal.",
-                "PrintRxerV3 installer",
+                "printRxerInstaller.exe installs printRxer.\nprintRxerUninstall.exe removes printRxer.\n\nRun as administrator for printer installation/removal.",
+                "printRxer installer",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
             return 0;
@@ -37,7 +37,7 @@ internal static class Program
 
                 if (!quiet)
                 {
-                    MessageBox.Show("PrintRxerV3 uninstall completed.", "PrintRxerV3 uninstaller", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("printRxer uninstall completed.", "printRxer uninstaller", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
 
                 return 0;
@@ -61,7 +61,7 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "PrintRxerV3 installer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(ex.Message, "printRxer installer", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;
         }
     }

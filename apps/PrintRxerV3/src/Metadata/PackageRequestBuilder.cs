@@ -2,7 +2,7 @@ namespace PrintRxerV3.Metadata;
 
 public static class PackageRequestBuilder
 {
-    public const string DefaultAuditNote = "PrintRxer v3 created this HealthMailer handoff package as workstation audit evidence; it did not send mail.";
+    public const string DefaultAuditNote = "printRxer created this HealthMailer handoff package as workstation audit evidence; it did not send mail.";
 
     public static PackageRequest Create(
         string packageId,

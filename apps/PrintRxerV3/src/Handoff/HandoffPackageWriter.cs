@@ -65,7 +65,7 @@ public static class HandoffPackageWriter
     private static string BuildSummary(PackageRequest request)
     {
         StringBuilder builder = new();
-        builder.AppendLine("PrintRxer v3 HealthMailer handoff package");
+        builder.AppendLine("printRxer HealthMailer handoff package");
         builder.AppendLine("Package ID: " + request.PackageId);
         builder.AppendLine("Recipient: " + request.SelectedRecipientName + " <" + request.SelectedRecipientEmail + ">");
         builder.AppendLine("Subject: " + request.Subject);

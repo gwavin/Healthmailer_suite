@@ -43,7 +43,7 @@ internal sealed class InstallForm : Form
 
     public InstallForm()
     {
-        Text = "PrintRxerV3 setup";
+        Text = "printRxer setup";
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(820, 620);
         Size = new Size(880, 660);
@@ -57,9 +57,9 @@ internal sealed class InstallForm : Form
     {
         _contentPanel.Controls.Clear();
 
-        TableLayoutPanel layout = CreateBaseLayout("Install PrintRxerV3", "Choose where PrintRxerV3 should place HealthMailer handoff packages.");
+        TableLayoutPanel layout = CreateBaseLayout("Install printRxer", "Choose where printRxer should place HealthMailer handoff packages.");
 
-        Label defaultDescription = CreateWrappedLabel("Recommended for a same-machine test. PrintRxerV3 will create and use:", 34);
+        Label defaultDescription = CreateWrappedLabel("Recommended for a same-machine test. printRxer will create and use:", 34);
 
         TextBox defaultPath = new()
         {
@@ -114,12 +114,12 @@ internal sealed class InstallForm : Form
     {
         _contentPanel.Controls.Clear();
 
-        TableLayoutPanel layout = CreateBaseLayout("Ready to install", "Review the handoff folder before installing PrintRxerV3.");
+        TableLayoutPanel layout = CreateBaseLayout("Ready to install", "Review the handoff folder before installing printRxer.");
 
         _reviewText.Text = _selectedHandoffRoot;
         _reviewText.Height = 26;
 
-        Label reviewLabel = CreateWrappedLabel("PrintRxerV3 will publish packages to:", 30);
+        Label reviewLabel = CreateWrappedLabel("printRxer will publish packages to:", 30);
 
         Label note = CreateWrappedLabel("After installation, Windows should show a printer named printRxer. Setup will not start the watcher unless that printer is present.", 48);
 
@@ -254,7 +254,7 @@ internal sealed class InstallForm : Form
     {
         DialogResult confirm = MessageBox.Show(
             this,
-            "Install PrintRxerV3 using this handoff folder?\n\n" + _selectedHandoffRoot,
+            "Install printRxer using this handoff folder?\n\n" + _selectedHandoffRoot,
             Text,
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Question);
@@ -271,13 +271,13 @@ internal sealed class InstallForm : Form
         {
             PrintRxerInstaller.Install(new InstallOptions(_selectedHandoffRoot), AppendStatus);
             AppendStatus("Install completed successfully.");
-            MessageBox.Show(this, "PrintRxerV3 was installed successfully. Click OK to close setup.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, "printRxer was installed successfully. Click OK to close setup.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
             Close();
         }
         catch (Exception ex)
         {
             AppendStatus("Install failed: " + ex.Message);
-            MessageBox.Show(this, ex.Message, "PrintRxerV3 install failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, ex.Message, "printRxer install failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         finally
         {

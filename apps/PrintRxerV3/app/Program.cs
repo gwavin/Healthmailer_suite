@@ -38,10 +38,10 @@ public static class Program
             return Watch(args);
         }
 
-        string outputRoot = GetOption(args, "--output", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "handoff"));
+        string outputRoot = GetOption(args, "--output", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "handoff"));
         string packageDirectory = PreviewPackageCreator.CreateSamplePackage(outputRoot);
         WindowsInformationAlert.Show(UserNotificationMessageBuilder.BuildPackageReadyMessage(packageDirectory));
-        Console.WriteLine("Created PrintRxer v3 preview handoff package:");
+        Console.WriteLine("Created printRxer preview handoff package:");
         Console.WriteLine(packageDirectory);
         return 0;
     }
@@ -64,7 +64,7 @@ public static class Program
         {
             WindowsInformationAlert.Show(UserNotificationMessageBuilder.BuildPackageQueuedMessage(result.LocalPackageDirectory));
         }
-        Console.WriteLine("Created PrintRxer v3 handoff package from captured print:");
+        Console.WriteLine("Created printRxer handoff package from captured print:");
         Console.WriteLine(result.PackageDirectory ?? "(no package created)");
         Console.WriteLine("Local package:");
         Console.WriteLine(result.LocalPackageDirectory ?? "(no local package)");
@@ -89,7 +89,7 @@ public static class Program
         Console.WriteLine("Incoming: " + config.IncomingRoot);
         Console.WriteLine("Handoff:  " + config.HandoffRoot);
         Console.WriteLine("Temp:     " + config.TempRoot);
-        Log("PrintRxerV3 started. Incoming: " + config.IncomingRoot + "; Handoff: " + config.HandoffRoot);
+        Log("printRxer started. Incoming: " + config.IncomingRoot + "; Handoff: " + config.HandoffRoot);
 
         CapturedPrintJobWatcher watcher = new(new CapturedPrintJobWatcherOptions
         {
@@ -97,8 +97,8 @@ public static class Program
             NotifyPackageReady = packageDirectory =>
             {
                 WindowsInformationAlert.Show(UserNotificationMessageBuilder.BuildPackageReadyMessage(packageDirectory));
-                Log("Created PrintRxer v3 handoff package: " + packageDirectory);
-                Console.WriteLine("Created PrintRxer v3 handoff package: " + packageDirectory);
+                Log("Created printRxer handoff package: " + packageDirectory);
+                Console.WriteLine("Created printRxer handoff package: " + packageDirectory);
             },
             NotifyPackageQueuedLocal = localPackageDirectory =>
             {
@@ -110,7 +110,7 @@ public static class Program
         });
 
         watcher.RunUntilCancelled(cancellation.Token);
-        Console.WriteLine("Stopped PrintRxer v3 watcher.");
+        Console.WriteLine("Stopped printRxer watcher.");
         return 0;
     }
 
@@ -158,7 +158,7 @@ public static class Program
             warnings.Add("Pending outbox contains packages older than 10 minutes.");
         }
 
-        string logPath = Path.Combine(config.LogsRoot, "printrxer_v3.log");
+        string logPath = Path.Combine(config.LogsRoot, "printRxer.log");
         long diskFree = GetDiskFreeBytes(config.LocalOutboxRoot);
         if (diskFree >= 0 && diskFree < 1024L * 1024L * 1024L)
         {
@@ -167,7 +167,7 @@ public static class Program
 
         var status = new
         {
-            Component = "PrintRxerV3",
+            Component = "printRxer",
             ConfigPath = effectiveConfigPath,
             config.IncomingRoot,
             config.HandoffRoot,
@@ -191,7 +191,7 @@ public static class Program
         }
         else
         {
-            Console.WriteLine("PrintRxerV3 status");
+            Console.WriteLine("printRxer status");
             Console.WriteLine("Config: " + status.ConfigPath);
             Console.WriteLine("Incoming: " + status.IncomingRoot);
             Console.WriteLine("Handoff: " + status.HandoffRoot + " (" + (handoffReachable ? "reachable" : "unavailable") + ")");
@@ -253,7 +253,7 @@ public static class Program
         if (!string.IsNullOrWhiteSpace(incomingOverride) || !string.IsNullOrWhiteSpace(dataRootOverride) || !string.IsNullOrWhiteSpace(handoffOverride))
         {
             string selectedDataRoot = string.IsNullOrWhiteSpace(dataRootOverride)
-                ? Path.GetDirectoryName(config.ProcessedRoot) ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3")
+                ? Path.GetDirectoryName(config.ProcessedRoot) ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer")
                 : dataRootOverride;
             config.IncomingRoot = string.IsNullOrWhiteSpace(incomingOverride) ? config.IncomingRoot : incomingOverride;
             ApplyDataRoot(config, selectedDataRoot);
@@ -262,7 +262,7 @@ public static class Program
             config.EnsureLocalDirectories();
             config.Save();
             InstallScheduledTask(config.ConfigPath);
-            Console.WriteLine("PrintRxerV3 installed.");
+            Console.WriteLine("printRxer installed.");
             Console.WriteLine("Config: " + config.ConfigPath);
             Console.WriteLine("Handoff: " + config.HandoffRoot);
             return 0;
@@ -282,10 +282,10 @@ public static class Program
 
         using FolderBrowserDialog dataDialog = new()
         {
-            Description = "Select the local PrintRxerV3 data folder.",
+            Description = "Select the local printRxer data folder.",
             UseDescriptionForTitle = true,
             ShowNewFolderButton = true,
-            SelectedPath = Path.GetDirectoryName(config.ProcessedRoot) ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3")
+            SelectedPath = Path.GetDirectoryName(config.ProcessedRoot) ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer")
         };
         if (dataDialog.ShowDialog() != DialogResult.OK)
         {
@@ -314,9 +314,9 @@ public static class Program
         InstallScheduledTask(config.ConfigPath);
 
         MessageBox.Show(
-            "PrintRxerV3 is configured and will start at user logon." + Environment.NewLine + Environment.NewLine +
+            "printRxer is configured and will start at user logon." + Environment.NewLine + Environment.NewLine +
             "Config: " + config.ConfigPath,
-            "PrintRxerV3 installed",
+            "printRxer installed",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);
         return 0;
@@ -335,15 +335,15 @@ public static class Program
 
     private static void InstallScheduledTask(string configPath)
     {
-        string exePath = Environment.ProcessPath ?? System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? throw new InvalidOperationException("Could not resolve PrintRxerV3 executable path.");
+        string exePath = Environment.ProcessPath ?? System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? throw new InvalidOperationException("Could not resolve printRxer executable path.");
         string command =
             "$action = New-ScheduledTaskAction -Execute '" + EscapePowerShellSingleQuoted(exePath) + "' -Argument '--watch --config \"" + EscapePowerShellSingleQuoted(configPath) + "\"'; " +
             "$logonTrigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME; " +
             "$watchdogTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1) -RepetitionDuration (New-TimeSpan -Days 999); " +
             "$principal = New-ScheduledTaskPrincipal -UserId \"$env:USERDOMAIN\\$env:USERNAME\" -LogonType Interactive -RunLevel Limited; " +
             "$settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit (New-TimeSpan -Days 999) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable; " +
-            "Register-ScheduledTask -TaskName 'PrintRxerV3' -Action $action -Trigger @($logonTrigger, $watchdogTrigger) -Principal $principal -Settings $settings -Force | Out-Null; " +
-            "Start-ScheduledTask -TaskName 'PrintRxerV3'";
+            "Register-ScheduledTask -TaskName 'printRxer' -Action $action -Trigger @($logonTrigger, $watchdogTrigger) -Principal $principal -Settings $settings -Force | Out-Null; " +
+            "Start-ScheduledTask -TaskName 'printRxer'";
         using System.Diagnostics.Process process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
         {
             FileName = "powershell.exe",
@@ -437,7 +437,7 @@ public static class Program
         try
         {
             (_log ??= new PrintRxerV3Log(
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printrxer_v3", "logs"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "logs"),
                 5 * 1024 * 1024,
                 3)).Write(message);
         }

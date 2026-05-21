@@ -1,5 +1,5 @@
 param(
-    [string]$PrintRxerConfig = "C:\ProgramData\printrxer_v3\config\printrxer_v3.settings.json",
+    [string]$PrintRxerConfig = "C:\ProgramData\printRxer\config\printRxer.settings.json",
     [string]$HealthMailerConfig = "C:\ProgramData\HealthMailer\healthmailer.settings.json",
     [int]$PendingWarningMinutes = 10,
     [int]$ReadyWarningMinutes = 10,
@@ -44,7 +44,7 @@ $healthConfig = $null
 if (Test-Path -LiteralPath $PrintRxerConfig) {
     $printConfig = Get-Content -LiteralPath $PrintRxerConfig | ConvertFrom-Json
 } else {
-    $critical.Add("PrintRxerV3 config not found: $PrintRxerConfig")
+    $critical.Add("printRxer config not found: $PrintRxerConfig")
 }
 
 if (Test-Path -LiteralPath $HealthMailerConfig) {
@@ -64,10 +64,10 @@ if ($printConfig) {
     $printPendingCount = Get-DirectoryCount $printConfig.LocalOutboxRoot
     $printPendingAge = Get-OldestAgeMinutes $printConfig.LocalOutboxRoot
     if ($printPendingAge -ne $null -and $printPendingAge -ge $PendingWarningMinutes) {
-        $warnings.Add("PrintRxerV3 pending package age is $printPendingAge minutes.")
+        $warnings.Add("printRxer pending package age is $printPendingAge minutes.")
     }
     if (-not (Test-Path -LiteralPath $printConfig.HandoffRoot -PathType Container)) {
-        $warnings.Add("PrintRxerV3 handoff folder is unavailable: $($printConfig.HandoffRoot)")
+        $warnings.Add("printRxer handoff folder is unavailable: $($printConfig.HandoffRoot)")
     }
 }
 
@@ -91,7 +91,7 @@ $result = [ordered]@{
     Status = if ($critical.Count -gt 0) { 'Critical' } elseif ($warnings.Count -gt 0) { 'Warning' } else { 'Healthy' }
     PrintRxerConfig = $PrintRxerConfig
     HealthMailerConfig = $HealthMailerConfig
-    PrintRxerV3Task = Get-TaskState 'PrintRxerV3'
+    PrintRxerTask = Get-TaskState 'printRxer'
     HealthMailerTask = Get-TaskState 'HealthMailer'
     PrintRxerPendingCount = $printPendingCount
     PrintRxerOldestPendingAgeMinutes = $printPendingAge
@@ -108,7 +108,7 @@ if ($Json) {
     $result | ConvertTo-Json -Depth 5
 } else {
     Write-Host "PrintRxer Suite health: $($result.Status)"
-    Write-Host "PrintRxerV3 task: $($result.PrintRxerV3Task)"
+    Write-Host "printRxer task: $($result.PrintRxerTask)"
     Write-Host "HealthMailer task: $($result.HealthMailerTask)"
     Write-Host "Pending/READY/failed/quarantine: $printPendingCount/$healthReadyCount/$failedCount/$quarantineCount"
     foreach ($item in $warnings) { Write-Warning $item }

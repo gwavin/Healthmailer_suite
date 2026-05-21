@@ -14,13 +14,13 @@ internal static class PrintRxerInstaller
         log("Creating local folders.");
         CreateDirectories();
 
-        log("Installing PrintRxerV3 application files.");
+        log("Installing printRxer application files.");
         CopyDirectory(InstallerPaths.PayloadPublishRoot, InstallerPaths.ProgramFilesRoot);
 
         log("Seeding recipients and picker image if missing.");
         SeedDataFiles();
 
-        log("Writing PrintRxerV3 configuration.");
+        log("Writing printRxer configuration.");
         WriteConfig(options.HandoffRoot);
 
         log("Installing printRxer capture printer.");
@@ -29,7 +29,7 @@ internal static class PrintRxerInstaller
         log("Verifying printRxer capture printer.");
         VerifyCapturePrinter();
 
-        log("Registering PrintRxerV3 watcher task.");
+        log("Registering printRxer watcher task.");
         RegisterScheduledTask();
     }
 
