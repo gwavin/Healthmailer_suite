@@ -112,10 +112,22 @@ internal sealed class SuiteInstallerForm : Form
             return;
         }
 
+        DialogResult confirm = MessageBox.Show(
+            this,
+            "Windows will ask for administrator approval to run this component installer.",
+            Text,
+            MessageBoxButtons.OKCancel,
+            MessageBoxIcon.Information);
+
+        if (confirm != DialogResult.OK)
+        {
+            return;
+        }
+
         RunUserAction(() =>
         {
-            AppendStatus("Starting " + Path.GetFileName(setupPath) + ".");
-            ProcessRunner.Run(setupPath, arguments);
+            AppendStatus("Starting elevated " + Path.GetFileName(setupPath) + ".");
+            ProcessRunner.Run(setupPath, arguments, elevate: true);
             AppendStatus(Path.GetFileName(setupPath) + " completed.");
         });
     }
