@@ -256,6 +256,17 @@ Support smoke test:
   This checks the release bundle layout without installing anything.
   Automation that needs an exit code should run it with Start-Process -Wait -PassThru.
 
+Enterprise deployment examples:
+  Run these from an elevated/admin deployment context.
+  printRxerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming"
+  HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true
+  printRxerSetup.exe --validate
+  HealthMailerSetup.exe --validate
+  printRxerSetup.exe --uninstall --quiet
+  HealthMailerSetup.exe --uninstall --quiet
+
+IT owns deployment tooling. Target machines do not need the SDK, WDK, Visual Studio, or C++ build tools.
+
 Safety notes:
   printRxer creates validated handoff packages and does not send mail.
   HealthMailer sends through local Outlook/Healthmail on the sender machine.
@@ -291,6 +302,12 @@ Purpose:
 Install from this folder:
   printRxerSetup.exe
 
+Quiet install:
+  printRxerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming"
+
+Validate:
+  printRxerSetup.exe --validate
+
 Uninstall:
   printRxerSetup.exe
   Then choose Uninstall.
@@ -324,6 +341,12 @@ Purpose:
 
 Install from this folder:
   HealthMailerSetup.exe
+
+Quiet install:
+  HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true
+
+Validate:
+  HealthMailerSetup.exe --validate
 
 Uninstall:
   HealthMailerSetup.exe

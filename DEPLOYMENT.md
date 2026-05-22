@@ -86,6 +86,70 @@ Support can run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted ZI
 
 Component ZIPs may still be published for targeted support, but the suite ZIP is the preferred release path.
 
+## Enterprise Deployment Commands
+
+This project does not provide a deployment platform and does not include Intune, SCCM, GPO, RMM, or code-signing logic. IT should deploy the extracted release bundle using existing local tooling. Target machines do not need the .NET SDK, WDK, Visual Studio, or C++ build tools.
+
+Run commands from the extracted suite ZIP root in an elevated/admin deployment context. The component installer manifests request administrator rights because they write Program Files, scheduled tasks, and printer/spooler components.
+
+printRxer printing machine:
+
+```powershell
+.\printRxerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming"
+.\printRxerSetup.exe --validate
+```
+
+HealthMailer sending machine:
+
+```powershell
+.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true
+.\HealthMailerSetup.exe --validate
+```
+
+Same-machine pilot:
+
+```powershell
+.\printRxerSetup.exe --quiet --handoff-root "C:\ProgramData\printRxer\handoff"
+.\HealthMailerSetup.exe --quiet --handoff-root "C:\ProgramData\printRxer\handoff" --send-mail false
+.\printRxerSetup.exe --validate
+.\HealthMailerSetup.exe --validate
+```
+
+Quiet uninstall:
+
+```powershell
+.\printRxerSetup.exe --uninstall --quiet
+.\HealthMailerSetup.exe --uninstall --quiet
+```
+
+Clean lab reset, only when explicitly approved:
+
+```powershell
+.\printRxerSetup.exe --uninstall --quiet --remove-data
+.\HealthMailerSetup.exe --uninstall --quiet --remove-data
+```
+
+Exit codes:
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success |
+| 1 | General failure |
+| 2 | Missing required argument |
+| 3 | Insufficient permissions |
+| 4 | Handoff folder unavailable |
+| 5 | Outlook/HealthMailer prerequisite failed |
+| 6 | Printer capture install failed |
+| 7 | Validation failed |
+| 8 | Cancelled by user |
+
+Quiet mode logs to:
+
+```text
+C:\ProgramData\printRxer\logs\printRxerInstaller.log
+C:\ProgramData\HealthMailer\logs\HealthMailerInstaller.log
+```
+
 ## Developer Publish Notes
 
 printRxer can be built from its app project during development:

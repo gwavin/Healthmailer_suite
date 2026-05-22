@@ -51,7 +51,7 @@ internal static class HealthMailerInstallerEngine
                 RequireMrn = true
             },
             Logging = new { MaxLogBytes = 10485760, MaxLogFiles = 5 },
-            SendMail = true
+            SendMail = options.SendMail
         };
 
         string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });

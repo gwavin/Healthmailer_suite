@@ -5,79 +5,173 @@ namespace PrintRxerV3Installer;
 
 internal static class Program
 {
+    private const int Success = 0;
+    private const int GeneralFailure = 1;
+    private const int MissingRequiredArgument = 2;
+    private const int InsufficientPermissions = 3;
+    private const int HandoffUnavailable = 4;
+    private const int PrinterCaptureFailed = 6;
+    private const int ValidationFailed = 7;
+
     [STAThread]
     [SupportedOSPlatform("windows")]
     private static int Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
 
-        bool uninstall = args.Any(arg => string.Equals(arg, "--uninstall", StringComparison.OrdinalIgnoreCase)) ||
+        bool uninstall = HasFlag(args, "--uninstall") ||
             string.Equals(Path.GetFileNameWithoutExtension(Environment.ProcessPath), "printRxerUninstall", StringComparison.OrdinalIgnoreCase);
-        bool removeData = args.Any(arg => string.Equals(arg, "--remove-data", StringComparison.OrdinalIgnoreCase));
-        bool quiet = args.Any(arg => string.Equals(arg, "--quiet", StringComparison.OrdinalIgnoreCase));
-        bool smokeTest = args.Any(arg => string.Equals(arg, "--smoke-test", StringComparison.OrdinalIgnoreCase));
-
-        if (args.Any(arg => string.Equals(arg, "--help", StringComparison.OrdinalIgnoreCase) || string.Equals(arg, "/?", StringComparison.OrdinalIgnoreCase)))
-        {
-            MessageBox.Show(
-                "printRxerInstaller.exe installs printRxer.\nprintRxerUninstall.exe removes printRxer.\n\nRun as administrator for printer installation/removal.",
-                "printRxer installer",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
-            return 0;
-        }
+        bool removeData = HasFlag(args, "--remove-data");
+        bool quiet = HasFlag(args, "--quiet");
+        bool smokeTest = HasFlag(args, "--smoke-test");
+        bool validate = HasFlag(args, "--validate");
+        bool help = HasFlag(args, "--help") || HasFlag(args, "/?");
+        Action<string> log = message => WriteInstallLog(message, quiet);
 
         try
         {
+            if (help)
+            {
+                WriteHelp();
+                return Success;
+            }
+
             if (smokeTest)
             {
-                if (!Directory.Exists(InstallerPaths.PayloadPublishRoot))
-                {
-                    Console.WriteLine("MISS " + InstallerPaths.PayloadPublishRoot);
-                    return 2;
-                }
+                return SmokeTest();
+            }
 
-                Console.WriteLine("OK   " + InstallerPaths.PayloadPublishRoot);
-                return 0;
+            if (validate)
+            {
+                return Validate(log);
             }
 
             if (uninstall && (quiet || removeData))
             {
                 if (PrintRxerUninstaller.IsInstalled() || (removeData && PrintRxerUninstaller.HasLocalData()))
                 {
-                    PrintRxerUninstaller.Uninstall(removeData, _ => { });
+                    PrintRxerUninstaller.Uninstall(removeData, log);
                 }
 
-                if (!quiet)
-                {
-                    MessageBox.Show("printRxer uninstall completed.", "printRxer uninstaller", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-
-                return 0;
+                log("printRxer uninstall completed.");
+                return Success;
             }
 
             if (uninstall)
             {
                 Application.Run(new UninstallForm());
-            }
-            else if (quiet)
-            {
-                string handoffRoot = GetOption(args, "--handoff-root") ?? InstallerPaths.DefaultHandoffRoot;
-                PrintRxerInstaller.Install(new InstallOptions(handoffRoot), _ => { });
-            }
-            else
-            {
-                Application.Run(new InstallForm());
+                return Success;
             }
 
-            return 0;
+            if (quiet)
+            {
+                string handoffRoot = GetOption(args, "--handoff-root") ?? InstallerPaths.DefaultHandoffRoot;
+                PrintRxerInstaller.Install(new InstallOptions(handoffRoot), log);
+                log("printRxer quiet install completed.");
+                return Success;
+            }
+
+            Application.Run(new InstallForm());
+            return Success;
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "printRxer installer", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            return 1;
+            log("ERROR: " + ex);
+            if (!quiet)
+            {
+                MessageBox.Show(ex.Message, "printRxer installer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            return MapExitCode(ex);
         }
     }
+
+    private static int SmokeTest()
+    {
+        if (!Directory.Exists(InstallerPaths.PayloadPublishRoot))
+        {
+            Console.WriteLine("MISS " + InstallerPaths.PayloadPublishRoot);
+            return MissingRequiredArgument;
+        }
+
+        Console.WriteLine("OK   " + InstallerPaths.PayloadPublishRoot);
+        return Success;
+    }
+
+    private static int Validate(Action<string> log)
+    {
+        List<string> failures = new();
+        if (!File.Exists(InstallerPaths.InstalledExePath)) { failures.Add("Missing printRxer executable: " + InstallerPaths.InstalledExePath); }
+        if (!File.Exists(InstallerPaths.ConfigPath)) { failures.Add("Missing printRxer config: " + InstallerPaths.ConfigPath); }
+        string taskState = ProcessRunner.PowerShell("if (Get-ScheduledTask -TaskName 'printRxer' -ErrorAction SilentlyContinue) { 'present' }", requireSuccess: false);
+        if (!taskState.Contains("present", StringComparison.OrdinalIgnoreCase)) { failures.Add("printRxer scheduled task is not installed."); }
+
+        string printerState = ProcessRunner.PowerShell(@"
+if (Get-Printer -Name 'printRxer' -ErrorAction SilentlyContinue) { 'printer' }
+if (Get-PrinterPort -Name 'printrx:' -ErrorAction SilentlyContinue) { 'port' }
+if (Get-PrinterDriver -Name 'PrintRxer XPS Driver' -ErrorAction SilentlyContinue) { 'driver' }
+", requireSuccess: false);
+        if (!printerState.Contains("printer", StringComparison.OrdinalIgnoreCase)) { failures.Add("printRxer printer queue is not installed."); }
+        if (!printerState.Contains("port", StringComparison.OrdinalIgnoreCase)) { failures.Add("printrx: printer port is not installed."); }
+        if (!printerState.Contains("driver", StringComparison.OrdinalIgnoreCase)) { failures.Add("PrintRxer XPS Driver is not installed."); }
+
+        foreach (string failure in failures)
+        {
+            log("VALIDATION: " + failure);
+        }
+
+        if (failures.Count > 0)
+        {
+            return ValidationFailed;
+        }
+
+        log("printRxer validation succeeded.");
+        return Success;
+    }
+
+    private static int MapExitCode(Exception ex)
+    {
+        if (ex is UnauthorizedAccessException) { return InsufficientPermissions; }
+        if (ex is DirectoryNotFoundException or FileNotFoundException) { return MissingRequiredArgument; }
+        if (ex.Message.Contains("handoff", StringComparison.OrdinalIgnoreCase) && ex is IOException) { return HandoffUnavailable; }
+        if (ex.Message.Contains("printer", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("port", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("driver", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("spooler", StringComparison.OrdinalIgnoreCase))
+        {
+            return PrinterCaptureFailed;
+        }
+
+        return GeneralFailure;
+    }
+
+    private static void WriteHelp()
+    {
+        Console.WriteLine("""
+printRxerSetup.exe
+
+Usage:
+  printRxerSetup.exe --quiet [--handoff-root <path>]
+  printRxerSetup.exe --uninstall --quiet [--remove-data]
+  printRxerSetup.exe --validate
+  printRxerSetup.exe --help
+
+Quiet install includes the printRxer app, watcher task, recipient cache handling,
+native port monitor, PrintRxer XPS driver, and local printer queue named printRxer.
+
+Exit codes:
+  0 success
+  1 general failure
+  2 missing required argument
+  3 insufficient permissions
+  4 handoff folder unavailable
+  6 printer capture install failed
+  7 validation failed
+  8 cancelled by user
+""");
+    }
+
+    private static bool HasFlag(string[] args, string name) => args.Any(arg => string.Equals(arg, name, StringComparison.OrdinalIgnoreCase));
 
     private static string? GetOption(string[] args, string name)
     {
@@ -90,5 +184,26 @@ internal static class Program
         }
 
         return null;
+    }
+
+    private static void WriteInstallLog(string message, bool echo)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(InstallerPaths.ProgramDataRoot, "logs"));
+            string line = "[" + DateTimeOffset.Now.ToString("O") + "] " + message;
+            File.AppendAllText(Path.Combine(InstallerPaths.ProgramDataRoot, "logs", "printRxerInstaller.log"), line + Environment.NewLine);
+            if (echo)
+            {
+                Console.WriteLine(message);
+            }
+        }
+        catch
+        {
+            if (echo)
+            {
+                Console.WriteLine(message);
+            }
+        }
     }
 }

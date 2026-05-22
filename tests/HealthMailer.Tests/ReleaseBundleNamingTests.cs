@@ -67,6 +67,31 @@ public sealed class ReleaseBundleNamingTests
         Assert.DoesNotContain("$healthReadyCount = Get-DirectoryCount $healthConfig.HandoffRoot", script, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Component_installers_expose_enterprise_cli_contract()
+    {
+        string repoRoot = FindRepoRoot();
+        string printRxer = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "Program.cs"));
+        string healthMailer = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "Program.cs"));
+
+        foreach (string source in new[] { printRxer, healthMailer })
+        {
+            Assert.Contains("--quiet", source, StringComparison.Ordinal);
+            Assert.Contains("--uninstall", source, StringComparison.Ordinal);
+            Assert.Contains("--validate", source, StringComparison.Ordinal);
+            Assert.Contains("--help", source, StringComparison.Ordinal);
+            Assert.Contains("--handoff-root", source, StringComparison.Ordinal);
+            Assert.Contains("MissingRequiredArgument = 2", source, StringComparison.Ordinal);
+            Assert.Contains("InsufficientPermissions = 3", source, StringComparison.Ordinal);
+            Assert.Contains("ValidationFailed = 7", source, StringComparison.Ordinal);
+            Assert.Contains("WriteInstallLog", source, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("PrinterCaptureFailed = 6", printRxer, StringComparison.Ordinal);
+        Assert.Contains("HealthMailerPrerequisiteFailed = 5", healthMailer, StringComparison.Ordinal);
+        Assert.Contains("--send-mail", healthMailer, StringComparison.Ordinal);
+    }
+
     private static string FindRepoRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
