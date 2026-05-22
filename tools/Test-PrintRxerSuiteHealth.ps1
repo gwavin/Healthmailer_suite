@@ -15,6 +15,13 @@ function Get-DirectoryCount([string]$Path) {
     return @(Get-ChildItem -LiteralPath $Path -Directory -ErrorAction SilentlyContinue).Count
 }
 
+function Get-ReadyPackageCount([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Container)) { return 0 }
+    return @(Get-ChildItem -LiteralPath $Path -Directory -ErrorAction SilentlyContinue | Where-Object {
+        -not $_.Name.StartsWith('.') -and (Test-Path -LiteralPath (Join-Path $_.FullName 'READY'))
+    }).Count
+}
+
 function Get-OldestAgeMinutes([string]$Path, [switch]$ReadyOnly) {
     if (-not (Test-Path -LiteralPath $Path -PathType Container)) { return $null }
     $items = Get-ChildItem -LiteralPath $Path -Directory -ErrorAction SilentlyContinue
@@ -72,7 +79,7 @@ if ($printConfig) {
 }
 
 if ($healthConfig) {
-    $healthReadyCount = Get-DirectoryCount $healthConfig.HandoffRoot
+    $healthReadyCount = Get-ReadyPackageCount $healthConfig.HandoffRoot
     $healthReadyAge = Get-OldestAgeMinutes $healthConfig.HandoffRoot -ReadyOnly
     $localRoot = $healthConfig.LocalRoot
     $failedCount = Get-DirectoryCount (Join-Path $localRoot 'failed')

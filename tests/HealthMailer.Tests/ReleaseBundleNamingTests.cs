@@ -56,6 +56,17 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("TableLayoutPanel panel", form, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Suite_health_script_counts_only_ready_packages_in_handoff_root()
+    {
+        string repoRoot = FindRepoRoot();
+        string script = File.ReadAllText(Path.Combine(repoRoot, "tools", "Test-PrintRxerSuiteHealth.ps1"));
+
+        Assert.Contains("function Get-ReadyPackageCount", script, StringComparison.Ordinal);
+        Assert.Contains("$healthReadyCount = Get-ReadyPackageCount $healthConfig.HandoffRoot", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("$healthReadyCount = Get-DirectoryCount $healthConfig.HandoffRoot", script, StringComparison.Ordinal);
+    }
+
     private static string FindRepoRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
