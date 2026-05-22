@@ -2,3 +2,4 @@ recipientId,displayName,email,active,organisation,site,department,service,sortOr
 sample-jane,Dr Jane Sample,jane.sample@example.invalid,true,Example Practice,Dublin,General Practice,Clinical Documents,10,Sample fallback recipient only
 sample-john,Dr John Sample,john.sample@example.invalid,true,Example Practice,Cork,General Practice,Clinical Documents,20,Sample fallback recipient only
 sample-review,Dr Alex Review,alex.review@example.invalid,true,Example Review Service,Galway,Medicines Review,Clinical Documents,30,Sample fallback recipient only
+gavin-horan,Gavin Horan,gavin.horan1@hse.ie,true,HSE,,,Testing,40,Temporary bundled test recipient approved by repository owner
