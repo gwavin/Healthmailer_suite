@@ -37,6 +37,8 @@ internal static class PrintRxerInstaller
         VerifyCapturePrinter();
 
         log("Registering printRxer watcher task.");
+        log("printRxer scheduled task target user: " + Environment.UserDomainName + "\\" + Environment.UserName);
+        log("printRxer installer Windows identity: " + WindowsIdentity.GetCurrent().Name);
         RegisterScheduledTask();
     }
 

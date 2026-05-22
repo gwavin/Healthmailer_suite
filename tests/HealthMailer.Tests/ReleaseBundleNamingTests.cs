@@ -50,8 +50,10 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("Advanced / repair", form, StringComparison.Ordinal);
         Assert.Contains("Repair printRxer printer capture", form, StringComparison.Ordinal);
         Assert.Contains("excludes PDF payloads by default", form, StringComparison.Ordinal);
-        Assert.Contains("administrator approval to run this component installer", form, StringComparison.Ordinal);
-        Assert.Contains("ProcessRunner.StartElevated(setupPath, arguments)", form, StringComparison.Ordinal);
+        Assert.Contains("HealthMailer setup will run as the current Windows user", form, StringComparison.Ordinal);
+        Assert.Contains("printRxer setup includes printer capture", form, StringComparison.Ordinal);
+        Assert.Contains("ProcessRunner.Start(setupPath, arguments, elevate: setupKind == SetupKind.PrintRxer)", form, StringComparison.Ordinal);
+        Assert.DoesNotContain("ProcessRunner.StartElevated(setupPath, arguments)", form, StringComparison.Ordinal);
         Assert.Contains("MinimumSize = new Size(560, 360)", form, StringComparison.Ordinal);
         Assert.Contains("TableLayoutPanel panel", form, StringComparison.Ordinal);
     }
@@ -90,6 +92,21 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("PrinterCaptureFailed = 6", printRxer, StringComparison.Ordinal);
         Assert.Contains("HealthMailerPrerequisiteFailed = 5", healthMailer, StringComparison.Ordinal);
         Assert.Contains("--send-mail", healthMailer, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Suite_deployment_text_separates_healthmailer_user_context_from_printrxer_admin_context()
+    {
+        string repoRoot = FindRepoRoot();
+        string script = File.ReadAllText(Path.Combine(repoRoot, "tools", "New-PrintRxerSuiteReleaseBundle.ps1"));
+        string healthMailerManifest = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "app.manifest"));
+        string printRxerManifest = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "app.manifest"));
+
+        Assert.Contains("Run as the intended Outlook/Healthmail sender user", script, StringComparison.Ordinal);
+        Assert.Contains("administrator-capable context", script, StringComparison.Ordinal);
+        Assert.Contains("scheduled task principal", script, StringComparison.Ordinal);
+        Assert.Contains("level=\"asInvoker\"", healthMailerManifest, StringComparison.Ordinal);
+        Assert.Contains("level=\"asInvoker\"", printRxerManifest, StringComparison.Ordinal);
     }
 
     private static string FindRepoRoot()

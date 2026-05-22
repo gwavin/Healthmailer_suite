@@ -257,11 +257,22 @@ Support smoke test:
   Automation that needs an exit code should run it with Start-Process -Wait -PassThru.
 
 Enterprise deployment examples:
-  Run these from an elevated/admin deployment context.
+  Run these from the extracted ZIP root. IT owns deployment tooling and must choose the correct Windows context.
+
+  printRxer printing machine:
+    Run in an administrator-capable context because printRxer installs the port monitor, XPS driver, and local printRxer queue.
   printRxerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming"
-  HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true
   printRxerSetup.exe --validate
+
+  HealthMailer sending machine:
+    Run as the intended Outlook/Healthmail sender user. Do not assume a system-context install will work with Outlook COM.
+  HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true
   HealthMailerSetup.exe --validate
+
+  Same-machine pilot:
+    Use the same handoff folder for both commands. HealthMailer still needs to be configured for the Outlook/Healthmail sender user.
+
+  Uninstall:
   printRxerSetup.exe --uninstall --quiet
   HealthMailerSetup.exe --uninstall --quiet
 
@@ -319,7 +330,7 @@ Uninstall:
 Notes:
   The installer asks for the handoff folder. Use the default local folder for same-machine testing, or choose/type a UNC path for a shared HealthMailer handoff.
   printRxer includes the application, watcher task, recipient cache handling, native port monitor, PrintRxer XPS driver, and local printer queue named printRxer.
-  Installing or removing printRxer printer capture requires administrator approval.
+  Installing or removing printRxer printer capture requires administrator approval. In this release, the printRxer component installer still runs as an administrator because app-file installation and printer capture are coupled; validation reports the scheduled task principal so IT can confirm task ownership.
   ProgramData files are preserved by default. Use --remove-data only for a clean lab reset.
   Full guidance: printRxer-Install-Guide.docx
 "@
@@ -357,6 +368,7 @@ Uninstall:
   HealthMailerSetup.exe --uninstall --remove-data --quiet
 
 Notes:
+  Run setup as the intended Outlook/Healthmail sender user so the scheduled task and Outlook COM automation use the correct Windows profile.
   Outlook must be installed and signed in as the approved sender user if SendMail=true.
   The installer asks for the handoff folder. Use the same folder configured for printRxer.
   ProgramData files are preserved by default. Use --remove-data only for a clean lab reset.

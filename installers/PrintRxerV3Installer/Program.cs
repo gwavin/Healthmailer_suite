@@ -1,4 +1,6 @@
 using System.Runtime.Versioning;
+using System.Security.Principal;
+using System.Text.Json;
 using System.Windows.Forms;
 
 namespace PrintRxerV3Installer;
@@ -26,7 +28,8 @@ internal static class Program
         bool smokeTest = HasFlag(args, "--smoke-test");
         bool validate = HasFlag(args, "--validate");
         bool help = HasFlag(args, "--help") || HasFlag(args, "/?");
-        Action<string> log = message => WriteInstallLog(message, quiet);
+        bool nonInteractive = quiet || validate || smokeTest || help;
+        Action<string> log = message => WriteInstallLog(message, nonInteractive);
 
         try
         {
@@ -48,6 +51,12 @@ internal static class Program
 
             if (uninstall && (quiet || removeData))
             {
+                if (!IsAdministrator())
+                {
+                    log("printRxer uninstall requires administrator rights.");
+                    return InsufficientPermissions;
+                }
+
                 if (PrintRxerUninstaller.IsInstalled() || (removeData && PrintRxerUninstaller.HasLocalData()))
                 {
                     PrintRxerUninstaller.Uninstall(removeData, log);
@@ -65,6 +74,12 @@ internal static class Program
 
             if (quiet)
             {
+                if (!IsAdministrator())
+                {
+                    log("printRxer quiet install requires administrator rights because printer capture is installed in this release.");
+                    return InsufficientPermissions;
+                }
+
                 string handoffRoot = GetOption(args, "--handoff-root") ?? InstallerPaths.DefaultHandoffRoot;
                 PrintRxerInstaller.Install(new InstallOptions(handoffRoot), log);
                 log("printRxer quiet install completed.");
@@ -77,7 +92,7 @@ internal static class Program
         catch (Exception ex)
         {
             log("ERROR: " + ex);
-            if (!quiet)
+            if (!nonInteractive)
             {
                 MessageBox.Show(ex.Message, "printRxer installer", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
@@ -101,9 +116,30 @@ internal static class Program
     private static int Validate(Action<string> log)
     {
         List<string> failures = new();
+        log("Validation running as Environment user: " + Environment.UserDomainName + "\\" + Environment.UserName);
+        log("Validation running as Windows identity: " + WindowsIdentity.GetCurrent().Name);
         if (!File.Exists(InstallerPaths.InstalledExePath)) { failures.Add("Missing printRxer executable: " + InstallerPaths.InstalledExePath); }
         if (!File.Exists(InstallerPaths.ConfigPath)) { failures.Add("Missing printRxer config: " + InstallerPaths.ConfigPath); }
-        string taskState = ProcessRunner.PowerShell("if (Get-ScheduledTask -TaskName 'printRxer' -ErrorAction SilentlyContinue) { 'present' }", requireSuccess: false);
+        if (!Directory.Exists(InstallerPaths.ProgramDataRoot)) { failures.Add("Missing ProgramData root: " + InstallerPaths.ProgramDataRoot); }
+        if (!Directory.Exists(Path.Combine(InstallerPaths.ProgramDataRoot, "logs"))) { failures.Add("Missing logs folder: " + Path.Combine(InstallerPaths.ProgramDataRoot, "logs")); }
+        if (!File.Exists(Path.Combine(InstallerPaths.ProgramDataRoot, "data", "recipients", "bundled-recipients.csv"))) { failures.Add("Missing bundled recipient fallback."); }
+
+        string? handoffRoot = TryReadConfigString(InstallerPaths.ConfigPath, "HandoffRoot");
+        if (!string.IsNullOrWhiteSpace(handoffRoot))
+        {
+            log("Configured handoff root: " + handoffRoot);
+            if (!Directory.Exists(handoffRoot))
+            {
+                failures.Add("Configured handoff folder is not reachable: " + handoffRoot);
+            }
+        }
+
+        string taskState = GetScheduledTaskPrincipal(InstallerPaths.TaskName);
+        if (!string.IsNullOrWhiteSpace(taskState))
+        {
+            log("Scheduled task principal for " + InstallerPaths.TaskName + ": " + taskState);
+        }
+
         if (!taskState.Contains("present", StringComparison.OrdinalIgnoreCase)) { failures.Add("printRxer scheduled task is not installed."); }
 
         string printerState = ProcessRunner.PowerShell(@"
@@ -127,6 +163,44 @@ if (Get-PrinterDriver -Name 'PrintRxer XPS Driver' -ErrorAction SilentlyContinue
 
         log("printRxer validation succeeded.");
         return Success;
+    }
+
+    private static bool IsAdministrator()
+    {
+        using WindowsIdentity identity = WindowsIdentity.GetCurrent();
+        WindowsPrincipal principal = new(identity);
+        return principal.IsInRole(WindowsBuiltInRole.Administrator);
+    }
+
+    private static string GetScheduledTaskPrincipal(string taskName)
+    {
+        string escaped = taskName.Replace("'", "''", StringComparison.Ordinal);
+        return ProcessRunner.PowerShell(@"
+$task = Get-ScheduledTask -TaskName '" + escaped + @"' -ErrorAction SilentlyContinue
+if ($task) {
+  'present user=' + $task.Principal.UserId + ' logonType=' + $task.Principal.LogonType + ' runLevel=' + $task.Principal.RunLevel
+}
+", requireSuccess: false);
+    }
+
+    private static string? TryReadConfigString(string path, string propertyName)
+    {
+        try
+        {
+            if (!File.Exists(path))
+            {
+                return null;
+            }
+
+            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
+            return document.RootElement.TryGetProperty(propertyName, out JsonElement value) && value.ValueKind == JsonValueKind.String
+                ? value.GetString()
+                : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
     private static int MapExitCode(Exception ex)

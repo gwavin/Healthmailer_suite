@@ -123,7 +123,7 @@ For managed deployment, write `healthmailer.settings.json` using standard config
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\Install-HealthMailerTask.ps1 `
-  -ExePath 'C:\Program Files\HealthMailer\HealthMailer.exe' `
+  -ExePath 'C:\ProgramData\HealthMailer\app\HealthMailer.exe' `
   -ConfigPath 'C:\ProgramData\HealthMailer\healthmailer.settings.json'
 ```
 

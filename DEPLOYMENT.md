@@ -90,7 +90,11 @@ Component ZIPs may still be published for targeted support, but the suite ZIP is
 
 This project does not provide a deployment platform and does not include Intune, SCCM, GPO, RMM, or code-signing logic. IT should deploy the extracted release bundle using existing local tooling. Target machines do not need the .NET SDK, WDK, Visual Studio, or C++ build tools.
 
-Run commands from the extracted suite ZIP root in an elevated/admin deployment context. The component installer manifests request administrator rights because they write Program Files, scheduled tasks, and printer/spooler components.
+Run commands from the extracted suite ZIP root. IT owns deployment tooling and must choose the correct Windows context.
+
+For HealthMailer, run setup as the intended Outlook/Healthmail sender user. Do not assume a system-context install will work with Outlook COM, because the scheduled task and Outlook profile are user/session-specific.
+
+For printRxer, quiet install may still need administrator rights because this release keeps app-file installation and printer capture in one component installer. Validation reports the scheduled task principal so IT can confirm ownership after install.
 
 printRxer printing machine:
 
@@ -107,6 +111,8 @@ HealthMailer sending machine:
 ```
 
 Same-machine pilot:
+
+Use the same handoff folder for both commands. HealthMailer still needs to be configured under the intended Outlook/Healthmail sender user.
 
 ```powershell
 .\printRxerSetup.exe --quiet --handoff-root "C:\ProgramData\printRxer\handoff"

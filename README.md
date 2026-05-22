@@ -136,6 +136,8 @@ Support can run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted ZI
 
 The printRxer printing-machine install requires Administrator/UAC approval because printRxer includes a native Windows port monitor, a local XPS driver, and the `printRxer` printer queue. Printer repair actions are available under Advanced / repair.
 
+The HealthMailer sending-machine install should be run as the intended Outlook/Healthmail sender user so the scheduled task and Outlook COM automation use the correct Windows profile. It does not install printer capture.
+
 printRxer is used by printing to a local printer queue named `printRxer`. It captures the print job, prepares the handoff package, and sends that package to the configured handoff folder for HealthMailer. If the share is down, packages remain local and are retried at the configured interval.
 
 The preferred printRxer recipient list is derived from the handoff folder as `<HandoffRoot>\recipients\recipients.csv`. printRxer reads that central file in the background, keeps `C:\ProgramData\printRxer\data\recipients\recipients.cache.csv` as a last-known-good copy, and falls back to `bundled-recipients.csv` if needed. Runtime users should not need write access to the central recipients folder.

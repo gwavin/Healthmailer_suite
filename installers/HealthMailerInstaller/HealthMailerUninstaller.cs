@@ -5,6 +5,7 @@ internal static class HealthMailerUninstaller
     public static bool IsInstalled()
     {
         return Directory.Exists(InstallerPaths.ProgramFilesRoot) ||
+            Directory.Exists(InstallerPaths.LegacyProgramFilesRoot) ||
             File.Exists(InstallerPaths.ConfigPath) ||
             TaskExists();
     }
@@ -28,6 +29,11 @@ internal static class HealthMailerUninstaller
         if (Directory.Exists(InstallerPaths.ProgramFilesRoot))
         {
             TryStep(() => DeleteDirectoryBestEffort(InstallerPaths.ProgramFilesRoot, log), "Application file cleanup", log);
+        }
+
+        if (Directory.Exists(InstallerPaths.LegacyProgramFilesRoot))
+        {
+            TryStep(() => DeleteDirectoryBestEffort(InstallerPaths.LegacyProgramFilesRoot, log), "Legacy application file cleanup", log);
         }
     }
 

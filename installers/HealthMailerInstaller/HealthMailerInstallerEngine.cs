@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Security.Principal;
 
 namespace HealthMailerInstaller;
 
@@ -31,6 +32,8 @@ internal static class HealthMailerInstallerEngine
         WriteConfig(options);
 
         log("Registering HealthMailer watcher task.");
+        log("HealthMailer scheduled task target user: " + Environment.UserDomainName + "\\" + Environment.UserName);
+        log("HealthMailer installer Windows identity: " + WindowsIdentity.GetCurrent().Name);
         RegisterScheduledTask();
     }
 

@@ -26,8 +26,8 @@ internal sealed class SuiteInstallerForm : Form
         Size = new Size(940, 700);
         Icon = InstallerBranding.TryCreateIcon();
 
-        Button installPrintRxer = CreateButton("Install printRxer printing machine", (_, _) => RunSetup(SuitePaths.PrintRxerSetupPath));
-        Button installHealthMailer = CreateButton("Install HealthMailer sending machine", (_, _) => RunSetup(SuitePaths.HealthMailerSetupPath));
+        Button installPrintRxer = CreateButton("Install printRxer printing machine", (_, _) => RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer));
+        Button installHealthMailer = CreateButton("Install HealthMailer sending machine", (_, _) => RunSetup(SuitePaths.HealthMailerSetupPath, SetupKind.HealthMailer));
         Button sameMachinePilot = CreateButton("Same-machine pilot: install both", (_, _) => RunSameMachinePilot());
         Button validate = CreateButton("Validate installation", (_, _) => RunValidation());
         Button openLogs = CreateButton("Open logs folder", (_, _) => OpenLogsFolder());
@@ -64,7 +64,7 @@ internal sealed class SuiteInstallerForm : Form
 
         root.Controls.Add(new Label
         {
-            Text = "Choose a role: printRxer printing machine, HealthMailer sending machine, or same-machine pilot. printRxer includes the local printRxer printer queue and capture components.",
+            Text = "Choose a role: printRxer printing machine, HealthMailer sending machine, or same-machine pilot. Install HealthMailer as the Outlook/Healthmail sender user. printRxer printer capture may ask for administrator approval.",
             Height = 42,
             Dock = DockStyle.Top
         });
@@ -105,8 +105,8 @@ internal sealed class SuiteInstallerForm : Form
             return;
         }
 
-        RunSetup(SuitePaths.PrintRxerSetupPath);
-        RunSetup(SuitePaths.HealthMailerSetupPath);
+        RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer);
+        RunSetup(SuitePaths.HealthMailerSetupPath, SetupKind.HealthMailer);
     }
 
     private static Button CreateButton(string text, EventHandler click)
@@ -122,7 +122,7 @@ internal sealed class SuiteInstallerForm : Form
         return button;
     }
 
-    private void RunSetup(string setupPath, string arguments = "")
+    private void RunSetup(string setupPath, SetupKind setupKind, string arguments = "")
     {
         if (!File.Exists(setupPath))
         {
@@ -130,12 +130,11 @@ internal sealed class SuiteInstallerForm : Form
             return;
         }
 
-        DialogResult confirm = MessageBox.Show(
-            this,
-            "Windows will ask for administrator approval to run this component installer.",
-            Text,
-            MessageBoxButtons.OKCancel,
-            MessageBoxIcon.Information);
+        string message = setupKind == SetupKind.HealthMailer
+            ? "HealthMailer setup will run as the current Windows user. Use the Outlook/Healthmail sender account so the scheduled task and Outlook COM automation use the correct profile."
+            : "printRxer setup includes printer capture. Windows will ask for administrator approval while it installs the app files, port monitor, driver, and local printer queue. After install, run validation to confirm the scheduled task principal.";
+
+        DialogResult confirm = MessageBox.Show(this, message, Text, MessageBoxButtons.OKCancel, MessageBoxIcon.Information);
 
         if (confirm != DialogResult.OK)
         {
@@ -144,8 +143,8 @@ internal sealed class SuiteInstallerForm : Form
 
         RunUserAction(() =>
         {
-            AppendStatus("Starting elevated " + Path.GetFileName(setupPath) + ".");
-            ProcessRunner.StartElevated(setupPath, arguments);
+            AppendStatus("Starting " + Path.GetFileName(setupPath) + ".");
+            ProcessRunner.Start(setupPath, arguments, elevate: setupKind == SetupKind.PrintRxer);
             AppendStatus(Path.GetFileName(setupPath) + " was started. Complete that setup window to continue.");
         });
     }
@@ -263,11 +262,11 @@ internal sealed class SuiteInstallerForm : Form
         };
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-        Button repairPrintRxer = CreateButton("Repair / reinstall printRxer printing", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath); });
+        Button repairPrintRxer = CreateButton("Repair / reinstall printRxer printing", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer); });
         Button repairCapture = CreateButton("Repair printRxer printer capture", (_, _) => { dialog.Close(); RunElevatedScript(SuitePaths.CaptureInstallScriptPath); });
-        Button repairHealthMailer = CreateButton("Repair / reinstall HealthMailer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.HealthMailerSetupPath); });
-        Button uninstallPrintRxer = CreateButton("Uninstall printRxer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath, "--uninstall"); });
-        Button uninstallHealthMailer = CreateButton("Uninstall HealthMailer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.HealthMailerSetupPath, "--uninstall"); });
+        Button repairHealthMailer = CreateButton("Repair / reinstall HealthMailer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.HealthMailerSetupPath, SetupKind.HealthMailer); });
+        Button uninstallPrintRxer = CreateButton("Uninstall printRxer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer, "--uninstall"); });
+        Button uninstallHealthMailer = CreateButton("Uninstall HealthMailer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.HealthMailerSetupPath, SetupKind.HealthMailer, "--uninstall"); });
 
         foreach (Button button in new[] { repairPrintRxer, repairCapture, repairHealthMailer, uninstallPrintRxer, uninstallHealthMailer })
         {
@@ -316,5 +315,11 @@ internal sealed class SuiteInstallerForm : Form
         _statusText.SelectionStart = _statusText.TextLength;
         _statusText.ScrollToCaret();
         Application.DoEvents();
+    }
+
+    private enum SetupKind
+    {
+        PrintRxer,
+        HealthMailer
     }
 }
