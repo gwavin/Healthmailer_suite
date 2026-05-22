@@ -70,6 +70,8 @@ public sealed class PrintRxerV3Config
         Directory.CreateDirectory(LogsRoot);
         Directory.CreateDirectory(TempRoot);
         Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath)!);
+        string recipientRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "printRxer", "data", "recipients");
+        Directory.CreateDirectory(recipientRoot);
         TryHardenDirectory(ProcessedRoot, FileSystemRights.Modify);
         TryHardenDirectory(DeferredRoot, FileSystemRights.Modify);
         TryHardenDirectory(LocalOutboxRoot, FileSystemRights.Modify);
@@ -77,6 +79,10 @@ public sealed class PrintRxerV3Config
         TryHardenDirectory(FailedRoot, FileSystemRights.Modify);
         TryHardenDirectory(LogsRoot, FileSystemRights.Modify);
         TryHardenDirectory(TempRoot, FileSystemRights.Modify);
+        TryHardenDirectory(recipientRoot, FileSystemRights.Modify);
+        TryHardenFile(Path.Combine(recipientRoot, "recipients.cache.csv"), FileSystemRights.Modify);
+        TryHardenFile(Path.Combine(recipientRoot, "recipient-source-status.json"), FileSystemRights.Modify);
+        TryHardenFile(Path.Combine(recipientRoot, "bundled-recipients.csv"), FileSystemRights.ReadAndExecute);
         TryHardenDirectory(Path.GetDirectoryName(ConfigPath)!, FileSystemRights.Modify);
         if (!IsUncPath(HandoffRoot))
         {

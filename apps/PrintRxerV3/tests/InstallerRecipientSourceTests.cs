@@ -24,6 +24,8 @@ public sealed class InstallerRecipientSourceTests
         Assert.Contains("\"bundled-recipients.csv\"", source, StringComparison.Ordinal);
         Assert.Contains("\"recipients.cache.csv\"", source, StringComparison.Ordinal);
         Assert.Contains("RecipientCsvValidator.LoadValidated(centralFile)", source, StringComparison.Ordinal);
+        Assert.Contains("TryHardenFile(cacheDestination, FileSystemRights.Modify)", source, StringComparison.Ordinal);
+        Assert.Contains("TryHardenFile(Path.Combine(recipientRoot, \"recipients.cache.csv\"), FileSystemRights.Modify)", source, StringComparison.Ordinal);
     }
 
     private static string ReadRepositoryFile(params string[] relativeParts)

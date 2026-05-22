@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using PrintRxerV3.Recipients;
 
 namespace PrintRxerV3Installer;
@@ -20,6 +22,7 @@ internal static class PrintRxerInstaller
 
         log("Seeding recipients and picker image if missing.");
         SeedDataFiles();
+        HardenRecipientFiles();
 
         log("Writing printRxer configuration.");
         WriteConfig(options.HandoffRoot);
@@ -113,6 +116,7 @@ internal static class PrintRxerInstaller
 
             _ = RecipientCsvValidator.LoadValidated(centralFile);
             File.Copy(centralFile, cacheDestination, overwrite: true);
+            TryHardenFile(cacheDestination, FileSystemRights.Modify);
             log("RecipientCacheUpdated: " + cacheDestination);
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or InvalidDataException or SystemException)
@@ -156,6 +160,64 @@ internal static class PrintRxerInstaller
 
         string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(InstallerPaths.ConfigPath, json);
+    }
+
+    private static void HardenRecipientFiles()
+    {
+        string recipientRoot = Path.Combine(InstallerPaths.ProgramDataRoot, "data", "recipients");
+        TryHardenDirectory(recipientRoot, FileSystemRights.Modify);
+        TryHardenFile(Path.Combine(recipientRoot, "bundled-recipients.csv"), FileSystemRights.ReadAndExecute);
+        TryHardenFile(Path.Combine(recipientRoot, "recipients.cache.csv"), FileSystemRights.Modify);
+        TryHardenFile(Path.Combine(recipientRoot, "recipient-source-status.json"), FileSystemRights.Modify);
+    }
+
+    private static void TryHardenDirectory(string path, FileSystemRights runtimeRights)
+    {
+        try
+        {
+            DirectoryInfo directory = new(path);
+            directory.SetAccessControl(CreateBaseDirectorySecurity(runtimeRights));
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or SystemException)
+        {
+        }
+    }
+
+    private static void TryHardenFile(string path, FileSystemRights runtimeRights)
+    {
+        if (!File.Exists(path))
+        {
+            return;
+        }
+
+        try
+        {
+            FileSecurity security = new();
+            security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+            SecurityIdentifier system = new(WellKnownSidType.LocalSystemSid, null);
+            SecurityIdentifier admins = new(WellKnownSidType.BuiltinAdministratorsSid, null);
+            SecurityIdentifier users = new(WellKnownSidType.BuiltinUsersSid, null);
+            security.AddAccessRule(new FileSystemAccessRule(system, FileSystemRights.FullControl, AccessControlType.Allow));
+            security.AddAccessRule(new FileSystemAccessRule(admins, FileSystemRights.FullControl, AccessControlType.Allow));
+            security.AddAccessRule(new FileSystemAccessRule(users, runtimeRights, AccessControlType.Allow));
+            new FileInfo(path).SetAccessControl(security);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or SystemException)
+        {
+        }
+    }
+
+    private static DirectorySecurity CreateBaseDirectorySecurity(FileSystemRights runtimeRights)
+    {
+        DirectorySecurity security = new();
+        security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        SecurityIdentifier system = new(WellKnownSidType.LocalSystemSid, null);
+        SecurityIdentifier admins = new(WellKnownSidType.BuiltinAdministratorsSid, null);
+        SecurityIdentifier users = new(WellKnownSidType.BuiltinUsersSid, null);
+        security.AddAccessRule(new FileSystemAccessRule(system, FileSystemRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
+        security.AddAccessRule(new FileSystemAccessRule(admins, FileSystemRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
+        security.AddAccessRule(new FileSystemAccessRule(users, runtimeRights, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
+        return security;
     }
 
     private static void RegisterScheduledTask()
