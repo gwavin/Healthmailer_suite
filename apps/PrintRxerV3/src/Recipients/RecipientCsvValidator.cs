@@ -27,10 +27,7 @@ public static class RecipientCsvValidator
         using StreamReader reader = new(path, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
         string[] headers = ReadCsvRow(reader) ?? throw new InvalidDataException("Recipient CSV header is missing.");
         Dictionary<string, int> index = BuildHeaderIndex(headers);
-        string idColumn = RequireColumn(index, "recipientId");
-        string nameColumn = RequireColumn(index, "displayName");
-        string emailColumn = RequireColumn(index, "email");
-        string activeColumn = RequireColumn(index, "active");
+        RecipientCsvSchema schema = ResolveSchema(index);
 
         HashSet<string> ids = new(StringComparer.OrdinalIgnoreCase);
         List<RecipientRecord> activeRecipients = new();
@@ -44,7 +41,9 @@ public static class RecipientCsvValidator
                 continue;
             }
 
-            string id = TextUtilities.NormalizeWhitespace(Get(fields, index, idColumn));
+            string name = ResolveDisplayName(fields, index, schema);
+            string email = TextUtilities.NormalizeWhitespace(Get(fields, index, schema.EmailColumn));
+            string id = ResolveRecipientId(fields, index, schema, email);
             if (string.IsNullOrWhiteSpace(id))
             {
                 throw new InvalidDataException($"Row {row} is missing recipientId.");
@@ -55,19 +54,20 @@ public static class RecipientCsvValidator
                 throw new InvalidDataException($"Duplicate recipientId '{id}' found.");
             }
 
-            string activeText = TextUtilities.NormalizeWhitespace(Get(fields, index, activeColumn));
-            if (!TryParseBoolean(activeText, out bool active))
+            if (schema.ActiveColumn is not null)
             {
-                throw new InvalidDataException($"Row {row} active value is not true/false.");
+                string activeText = TextUtilities.NormalizeWhitespace(Get(fields, index, schema.ActiveColumn));
+                if (!TryParseBoolean(activeText, out bool active))
+                {
+                    throw new InvalidDataException($"Row {row} active value is not true/false.");
+                }
+
+                if (!active)
+                {
+                    continue;
+                }
             }
 
-            if (!active)
-            {
-                continue;
-            }
-
-            string name = TextUtilities.NormalizeWhitespace(Get(fields, index, nameColumn));
-            string email = TextUtilities.NormalizeWhitespace(Get(fields, index, emailColumn));
             if (string.IsNullOrWhiteSpace(name))
             {
                 throw new InvalidDataException($"Row {row} active recipient is missing displayName.");
@@ -88,10 +88,10 @@ public static class RecipientCsvValidator
             }
 
             HashSet<string> searchTerms = new(StringComparer.OrdinalIgnoreCase) { id, name, email };
-            AddOptionalSearchTerm(fields, index, searchTerms, "organisation");
-            AddOptionalSearchTerm(fields, index, searchTerms, "site");
-            AddOptionalSearchTerm(fields, index, searchTerms, "department");
-            AddOptionalSearchTerm(fields, index, searchTerms, "service");
+            foreach (string column in schema.SearchColumns)
+            {
+                AddOptionalSearchTerm(fields, index, searchTerms, column);
+            }
 
             activeRecipients.Add(new RecipientRecord
             {
@@ -109,6 +109,81 @@ public static class RecipientCsvValidator
         }
 
         return activeRecipients;
+    }
+
+    private static RecipientCsvSchema ResolveSchema(Dictionary<string, int> index)
+    {
+        if (index.ContainsKey("recipientId") &&
+            index.ContainsKey("displayName") &&
+            index.ContainsKey("email") &&
+            index.ContainsKey("active"))
+        {
+            return new RecipientCsvSchema(
+                IdColumns: new[] { "recipientId" },
+                DisplayNameColumn: "displayName",
+                EmailColumn: "email",
+                ActiveColumn: "active",
+                SearchColumns: new[] { "organisation", "site", "department", "service" });
+        }
+
+        if (TryFindColumn(index, out string healthmailAddressColumn, "Healthmail Address", "Healthmail Email") &&
+            TryFindColumn(index, out string displayNameColumn, "DisplayName", "Display Name"))
+        {
+            return new RecipientCsvSchema(
+                IdColumns: new[] { "RecipientId", "recipientId", "Healthmail Address", healthmailAddressColumn },
+                DisplayNameColumn: displayNameColumn,
+                EmailColumn: healthmailAddressColumn,
+                ActiveColumn: null,
+                SearchColumns: new[] { "Company", "City", "County", "County ", "Phone", "Title" });
+        }
+
+        if (TryFindColumn(index, out string outlookEmailColumn, "E-mail Address", "Email Address", "Email") &&
+            TryFindColumn(index, out string outlookNameColumn, "Name", "Display Name", "DisplayName"))
+        {
+            return new RecipientCsvSchema(
+                IdColumns: new[] { "recipientId", "RecipientId", "Government ID Number", "ID 2", outlookEmailColumn },
+                DisplayNameColumn: outlookNameColumn,
+                EmailColumn: outlookEmailColumn,
+                ActiveColumn: null,
+                SearchColumns: new[] { "Title", "First Name", "Middle Name", "Last Name", "Company", "City", "County", "Business Phone", "Job Title" });
+        }
+
+        throw new InvalidDataException("Recipient CSV is missing required columns. Expected recipientId, displayName, email, active or a supported Healthmail/Outlook export shape.");
+    }
+
+    private static string ResolveRecipientId(string[] fields, Dictionary<string, int> index, RecipientCsvSchema schema, string email)
+    {
+        foreach (string column in schema.IdColumns)
+        {
+            if (!index.ContainsKey(column))
+            {
+                continue;
+            }
+
+            string value = TextUtilities.NormalizeWhitespace(Get(fields, index, column));
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+        }
+
+        return email.ToLowerInvariant();
+    }
+
+    private static string ResolveDisplayName(string[] fields, Dictionary<string, int> index, RecipientCsvSchema schema)
+    {
+        string value = TextUtilities.NormalizeWhitespace(Get(fields, index, schema.DisplayNameColumn));
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        string[] fallbackParts = new[] { "Title", "First Name", "Middle Name", "Last Name" }
+            .Select(column => TextUtilities.NormalizeWhitespace(Get(fields, index, column)))
+            .Where(part => !string.IsNullOrWhiteSpace(part))
+            .ToArray();
+
+        return TextUtilities.NormalizeWhitespace(string.Join(" ", fallbackParts));
     }
 
     private static void AddOptionalSearchTerm(string[] fields, Dictionary<string, int> index, HashSet<string> terms, string column)
@@ -133,6 +208,21 @@ public static class RecipientCsvValidator
         }
 
         return name;
+    }
+
+    private static bool TryFindColumn(Dictionary<string, int> index, out string column, params string[] names)
+    {
+        foreach (string name in names)
+        {
+            if (index.ContainsKey(name))
+            {
+                column = name;
+                return true;
+            }
+        }
+
+        column = string.Empty;
+        return false;
     }
 
     private static Dictionary<string, int> BuildHeaderIndex(IReadOnlyList<string> headers)
@@ -238,4 +328,11 @@ public static class RecipientCsvValidator
             field.Append(ch);
         }
     }
+
+    private sealed record RecipientCsvSchema(
+        IReadOnlyList<string> IdColumns,
+        string DisplayNameColumn,
+        string EmailColumn,
+        string? ActiveColumn,
+        IReadOnlyList<string> SearchColumns);
 }

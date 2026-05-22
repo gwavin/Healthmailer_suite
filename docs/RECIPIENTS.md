@@ -59,6 +59,8 @@ Recommended ACLs for `<HandoffRoot>\recipients`:
 
 ## CSV Schema
 
+Preferred schema:
+
 Required columns:
 
 ```text
@@ -79,6 +81,16 @@ Rules:
 - `active` must be true/false, yes/no, or 1/0.
 - At least one active recipient must exist.
 - Invalid central files are rejected and do not overwrite the local cache.
+
+Supported Healthmail master export schema:
+
+```text
+DisplayName,Healthmail Address,Company,City,Phone,County,Title
+```
+
+For this format, `DisplayName` is used as the picker name, `Healthmail Address` is used as the delivery address and stable recipient ID, and all rows are treated as active. `Company`, `City`, `Phone`, `County`, and `Title` are included in search terms when present.
+
+Older Outlook-style exports with `Name` and `E-mail Address` are also accepted for compatibility. In those files, `Government ID Number` or `ID 2` is preferred as the stable recipient ID when present; otherwise the email address is used.
 
 The recipients.csv file is an address book/configuration file only. It must not contain patient names, MRNs, prescription details, or other patient-identifiable information.
 

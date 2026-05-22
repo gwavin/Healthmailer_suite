@@ -146,6 +146,34 @@ public sealed class RecipientSourceServiceTests
     }
 
     [Fact]
+    public void Validator_accepts_healthmail_master_export_headers()
+    {
+        string csv = Path.Combine(NewTempRoot(), "recipients.csv");
+        WriteText(csv, "DisplayName,Healthmail Address,Company,City,Phone,County ,Title\n" +
+            "Central Healthmail,central.healthmail@healthmail.ie,Central Clinic,Dublin,01 555 0100,Dublin,Consultant\n");
+
+        RecipientRecord recipient = Assert.Single(RecipientCsvValidator.LoadValidated(csv));
+
+        Assert.Equal("Central Healthmail", recipient.RecipientName);
+        Assert.Equal("central.healthmail@healthmail.ie", recipient.EmailAddress);
+        Assert.Contains("Central Clinic", recipient.SearchTerms);
+        Assert.Contains("Dublin", recipient.SearchTerms);
+    }
+
+    [Fact]
+    public void Validator_rejects_duplicate_healthmail_master_addresses()
+    {
+        string csv = Path.Combine(NewTempRoot(), "recipients.csv");
+        WriteText(csv, "DisplayName,Healthmail Address,Company,City,Phone,County ,Title\n" +
+            "Central A,central.healthmail@healthmail.ie,Central Clinic,Dublin,01 555 0100,Dublin,Consultant\n" +
+            "Central B,central.healthmail@healthmail.ie,Central Clinic,Dublin,01 555 0101,Dublin,Consultant\n");
+
+        InvalidDataException ex = Assert.Throws<InvalidDataException>(() => RecipientCsvValidator.LoadValidated(csv));
+
+        Assert.Contains("duplicate", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Refresh_tasks_do_not_overlap()
     {
         string root = NewTempRoot();
