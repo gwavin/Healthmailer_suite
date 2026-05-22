@@ -4,7 +4,7 @@ This repository contains the two workstation-side components for the printRxer w
 
 ```text
 printRxer machine
-  print/PDF capture -> picker -> validated handoff package
+  print to local printRxer printer -> picker -> validated handoff package
 
 HealthMailer machine
   handoff watcher -> Outlook COM send -> optional chart-folder copy
@@ -20,7 +20,7 @@ Do not redistribute or reuse without explicit permission from the repository own
 
 ## Projects
 
-- `apps/PrintRxerV3`: currently retained source path for the printRxer package creator. It does not send mail.
+- `apps/PrintRxerV3`: currently retained source path for printRxer printing capture and package creation. It does not send mail.
 - `apps/HealthMailer`: consumes ready handoff packages, validates them, sends via local Outlook COM, and archives them.
 - `native` and `assets/print-capture`: the Windows print-capture layer that creates the local `printRxer` printer queue and writes captured jobs into the printRxer incoming folder.
 - `installers/PrintRxerSuiteInstaller`: the GUI-first release launcher for normal installs, validation, support bundles, and uninstall/repair entry points.
@@ -110,7 +110,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\New-PrintRxerSuiteReleaseBundle
 The generated ZIPs are written under `dist\`:
 
 - `printRxerSuite-<version>.zip`: GUI-first release bundle. Extract it and run `PrintRxerSuiteInstaller.exe`.
-- `printRxer-<version>.zip`: minimum files to install/uninstall the print/picker side.
+- `printRxer-<version>.zip`: minimum files to install/uninstall the printRxer printing-machine side.
 - `HealthMailer-<version>.zip`: minimum files to install/uninstall the Outlook sending side.
 
 Generated app EXEs stay out of git; use GitHub Releases for distribution. Normal installs should use the suite ZIP and GUI launcher. Component ZIPs and PowerShell scripts remain support/internal paths unless support explicitly instructs otherwise.
@@ -130,19 +130,19 @@ Normal install path:
 1. Download `printRxerSuite-<version>.zip` from the GitHub Release.
 2. Extract the ZIP.
 3. Run `PrintRxerSuiteInstaller.exe`.
-4. Use the GUI to install printRxer, install HealthMailer, install the printer capture component, and validate the installation.
+4. Use the GUI to choose `Install printRxer printing machine`, `Install HealthMailer sending machine`, or `Same-machine pilot: install both`, then validate the installation.
 
 Support can run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted ZIP to verify the release bundle layout without installing anything. Automation that needs the exit code should run it with `Start-Process -Wait -PassThru`.
 
-This step requires Administrator/UAC approval because it installs a native Windows port monitor, a local XPS driver, and the `printRxer` printer queue. The watcher and the printer layer are separate deliberately: printRxer can be tested with imported captures, but live printing requires the capture printer.
+The printRxer printing-machine install requires Administrator/UAC approval because printRxer includes a native Windows port monitor, a local XPS driver, and the `printRxer` printer queue. Printer repair actions are available under Advanced / repair.
 
-printRxer writes `C:\ProgramData\printRxer\config\printRxer.settings.json`, builds packages in a durable local outbox first, then publishes complete `READY` packages to the configured handoff folder. If the share is down, packages remain local and are retried at the configured interval.
+printRxer is used by printing to a local printer queue named `printRxer`. It captures the print job, prepares the handoff package, and sends that package to the configured handoff folder for HealthMailer. If the share is down, packages remain local and are retried at the configured interval.
 
 The preferred printRxer recipient list is derived from the handoff folder as `<HandoffRoot>\recipients\recipients.csv`. printRxer reads that central file in the background, keeps `C:\ProgramData\printRxer\data\recipients\recipients.cache.csv` as a last-known-good copy, and falls back to `bundled-recipients.csv` if needed. Runtime users should not need write access to the central recipients folder.
 
 ## Uninstall Both Apps
 
-Use `PrintRxerSuiteInstaller.exe`, then choose `Uninstall / repair`. Standard uninstall preserves local data/logs/archives by default.
+Use `PrintRxerSuiteInstaller.exe`, then choose `Advanced / repair`. Standard uninstall preserves local data/logs/archives by default.
 
 ## Deployment Shape
 

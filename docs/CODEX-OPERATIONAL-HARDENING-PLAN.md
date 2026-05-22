@@ -4,7 +4,7 @@ This is the next conservative work package for the PrintRxer Suite. It records p
 
 ## Current Architecture
 
-PrintRxerV3 runs where the print/PDF workflow happens. It captures or imports the job, checks payload readiness and job ownership, opens the recipient picker, creates a durable local package, and publishes or retries publication to the configured handoff folder.
+PrintRxerV3 runs where users print prescriptions to the local `printRxer` printer. It captures the print job, checks payload readiness and job ownership, opens the recipient picker, creates a durable local package, and publishes or retries publication to the configured handoff folder.
 
 HealthMailer runs where the approved Outlook/Healthmail profile is available. It watches the configured handoff folder, validates complete READY packages, prevents duplicate sends, sends through local Outlook COM when enabled, optionally copies to chart/ViewPoint, writes result/audit records, and archives packages.
 

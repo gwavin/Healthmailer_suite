@@ -1,11 +1,11 @@
 ﻿# printRxer
 
-printRxer is a workstation-side package creator for HealthMailer handoff packages.
+printRxer is a workstation-side printing workflow tool for HealthMailer handoff packages.
 
 The intended flow is:
 
 ```text
-print/PDF capture -> document preparation -> curated picker -> request metadata -> HealthMailer handoff package
+print to local printRxer printer -> document preparation -> curated picker -> request metadata -> HealthMailer handoff package
 ```
 
 printRxer does not send mail and does not include Outlook COM, SMTP, Microsoft Graph, or Power Automate senders.

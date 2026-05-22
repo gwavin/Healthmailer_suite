@@ -247,7 +247,8 @@ Install:
 Do not build from source for a normal install.
 Do not run PowerShell scripts directly unless instructed by support.
 
-The GUI can install printRxer, install HealthMailer, install printer capture, validate the installation, open logs, create a support bundle, and start uninstall/repair actions.
+The GUI can install a printRxer printing machine, install a HealthMailer sending machine, install both for a same-machine pilot, validate the installation, open logs, create a support bundle, and start Advanced / repair actions.
+Printer capture is included in the normal printRxer printing-machine install. Printer-only actions are for repair/support.
 The component installers are included at the ZIP root because they use the root payload folder.
 
 Support smoke test:
@@ -285,7 +286,7 @@ printRxer install bundle
 Version: $Version
 
 Purpose:
-  Install only the printing/capture side. This machine does not need Outlook.
+  Install the printRxer printing-machine side. This machine is where users print prescriptions to the local printRxer printer and does not need Outlook.
 
 Install from this folder:
   printRxerSetup.exe
@@ -300,7 +301,8 @@ Uninstall:
 
 Notes:
   The installer asks for the handoff folder. Use the default local folder for same-machine testing, or choose/type a UNC path for a shared HealthMailer handoff.
-  Installing or removing the printRxer printer requires administrator approval.
+  printRxer includes the application, watcher task, recipient cache handling, native port monitor, PrintRxer XPS driver, and local printer queue named printRxer.
+  Installing or removing printRxer printer capture requires administrator approval.
   ProgramData files are preserved by default. Use --remove-data only for a clean lab reset.
   Full guidance: printRxer-Install-Guide.docx
 "@

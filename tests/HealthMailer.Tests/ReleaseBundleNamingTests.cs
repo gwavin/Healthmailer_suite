@@ -41,13 +41,14 @@ public sealed class ReleaseBundleNamingTests
         string repoRoot = FindRepoRoot();
         string form = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerSuiteInstaller", "SuiteInstallerForm.cs"));
 
-        Assert.Contains("Install printRxer", form, StringComparison.Ordinal);
-        Assert.Contains("Install HealthMailer", form, StringComparison.Ordinal);
-        Assert.Contains("Install printRxer printer capture", form, StringComparison.Ordinal);
+        Assert.Contains("Install printRxer printing machine", form, StringComparison.Ordinal);
+        Assert.Contains("Install HealthMailer sending machine", form, StringComparison.Ordinal);
+        Assert.Contains("Same-machine pilot: install both", form, StringComparison.Ordinal);
         Assert.Contains("Validate installation", form, StringComparison.Ordinal);
         Assert.Contains("Open logs folder", form, StringComparison.Ordinal);
         Assert.Contains("Create support bundle", form, StringComparison.Ordinal);
-        Assert.Contains("Uninstall / repair", form, StringComparison.Ordinal);
+        Assert.Contains("Advanced / repair", form, StringComparison.Ordinal);
+        Assert.Contains("Repair printRxer printer capture", form, StringComparison.Ordinal);
         Assert.Contains("excludes PDF payloads by default", form, StringComparison.Ordinal);
         Assert.Contains("administrator approval to run this component installer", form, StringComparison.Ordinal);
         Assert.Contains("ProcessRunner.StartElevated(setupPath, arguments)", form, StringComparison.Ordinal);

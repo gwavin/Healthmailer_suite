@@ -26,20 +26,20 @@ internal sealed class SuiteInstallerForm : Form
         Size = new Size(940, 700);
         Icon = InstallerBranding.TryCreateIcon();
 
-        Button installPrintRxer = CreateButton("Install printRxer", (_, _) => RunSetup(SuitePaths.PrintRxerSetupPath));
-        Button installHealthMailer = CreateButton("Install HealthMailer", (_, _) => RunSetup(SuitePaths.HealthMailerSetupPath));
-        Button installCapture = CreateButton("Install printRxer printer capture", (_, _) => RunElevatedScript(SuitePaths.CaptureInstallScriptPath));
+        Button installPrintRxer = CreateButton("Install printRxer printing machine", (_, _) => RunSetup(SuitePaths.PrintRxerSetupPath));
+        Button installHealthMailer = CreateButton("Install HealthMailer sending machine", (_, _) => RunSetup(SuitePaths.HealthMailerSetupPath));
+        Button sameMachinePilot = CreateButton("Same-machine pilot: install both", (_, _) => RunSameMachinePilot());
         Button validate = CreateButton("Validate installation", (_, _) => RunValidation());
         Button openLogs = CreateButton("Open logs folder", (_, _) => OpenLogsFolder());
         Button supportBundle = CreateButton("Create support bundle", (_, _) => CreateSupportBundle());
-        Button uninstallRepair = CreateButton("Uninstall / repair", (_, _) => ShowUninstallRepair());
+        Button uninstallRepair = CreateButton("Advanced / repair", (_, _) => ShowUninstallRepair());
         Button close = CreateButton("Close", (_, _) => Close());
 
         _buttons = new[]
         {
             installPrintRxer,
             installHealthMailer,
-            installCapture,
+            sameMachinePilot,
             validate,
             openLogs,
             supportBundle,
@@ -64,7 +64,7 @@ internal sealed class SuiteInstallerForm : Form
 
         root.Controls.Add(new Label
         {
-            Text = "Install and validate the printRxer package creator, HealthMailer courier, and printer capture components.",
+            Text = "Choose a role: printRxer printing machine, HealthMailer sending machine, or same-machine pilot. printRxer includes the local printRxer printer queue and capture components.",
             Height = 42,
             Dock = DockStyle.Top
         });
@@ -89,6 +89,24 @@ internal sealed class SuiteInstallerForm : Form
 
         Controls.Add(root);
         AppendStatus("Ready. Run component installs from the release ZIP root.");
+    }
+
+    private void RunSameMachinePilot()
+    {
+        DialogResult confirm = MessageBox.Show(
+            this,
+            "This will start the printRxer printing-machine installer, then the HealthMailer sending-machine installer. Use the same handoff folder in both setup windows.",
+            Text,
+            MessageBoxButtons.OKCancel,
+            MessageBoxIcon.Information);
+
+        if (confirm != DialogResult.OK)
+        {
+            return;
+        }
+
+        RunSetup(SuitePaths.PrintRxerSetupPath);
+        RunSetup(SuitePaths.HealthMailerSetupPath);
     }
 
     private static Button CreateButton(string text, EventHandler click)
@@ -227,7 +245,7 @@ internal sealed class SuiteInstallerForm : Form
     {
         using Form dialog = new()
         {
-            Text = "Uninstall / repair",
+            Text = "Advanced / repair",
             StartPosition = FormStartPosition.CenterParent,
             MinimumSize = new Size(560, 360),
             Size = new Size(600, 380),
@@ -240,21 +258,22 @@ internal sealed class SuiteInstallerForm : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 4,
+            RowCount = 5,
             Padding = new Padding(20)
         };
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-        Button repairPrintRxer = CreateButton("Repair / reinstall printRxer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath); });
+        Button repairPrintRxer = CreateButton("Repair / reinstall printRxer printing", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath); });
+        Button repairCapture = CreateButton("Repair printRxer printer capture", (_, _) => { dialog.Close(); RunElevatedScript(SuitePaths.CaptureInstallScriptPath); });
         Button repairHealthMailer = CreateButton("Repair / reinstall HealthMailer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.HealthMailerSetupPath); });
         Button uninstallPrintRxer = CreateButton("Uninstall printRxer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath, "--uninstall"); });
         Button uninstallHealthMailer = CreateButton("Uninstall HealthMailer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.HealthMailerSetupPath, "--uninstall"); });
 
-        foreach (Button button in new[] { repairPrintRxer, repairHealthMailer, uninstallPrintRxer, uninstallHealthMailer })
+        foreach (Button button in new[] { repairPrintRxer, repairCapture, repairHealthMailer, uninstallPrintRxer, uninstallHealthMailer })
         {
             button.Dock = DockStyle.Fill;
             button.Margin = new Padding(0, 0, 0, 12);
-            panel.RowStyles.Add(new RowStyle(SizeType.Percent, 25));
+            panel.RowStyles.Add(new RowStyle(SizeType.Percent, 20));
             panel.Controls.Add(button);
         }
 

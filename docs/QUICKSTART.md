@@ -1,6 +1,6 @@
 ﻿# Quickstart
 
-This is the shortest local test path for the two-exe suite.
+This is the shortest local test path for the two-exe suite. Normal users should use the release ZIP and `PrintRxerSuiteInstaller.exe`; the commands here are developer/support notes.
 
 ## 1. Build And Test
 
@@ -31,32 +31,23 @@ For two machines, use a UNC path directly, for example:
 \\server\HealthMailerDrop$\incoming
 ```
 
-## 4. Install printRxer Watcher
+## 4. Install printRxer Printing Machine
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Install-printRxerTask.ps1
-```
+On the machine where users will print prescriptions, install printRxer printing. The normal GUI installer installs the application, scheduled watcher task, recipient cache handling, native port monitor, PrintRxer XPS driver, and local printer queue named `printRxer`.
 
-For a separate printRxer-only machine, provide the UNC handoff path:
+For support/developer command-line installation, install the watcher and capture printer with the same handoff path:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\Install-printRxerTask.ps1 `
   -HandoffRoot '\\server\HealthMailerDrop$\incoming'
-```
-
-## 5. Install The Local printRxer Printer
-
-On the machine where users will print prescriptions, install the native capture printer:
-
-```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\Install-PrintRxerCapturePrinter.ps1
 ```
 
-This creates the `printRxer` printer queue, the `printrx:` port, and the PrintRxer XPS driver. It requires Administrator/UAC approval. If you only import existing capture folders or PDFs for testing, this printer step can be skipped.
+The printer capture step creates the `printRxer` printer queue, the `printrx:` port, and the PrintRxer XPS driver. It requires Administrator/UAC approval and is part of printRxer, not an optional normal install component.
 
-## 6. Install HealthMailer Watcher
+## 5. Install HealthMailer Sending Machine
 
-Interactive:
+Interactive support path:
 
 ```powershell
 .\publish\HealthMailer\HealthMailer.exe --install
@@ -68,9 +59,9 @@ Scripted refresh:
 powershell -ExecutionPolicy Bypass -File .\tools\Install-HealthMailerTask.ps1
 ```
 
-For a separate HealthMailer-only machine, configure the same UNC handoff folder in `C:\ProgramData\HealthMailer\healthmailer.settings.json` or via `HealthMailer.exe --install`.
+For a separate HealthMailer sending machine, configure the same UNC handoff folder in `C:\ProgramData\HealthMailer\healthmailer.settings.json` or via `HealthMailer.exe --install`. HealthMailer does not install printer capture.
 
-## 7. Run A Test Package
+## 6. Run A Test Package
 
 For a harmless first test, set `SendMail=false` in
 `C:\ProgramData\HealthMailer\healthmailer.settings.json` unless Outlook sending
@@ -82,13 +73,13 @@ Create a printRxer preview package:
 .\publish\printRxer\printRxer.exe --output C:\ProgramData\printRxer\handoff
 ```
 
-Or process one captured print job:
+Or print to the local `printRxer` printer and process one captured print job:
 
 ```powershell
 .\publish\printRxer\printRxer.exe --process-once
 ```
 
-## 8. Validate Results
+## 7. Validate Results
 
 Check HealthMailer terminal folders:
 
@@ -104,7 +95,7 @@ Inspect audit records:
 Get-ChildItem C:\ProgramData\HealthMailer\sent -Recurse -Filter result.json | Select-Object -Last 1 | Get-Content
 ```
 
-## 9. Uninstall Both
+## 8. Uninstall Both
 
 Preview:
 

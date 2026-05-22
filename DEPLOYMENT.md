@@ -4,7 +4,8 @@ The suite is deployed as two separate executables connected by a local or shared
 
 ```text
 printRxer
-  runs where the prescription print/PDF workflow happens
+  runs where users print prescriptions to the local printRxer printer
+  includes the printRxer app, watcher task, port monitor, XPS driver, and printer queue
   creates request.json, prescription.pdf, request.sha256, summary.txt, READY
   does not send mail
 
@@ -24,7 +25,7 @@ HealthMailer
 | Site-managed sender | Clinical workstation | Site-approved mailbox machine | Locked-down UNC |
 | Developer test | Test PC | Same or second test PC | Local or test share |
 
-Do not use an RDP/Citrix redirected `printRxer` queue for the print-capture path. Install printRxer where the print job or imported PDF is created.
+Do not use an RDP/Citrix redirected `printRxer` queue for the print-capture path. Install printRxer where users print prescriptions to the local `printRxer` printer queue.
 
 Machine A can run printRxer only. Machine B can run HealthMailer only. They must be configured with the same handoff folder, for example `\\server\HealthMailerDrop$\incoming`. printRxer does not require Outlook. HealthMailer does not require printRxer.
 
@@ -76,9 +77,10 @@ Normal user-facing install path:
 1. Download the release ZIP.
 2. Extract it.
 3. Run `PrintRxerSuiteInstaller.exe`.
-4. Use the launcher to install printRxer, install HealthMailer, install printer capture, validate installation, open logs, create a support bundle, or start uninstall/repair.
+4. Choose one primary role: `Install printRxer printing machine`, `Install HealthMailer sending machine`, or `Same-machine pilot: install both`.
+5. Use validation, logs, support bundle, and Advanced / repair actions as needed.
 
-Do not ask normal users to run PowerShell scripts directly. Scripts in `payload\tools` are support internals used by the GUI or by instructed support sessions.
+Do not ask normal users to run PowerShell scripts directly. Scripts in `payload\tools` are support internals used by the GUI or by instructed support sessions. Printer capture repair is an Advanced / repair action, not a separate normal install role.
 
 Support can run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted ZIP to verify the bundle layout without installing any component. Automation that needs the exit code should run it with `Start-Process -Wait -PassThru`.
 
@@ -162,6 +164,6 @@ Send-enabled validation requires Outlook COM registration:
 
 ## Rollback
 
-Run `PrintRxerSuiteInstaller.exe`, choose `Uninstall / repair`, and uninstall the relevant component. Component uninstall preserves local data by default. Remove local data only when explicitly approved by governance/support.
+Run `PrintRxerSuiteInstaller.exe`, choose `Advanced / repair`, and uninstall the relevant component. Component uninstall preserves local data by default. Remove local data only when explicitly approved by governance/support.
 
 

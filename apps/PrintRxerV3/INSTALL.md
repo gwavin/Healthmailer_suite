@@ -1,6 +1,6 @@
 ﻿# printRxer Install
 
-printRxer runs where prescriptions are printed or where captured PDF/XPS jobs are imported. It creates HealthMailer handoff packages and does not send mail.
+printRxer runs where users print prescriptions to the local `printRxer` printer queue. It captures the print job, creates HealthMailer handoff packages, and does not send mail.
 
 ## Publish
 
@@ -26,17 +26,23 @@ Pending local outbox: C:\ProgramData\printRxer\pending-outbox
 Published local outbox: C:\ProgramData\printRxer\published
 Logs: C:\ProgramData\printRxer\logs
 Handoff folder: C:\ProgramData\printRxer\handoff or \\server\HealthMailerDrop$\incoming
-Recipient list: C:\ProgramData\printRxer\data\recipients\recipients.csv
+Bundled recipients: C:\ProgramData\printRxer\data\recipients\bundled-recipients.csv
+Recipient cache: C:\ProgramData\printRxer\data\recipients\recipients.cache.csv
 Picker image: C:\ProgramData\printRxer\data\Images\mncms_400x400.jpg
 ```
 
-## Install Watcher Task
+## Install printRxer Printing
+
+Normal installation should use the release bundle GUI. The printRxer printing-machine installer installs the application, scheduled watcher task, recipient cache handling, native port monitor, PrintRxer XPS driver, and local printer queue named `printRxer`.
+
+Support/developer command-line installation uses both scripts:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\Install-printRxerTask.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\Install-PrintRxerCapturePrinter.ps1
 ```
 
-Custom paths:
+Custom watcher paths:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\Install-printRxerTask.ps1 `
@@ -46,19 +52,9 @@ powershell -ExecutionPolicy Bypass -File .\tools\Install-printRxerTask.ps1 `
   -HandoffRoot '\\server\HealthMailerDrop$\incoming'
 ```
 
-The script writes `printRxer.settings.json`, creates local data folders, and registers a task named `printRxer`. The task starts at user logon and has a one-minute watchdog trigger.
+The watcher script writes `printRxer.settings.json`, creates local data folders, and registers a task named `printRxer`. The capture printer script installs the `PrintRxer Port Monitor`, `printrx:` port, `PrintRxer XPS Driver`, and the visible `printRxer` printer queue. It requires Administrator/UAC approval because it changes Windows spooler components.
 
-The installer also seeds the baseline recipient CSV and picker image from the repository `assets` folder if those files do not already exist. It does not overwrite an existing local recipients file, because that file is expected to be site-maintained.
-
-## Install Live Print Capture
-
-The watcher processes completed captures from `IncomingRoot`. To create those captures from normal Windows printing, install the local native capture printer on the printing workstation:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Install-PrintRxerCapturePrinter.ps1
-```
-
-This installs the `PrintRxer Port Monitor`, `printrx:` port, `PrintRxer XPS Driver`, and the visible `printRxer` printer queue. It requires Administrator/UAC approval because it changes Windows spooler components.
+The installer seeds the bundled fallback recipient CSV and picker image from the release assets. If the selected handoff folder is writable, it may also seed `<HandoffRoot>\recipients\recipients.csv` when that file is missing.
 
 Check the printer state:
 
@@ -106,7 +102,7 @@ printRxer.exe --watch `
   --output '\\server\HealthMailerDrop$\incoming'
 ```
 
-Create a sample preview package:
+Create a sample preview package for support testing:
 
 ```powershell
 printRxer.exe --output C:\ProgramData\printRxer\handoff

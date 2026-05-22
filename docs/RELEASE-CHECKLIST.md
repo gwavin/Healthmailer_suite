@@ -17,12 +17,13 @@
 - [ ] Download/extract the suite ZIP rather than building from source on the target machine.
 - [ ] Open `PrintRxerSuiteInstaller.exe`.
 - [ ] `Validate installation` runs before install and reports expected missing/not-installed items without crashing.
-- [ ] `Install printRxer` asks for administrator approval and opens the printRxer component installer.
-- [ ] `Install HealthMailer` asks for administrator approval and opens the HealthMailer component installer.
-- [ ] `Install printRxer printer capture` asks for administrator approval only for printer capture.
+- [ ] `Install printRxer printing machine` asks for administrator approval and opens the printRxer component installer.
+- [ ] printRxer install creates/repairs the native port monitor, PrintRxer XPS driver, and local printer queue named `printRxer`.
+- [ ] `Install HealthMailer sending machine` asks for administrator approval and opens the HealthMailer component installer.
+- [ ] `Same-machine pilot: install both` starts the printRxer printing installer and HealthMailer sending installer.
 - [ ] `Open logs folder` opens an existing logs folder or ProgramData fallback.
 - [ ] `Create support bundle` creates a ZIP and excludes PDF payloads by default.
-- [ ] `Uninstall / repair` offers separate printRxer and HealthMailer actions, each asking for administrator approval before launching the component installer.
+- [ ] `Advanced / repair` offers printer-capture repair plus separate printRxer and HealthMailer actions, each asking for administrator approval before launching elevated repair/install work.
 - [ ] printRxer installed alone with local handoff folder.
 - [ ] printRxer installed alone with UNC handoff folder.
 - [ ] HealthMailer installed alone watching local folder.
