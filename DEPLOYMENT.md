@@ -37,6 +37,7 @@ The supplied scheduled-task installers create per-user interactive tasks. Health
 - Local or UNC handoff folder agreed with IT.
 - Folder ACLs configured before live PHI testing.
 - Approved sender mailbox/account and Healthmail governance decision.
+- Central recipient list location agreed with IT. By default this is derived from the same handoff folder as `<HandoffRoot>\recipients\recipients.csv`.
 
 ## Operational Protections
 
@@ -55,6 +56,7 @@ The suite preserves the lessons from the original printRxer testing:
 - printRxer waits for capture payload stability before opening the picker.
 - printRxer keeps a durable local outbox and retries handoff publication when a UNC share is unavailable.
 - HealthMailer keeps running and polling when the watched UNC folder is temporarily unavailable.
+- printRxer opens the recipient picker from memory, local cache, or bundled fallback; central recipient refresh happens in the background and does not block the picker.
 
 ## Build
 
@@ -110,6 +112,30 @@ and registers the scheduled task:
 ```text
 HealthMailer
 ```
+
+## Recipient List Deployment
+
+The preferred recipient list is derived from the printRxer handoff folder:
+
+```text
+<HandoffRoot>\recipients\recipients.csv
+```
+
+During printRxer installation, the installer always places the bundled fallback at:
+
+```text
+C:\ProgramData\printRxer\data\recipients\bundled-recipients.csv
+```
+
+If the handoff folder is reachable and writable, the installer attempts to create `<HandoffRoot>\recipients` and seed `recipients.csv` from the bundled fallback only when the central file is missing. Existing central files are not overwritten. If the handoff folder is unavailable or read-only, installation can continue with local fallback; IT can create or update the central file later.
+
+Runtime printRxer access to the central file is read-only. The runtime user should be able to write only local cache/status files under:
+
+```text
+C:\ProgramData\printRxer\data\recipients
+```
+
+See [docs/RECIPIENTS.md](docs/RECIPIENTS.md) for schema, ACLs, status files, and the IT update process.
 
 ## Validation
 

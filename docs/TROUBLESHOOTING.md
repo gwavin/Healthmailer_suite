@@ -53,6 +53,32 @@ printRxer intentionally waits before opening the picker if the capture is not sa
 
 Deferred captures include `printRxer_failure.txt` with outcomes such as `JobOwnerMismatch` or `PayloadNotReady`.
 
+## Recipient List Is Missing Or Stale
+
+The preferred recipient list is:
+
+```text
+<HandoffRoot>\recipients\recipients.csv
+```
+
+printRxer should still open the picker from local sources if the central share is slow or unavailable. Check:
+
+```powershell
+Get-ChildItem C:\ProgramData\printRxer\data\recipients -Force
+Get-Content C:\ProgramData\printRxer\data\recipients\recipient-source-status.json
+Get-Content C:\ProgramData\printRxer\logs\printRxer.log -Tail 80
+```
+
+Useful source files:
+
+- `recipients.cache.csv`: last-known-good central list.
+- `bundled-recipients.csv`: release-time fallback.
+- `recipient-source-status.json`: current source, central path, validation status, and warning.
+
+If the central file is invalid, printRxer rejects it and keeps using cache or bundled fallback. Fix the central CSV, then use `Refresh recipients` in the picker or restart printRxer.
+
+The recipients CSV is address book/configuration data only. It must not contain patient names, MRNs, prescription details, or other patient-identifiable information.
+
 ## PrintRxer Package Queued Locally
 
 If the user sees a local queue notification, the PDF package has been built but could not be copied to the HealthMailer handoff folder. Check:

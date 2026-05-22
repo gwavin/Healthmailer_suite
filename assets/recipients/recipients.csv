@@ -1,5 +1,4 @@
-Name,Title,First Name,Middle Name,Last Name,Name Split 1,Name Split 2,Name Split 3,E-mail Address,Business Street,Business Street 2,Business Phone,Business State,Job Title,Anniversary,Government ID Number,ID 2
-Dr. Jane Sample,Dr.,Jane,,Sample,Jane,,Sample,jane.sample@example.invalid,1 Example Street,Suite 1,555-0100,Dublin,General Practitioner,,PRACTICE123,EXAMPLE01
-Dr. John Sample,Dr.,John,,Sample,John,,Sample,john.sample@example.invalid,2 Example Street,,555-0101,Cork,Community GP,,PRACTICE456,EXAMPLE02
-Dr. Alex Review,Dr.,Alex,,Review,Alex,,Review,alex.review@example.invalid,3 Review Avenue,,555-0102,Galway,Medical Reviewer,,PRACTICE789,EXAMPLE03
-Gavin Horan,,Gavin,,Horan,Gavin,,Horan,gavin.horan1@hse.ie,,,,,,,,
+recipientId,displayName,email,active,organisation,site,department,service,sortOrder,notes
+sample-jane,Dr Jane Sample,jane.sample@example.invalid,true,Example Practice,Dublin,General Practice,Clinical Documents,10,Sample fallback recipient only
+sample-john,Dr John Sample,john.sample@example.invalid,true,Example Practice,Cork,General Practice,Clinical Documents,20,Sample fallback recipient only
+sample-review,Dr Alex Review,alex.review@example.invalid,true,Example Review Service,Galway,Medicines Review,Clinical Documents,30,Sample fallback recipient only

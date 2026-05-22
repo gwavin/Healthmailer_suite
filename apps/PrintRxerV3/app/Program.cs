@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using PrintRxerV3.Capture;
 using PrintRxerV3.Metadata;
 using PrintRxerV3.Notifications;
+using PrintRxerV3.Recipients;
 
 namespace PrintRxerV3.App;
 
@@ -369,10 +370,31 @@ public static class Program
         using ProgressNotice notice = new("Preparing print job details. The recipient picker will open shortly.");
         notice.Show();
         notice.Refresh();
-        IReadOnlyList<Recipients.RecipientRecord> recipients = RecipientSource.LoadDefault();
+        RecipientService recipientService = RecipientSource.GetService(config);
+        RecipientSnapshot snapshot = recipientService.Current;
+        if (!snapshot.HasRecipients)
+        {
+            snapshot = recipientService.LoadLocalFirst();
+        }
         notice.Close();
 
-        using RecipientSelectionDialog dialog = new(recipients, context, () => PreviewPrescription(context, config));
+        if (!snapshot.HasRecipients)
+        {
+            Log("RecipientNoUsableSource: " + snapshot.Warning);
+            MessageBox.Show(
+                "No usable recipient list is available. The document has not been sent or prepared. Please contact support to restore the central, cached, or bundled recipient list.",
+                "Recipient list unavailable",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+            return null;
+        }
+
+        using RecipientSelectionDialog dialog = new(
+            snapshot.Recipients,
+            context,
+            () => PreviewPrescription(context, config),
+            FormatRecipientSource(snapshot),
+            recipientService.RefreshFromCentral);
         DialogResult result = dialog.ShowDialog();
         if (result != DialogResult.OK)
         {
@@ -380,6 +402,17 @@ public static class Program
         }
 
         return dialog.Selection;
+    }
+
+    private static string FormatRecipientSource(RecipientSnapshot snapshot)
+    {
+        return snapshot.SourceUsed switch
+        {
+            RecipientSourceKind.Central => "central list",
+            RecipientSourceKind.Cache => "cached central list from " + File.GetLastWriteTime(snapshot.SourcePath).ToString("dd MMM yyyy HH:mm"),
+            RecipientSourceKind.BundledFallback => "bundled fallback list",
+            _ => "no usable recipient list"
+        };
     }
 
     private static void PreviewPrescription(CapturedPrintJobContext context, PrintRxerV3Config config)
@@ -432,7 +465,7 @@ public static class Program
             : fallback;
     }
 
-    private static void Log(string message)
+    internal static void Log(string message)
     {
         try
         {

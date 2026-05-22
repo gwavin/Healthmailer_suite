@@ -20,13 +20,21 @@ public sealed class RecipientSelectionDialog : Form
     private readonly TextBox _subjectBox = new();
     private readonly TextBox _bodyBox = new();
     private readonly Action? _previewPrescription;
+    private readonly Func<RecipientRefreshResult>? _refreshRecipients;
+    private readonly Label _recipientSourceLabel = new();
     private RecipientRecord? _explicitlySelectedRecipient;
 
     public PickerSelection? Selection { get; private set; }
 
-    public RecipientSelectionDialog(IReadOnlyList<RecipientRecord> recipients, CapturedPrintJobContext context, Action? previewPrescription = null)
+    public RecipientSelectionDialog(
+        IReadOnlyList<RecipientRecord> recipients,
+        CapturedPrintJobContext context,
+        Action? previewPrescription = null,
+        string recipientSourceText = "",
+        Func<RecipientRefreshResult>? refreshRecipients = null)
     {
         _previewPrescription = previewPrescription;
+        _refreshRecipients = refreshRecipients;
         _recipients = recipients.OrderBy(recipient => recipient.RecipientName, StringComparer.OrdinalIgnoreCase).ToList();
         Text = "Choose Recipient";
         Width = 1120;
@@ -37,7 +45,8 @@ public sealed class RecipientSelectionDialog : Form
 
         TryApplyIcon();
 
-        TableLayoutPanel root = new() { Dock = DockStyle.Fill, Padding = new Padding(16), RowCount = 5, ColumnCount = 1 };
+        TableLayoutPanel root = new() { Dock = DockStyle.Fill, Padding = new Padding(16), RowCount = 6, ColumnCount = 1 };
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -80,6 +89,8 @@ public sealed class RecipientSelectionDialog : Form
         root.Controls.Add(header);
 
         root.Controls.Add(BuildPrintJobPanel(context));
+
+        root.Controls.Add(BuildRecipientSourcePanel(string.IsNullOrWhiteSpace(recipientSourceText) ? "recipient list" : recipientSourceText));
 
         _searchBox.PlaceholderText = "Search recipients";
         _searchBox.Dock = DockStyle.Fill;
@@ -258,6 +269,41 @@ public sealed class RecipientSelectionDialog : Form
         _recipientGrid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Aliases", DataPropertyName = nameof(RecipientGridItem.AliasesText), AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
     }
 
+    private Control BuildRecipientSourcePanel(string sourceText)
+    {
+        TableLayoutPanel panel = new()
+        {
+            Dock = DockStyle.Fill,
+            AutoSize = true,
+            ColumnCount = 2,
+            Margin = new Padding(0, 0, 0, 8),
+            Padding = Padding.Empty
+        };
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+
+        _recipientSourceLabel.Text = "Recipients: " + sourceText;
+        _recipientSourceLabel.AutoSize = true;
+        _recipientSourceLabel.Dock = DockStyle.Fill;
+        _recipientSourceLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+        _recipientSourceLabel.ForeColor = System.Drawing.Color.DimGray;
+
+        Button refreshButton = new()
+        {
+            Text = "Refresh recipients",
+            AutoSize = true,
+            Height = 32,
+            Margin = new Padding(8, 0, 0, 0),
+            UseVisualStyleBackColor = true,
+            Enabled = _refreshRecipients is not null
+        };
+        refreshButton.Click += delegate { RefreshRecipientsFromCentral(refreshButton); };
+
+        panel.Controls.Add(_recipientSourceLabel, 0, 0);
+        panel.Controls.Add(refreshButton, 1, 0);
+        return panel;
+    }
+
     private Control BuildPrintJobPanel(CapturedPrintJobContext context)
     {
         TableLayoutPanel panel = new()
@@ -338,6 +384,52 @@ public sealed class RecipientSelectionDialog : Form
         }
 
         UpdateSelectedRecipientField();
+    }
+
+    private void RefreshRecipientsFromCentral(Button refreshButton)
+    {
+        if (_refreshRecipients is null)
+        {
+            return;
+        }
+
+        bool previousEnabled = refreshButton.Enabled;
+        refreshButton.Enabled = false;
+        try
+        {
+            RecipientRefreshResult result = _refreshRecipients();
+            if (result.Success && result.Snapshot.HasRecipients)
+            {
+                _recipients.Clear();
+                _recipients.AddRange(result.Snapshot.Recipients.OrderBy(recipient => recipient.RecipientName, StringComparer.OrdinalIgnoreCase));
+                _recipientSourceLabel.Text = "Recipients: " + FormatRecipientSource(result.Snapshot);
+                RefreshRecipients();
+                MessageBox.Show(this, "Recipients refreshed successfully.", "Recipients refreshed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            MessageBox.Show(
+                this,
+                "The central recipient list could not be refreshed. The current local recipient list is still being used." + Environment.NewLine + Environment.NewLine + result.Message,
+                "Recipient refresh unavailable",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        }
+        finally
+        {
+            refreshButton.Enabled = previousEnabled;
+        }
+    }
+
+    private static string FormatRecipientSource(RecipientSnapshot snapshot)
+    {
+        return snapshot.SourceUsed switch
+        {
+            RecipientSourceKind.Central => "central list",
+            RecipientSourceKind.Cache => "cached central list from " + File.GetLastWriteTime(snapshot.SourcePath).ToString("dd MMM yyyy HH:mm"),
+            RecipientSourceKind.BundledFallback => "bundled fallback list",
+            _ => "no usable recipient list"
+        };
     }
 
     private void UpdateSelectedRecipientField()

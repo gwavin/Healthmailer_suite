@@ -23,6 +23,7 @@ public sealed class PrintRxerV3Config
     public int RetryIntervalSeconds { get; set; } = 1;
     public int MaxLogBytes { get; set; } = 5 * 1024 * 1024;
     public int MaxLogFiles { get; set; } = 3;
+    public RecipientSourceSettings RecipientSource { get; set; } = new();
 
     [JsonIgnore]
     public string ConfigPath => DefaultConfigPath;
@@ -115,6 +116,9 @@ public sealed class PrintRxerV3Config
         {
             MaxLogFiles = 3;
         }
+
+        RecipientSource ??= new RecipientSourceSettings();
+        RecipientSource.Normalize();
     }
 
     private static void TryHardenDropDirectory(string path)
@@ -197,5 +201,56 @@ public sealed class PrintRxerV3Config
     private static bool IsUncPath(string path)
     {
         return string.IsNullOrWhiteSpace(path) || path.StartsWith(@"\\", StringComparison.Ordinal);
+    }
+}
+
+public sealed class RecipientSourceSettings
+{
+    public string Mode { get; set; } = "HandoffDerivedWithFallback";
+    public string CentralRelativePath { get; set; } = "recipients";
+    public string CentralFileName { get; set; } = "recipients.csv";
+    public bool UseBundledFallback { get; set; } = true;
+    public bool RefreshOnStartup { get; set; } = true;
+    public int StartupRefreshDelaySeconds { get; set; } = 20;
+    public int RefreshIntervalHours { get; set; } = 12;
+    public int MaxCacheAgeDaysWarning { get; set; } = 30;
+    public int MaxCacheAgeDaysBlock { get; set; } = 365;
+
+    public void Normalize()
+    {
+        if (string.IsNullOrWhiteSpace(Mode))
+        {
+            Mode = "HandoffDerivedWithFallback";
+        }
+
+        if (string.IsNullOrWhiteSpace(CentralRelativePath))
+        {
+            CentralRelativePath = "recipients";
+        }
+
+        if (string.IsNullOrWhiteSpace(CentralFileName))
+        {
+            CentralFileName = "recipients.csv";
+        }
+
+        if (StartupRefreshDelaySeconds <= 0)
+        {
+            StartupRefreshDelaySeconds = 20;
+        }
+
+        if (RefreshIntervalHours <= 0)
+        {
+            RefreshIntervalHours = 12;
+        }
+
+        if (MaxCacheAgeDaysWarning <= 0)
+        {
+            MaxCacheAgeDaysWarning = 30;
+        }
+
+        if (MaxCacheAgeDaysBlock <= 0)
+        {
+            MaxCacheAgeDaysBlock = 365;
+        }
     }
 }

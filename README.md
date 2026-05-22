@@ -24,7 +24,7 @@ Do not redistribute or reuse without explicit permission from the repository own
 - `apps/HealthMailer`: consumes ready handoff packages, validates them, sends via local Outlook COM, and archives them.
 - `native` and `assets/print-capture`: the Windows print-capture layer that creates the local `printRxer` printer queue and writes captured jobs into the printRxer incoming folder.
 - `installers/PrintRxerSuiteInstaller`: the GUI-first release launcher for normal installs, validation, support bundles, and uninstall/repair entry points.
-- `assets/recipients` and `assets/branding`: baseline picker data copied into ProgramData during printRxer install if local files do not already exist.
+- `assets/recipients` and `assets/branding`: bundled fallback picker data and branding copied into ProgramData during printRxer install.
 - `tests/HealthMailer.Tests`: HealthMailer contract and processing tests.
 - `apps/PrintRxerV3/tests`: printRxer tests.
 
@@ -51,6 +51,7 @@ Support analyst:
 
 - [docs/OPERATIONS-RUNBOOK.md](docs/OPERATIONS-RUNBOOK.md)
 - [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+- [docs/RECIPIENTS.md](docs/RECIPIENTS.md)
 - [UNINSTALL.md](UNINSTALL.md)
 
 Security reviewer:
@@ -136,6 +137,8 @@ Support can run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted ZI
 This step requires Administrator/UAC approval because it installs a native Windows port monitor, a local XPS driver, and the `printRxer` printer queue. The watcher and the printer layer are separate deliberately: printRxer can be tested with imported captures, but live printing requires the capture printer.
 
 printRxer writes `C:\ProgramData\printRxer\config\printRxer.settings.json`, builds packages in a durable local outbox first, then publishes complete `READY` packages to the configured handoff folder. If the share is down, packages remain local and are retried at the configured interval.
+
+The preferred printRxer recipient list is derived from the handoff folder as `<HandoffRoot>\recipients\recipients.csv`. printRxer reads that central file in the background, keeps `C:\ProgramData\printRxer\data\recipients\recipients.cache.csv` as a last-known-good copy, and falls back to `bundled-recipients.csv` if needed. Runtime users should not need write access to the central recipients folder.
 
 ## Uninstall Both Apps
 

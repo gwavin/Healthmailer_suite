@@ -12,4 +12,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>..\..\assets\branding\mncms.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\apps\PrintRxerV3\src\PrintRxerV3.csproj" />
+  </ItemGroup>
 </Project>

@@ -14,6 +14,9 @@
 | printRxer pending outbox | `C:\ProgramData\printRxer\pending-outbox` |
 | printRxer published outbox | `C:\ProgramData\printRxer\published` |
 | printRxer logs | `C:\ProgramData\printRxer\logs` |
+| printRxer bundled recipients | `C:\ProgramData\printRxer\data\recipients\bundled-recipients.csv` |
+| printRxer recipient cache | `C:\ProgramData\printRxer\data\recipients\recipients.cache.csv` |
+| printRxer recipient status | `C:\ProgramData\printRxer\data\recipients\recipient-source-status.json` |
 
 ## Scheduled Task
 
@@ -77,6 +80,33 @@ Get-ChildItem C:\ProgramData\printRxer\deferred -Recurse -Filter printRxer_failu
 If the handoff share is down, check `C:\ProgramData\printRxer\pending-outbox`. Packages there are durable local packages waiting for publication retry. Once publication succeeds they move to `C:\ProgramData\printRxer\published`.
 
 Publication log outcomes are `PackageQueuedLocal`, `PackagePublished`, `PackagePublishDeferred`, and `PackagePublishFailed`.
+
+## Recipient List Operations
+
+The preferred recipient list lives under the configured handoff folder:
+
+```text
+<HandoffRoot>\recipients\recipients.csv
+```
+
+printRxer reads this central file in the background and writes only local cache/status files during normal runtime. Ordinary printRxer users should not need write access to `<HandoffRoot>\recipients`.
+
+Recommended central ACLs:
+
+- IT / authorised maintainers: read/write.
+- printRxer runtime users or workstation identities: read-only.
+- HealthMailer: no access required for normal package processing.
+- Broad ordinary user groups: avoid write access.
+
+Update process:
+
+1. Prepare and validate a new `recipients.csv`.
+2. Copy it to `<HandoffRoot>\recipients\recipients.csv.tmp`.
+3. Rename it to `recipients.csv`.
+4. Keep a backup of the previous file.
+5. Ask users/support to use `Refresh recipients` or wait for the next background refresh.
+
+The recipients CSV must not contain patient names, MRNs, prescription details, or other patient-identifiable information.
 
 ## Support Bundle
 

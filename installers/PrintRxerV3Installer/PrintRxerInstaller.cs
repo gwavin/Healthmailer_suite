@@ -1,4 +1,5 @@
 using System.Text.Json;
+using PrintRxerV3.Recipients;
 
 namespace PrintRxerV3Installer;
 
@@ -22,6 +23,9 @@ internal static class PrintRxerInstaller
 
         log("Writing printRxer configuration.");
         WriteConfig(options.HandoffRoot);
+
+        log("Preparing central recipient list if available.");
+        PrepareCentralRecipients(options.HandoffRoot, log);
 
         log("Installing printRxer capture printer.");
         InstallCapturePrinter();
@@ -60,10 +64,13 @@ internal static class PrintRxerInstaller
     {
         string recipientsSource = Path.Combine(InstallerPaths.PayloadAssetsRoot, "recipients", "recipients.csv");
         string imageSource = Path.Combine(InstallerPaths.PayloadAssetsRoot, "branding", "mncms_400x400.jpg");
-        string recipientsDestination = Path.Combine(InstallerPaths.ProgramDataRoot, "data", "recipients", "recipients.csv");
+        string recipientsDestination = Path.Combine(InstallerPaths.ProgramDataRoot, "data", "recipients", "bundled-recipients.csv");
         string imageDestination = Path.Combine(InstallerPaths.ProgramDataRoot, "data", "Images", "mncms_400x400.jpg");
 
-        MergeRecipientsFile(recipientsSource, recipientsDestination);
+        if (File.Exists(recipientsSource))
+        {
+            File.Copy(recipientsSource, recipientsDestination, overwrite: true);
+        }
 
         if (File.Exists(imageSource) && !File.Exists(imageDestination))
         {
@@ -71,57 +78,47 @@ internal static class PrintRxerInstaller
         }
     }
 
-    private static void MergeRecipientsFile(string source, string destination)
+    private static void PrepareCentralRecipients(string handoffRoot, Action<string> log)
     {
-        if (!File.Exists(source))
+        if (string.IsNullOrWhiteSpace(handoffRoot))
         {
             return;
         }
 
-        if (!File.Exists(destination))
+        string bundled = Path.Combine(InstallerPaths.ProgramDataRoot, "data", "recipients", "bundled-recipients.csv");
+        if (!File.Exists(bundled))
         {
-            File.Copy(source, destination);
+            log("RecipientCentralSeedSkipped: bundled fallback recipient file was not installed.");
             return;
         }
 
-        string[] sourceLines = File.ReadAllLines(source);
-        string[] destinationLines = File.ReadAllLines(destination);
-        if (sourceLines.Length == 0)
+        string centralFolder = Path.Combine(handoffRoot, "recipients");
+        string centralFile = Path.Combine(centralFolder, "recipients.csv");
+        string cacheDestination = Path.Combine(InstallerPaths.ProgramDataRoot, "data", "recipients", "recipients.cache.csv");
+        try
         {
-            return;
-        }
+            log("RecipientCentralFolderCreateAttempted: " + centralFolder);
+            Directory.CreateDirectory(centralFolder);
+            log("RecipientCentralFolderCreated: " + centralFolder);
 
-        HashSet<string> destinationEmails = new(StringComparer.OrdinalIgnoreCase);
-        foreach (string line in destinationLines.Skip(1))
-        {
-            string email = GetEmail(line);
-            if (!string.IsNullOrWhiteSpace(email))
+            if (!File.Exists(centralFile))
             {
-                destinationEmails.Add(email);
+                File.Copy(bundled, centralFile);
+                log("RecipientCentralSeededFromBundled: " + centralFile);
             }
-        }
-
-        List<string> missing = new();
-        foreach (string line in sourceLines.Skip(1))
-        {
-            string email = GetEmail(line);
-            if (!string.IsNullOrWhiteSpace(email) && !destinationEmails.Contains(email))
+            else
             {
-                missing.Add(line);
-                destinationEmails.Add(email);
+                log("RecipientCentralAlreadyExists: " + centralFile);
             }
-        }
 
-        if (missing.Count > 0)
+            _ = RecipientCsvValidator.LoadValidated(centralFile);
+            File.Copy(centralFile, cacheDestination, overwrite: true);
+            log("RecipientCacheUpdated: " + cacheDestination);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or InvalidDataException or SystemException)
         {
-            File.AppendAllLines(destination, missing);
+            log("RecipientCentralFolderCreateFailed: " + ex.Message);
         }
-    }
-
-    private static string GetEmail(string csvLine)
-    {
-        string[] parts = csvLine.Split(',');
-        return parts.Length > 8 ? parts[8].Trim() : string.Empty;
     }
 
     private static void WriteConfig(string handoffRoot)
@@ -142,7 +139,19 @@ internal static class PrintRxerInstaller
             AllowMissingSubmittingSid = false,
             RetryIntervalSeconds = 1,
             MaxLogBytes = 5242880,
-            MaxLogFiles = 3
+            MaxLogFiles = 3,
+            RecipientSource = new
+            {
+                Mode = "HandoffDerivedWithFallback",
+                CentralRelativePath = "recipients",
+                CentralFileName = "recipients.csv",
+                UseBundledFallback = true,
+                RefreshOnStartup = true,
+                StartupRefreshDelaySeconds = 20,
+                RefreshIntervalHours = 12,
+                MaxCacheAgeDaysWarning = 30,
+                MaxCacheAgeDaysBlock = 365
+            }
         };
 
         string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
