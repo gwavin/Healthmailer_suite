@@ -101,6 +101,17 @@ public sealed class ReleaseBundleNamingTests
     }
 
     [Fact]
+    public void PrintRxer_uninstaller_does_not_kill_its_own_setup_process()
+    {
+        string repoRoot = FindRepoRoot();
+        string uninstaller = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "PrintRxerUninstaller.cs"));
+
+        Assert.DoesNotContain("Get-Process -Name 'printRxer*'", uninstaller, StringComparison.Ordinal);
+        Assert.DoesNotContain("Get-Process -Name \"printRxer*\"", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("Get-Process -Name 'printRxer'", uninstaller, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Source_and_docs_do_not_use_legacy_underscored_printRxer_name()
     {
         string repoRoot = FindRepoRoot();

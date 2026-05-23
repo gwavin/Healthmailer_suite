@@ -138,7 +138,6 @@ foreach ($taskName in $taskNames) {
     }
 }
 Get-Process -Name 'printRxer' -ErrorAction SilentlyContinue | Stop-Process -Force
-Get-Process -Name 'printRxer*' -ErrorAction SilentlyContinue | Stop-Process -Force
 Get-Process -Name 'PrintRxer.Agent' -ErrorAction SilentlyContinue | Stop-Process -Force
 ";
         string output = ProcessRunner.PowerShell(command, requireSuccess: false);
