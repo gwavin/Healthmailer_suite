@@ -82,7 +82,6 @@ if (Get-Printer -Name 'printRxer' -ErrorAction SilentlyContinue) { 'true'; exit 
 if (Get-PrinterPort -Name 'printrx:' -ErrorAction SilentlyContinue) { 'true'; exit }
 if (Get-PrinterDriver -Name 'PrintRxer XPS Driver' -ErrorAction SilentlyContinue) { 'true'; exit }
 if (Test-Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer Port Monitor') { 'true'; exit }
-if (Test-Path (Join-Path $env:WINDIR 'System32\PrintRxerPortMonitor.dll')) { 'true'; exit }
 ";
         return ProcessRunner.PowerShell(command, requireSuccess: false).Contains("true", StringComparison.OrdinalIgnoreCase);
     }

@@ -52,6 +52,19 @@ if ($driver) {
     }
 }
 
+Start-Sleep -Seconds 1
+$driver = Get-PrinterDriver -Name 'PrintRxer XPS Driver' -ErrorAction SilentlyContinue
+if ($driver) {
+    try {
+        Restart-Service -Name Spooler -Force -ErrorAction Stop
+        Start-Sleep -Seconds 1
+        Remove-PrinterDriver -Name 'PrintRxer XPS Driver' -ErrorAction Stop
+        Write-Step "Removed PrintRxer XPS Driver after spooler restart."
+    } catch {
+        Write-Step "Could not remove PrintRxer XPS Driver after retry; Windows may release it after restart: $($_.Exception.Message)"
+    }
+}
+
 $spoolerWasRunning = (Get-Service -Name Spooler).Status -eq 'Running'
 if ($spoolerWasRunning) {
     try {
@@ -80,6 +93,14 @@ try {
     if ($spoolerWasRunning) {
         try {
             Start-Service -Name Spooler -ErrorAction Stop
+            if (Test-Path -LiteralPath $dllPath) {
+                try {
+                    Remove-Item -LiteralPath $dllPath -Force -ErrorAction Stop
+                    Write-Step "Removed PrintRxer Port Monitor DLL after spooler restart."
+                } catch {
+                    Write-Step "PrintRxer Port Monitor DLL remains on disk and can be removed after restart: $($_.Exception.Message)"
+                }
+            }
         } catch {
             Write-Step "Could not restart the Print Spooler service: $($_.Exception.Message)"
         }
