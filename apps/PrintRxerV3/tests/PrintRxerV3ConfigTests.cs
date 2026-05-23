@@ -45,7 +45,7 @@ public sealed class PrintRxerV3ConfigTests
     public void Load_roundtrips_persistent_config_fields()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-config-" + Guid.NewGuid().ToString("N"));
-        string configPath = Path.Combine(root, "config", "printrxer_v3.settings.json");
+        string configPath = Path.Combine(root, "config", "printRxer.settings.json");
         PrintRxerV3Config config = new()
         {
             IncomingRoot = Path.Combine(root, "incoming"),

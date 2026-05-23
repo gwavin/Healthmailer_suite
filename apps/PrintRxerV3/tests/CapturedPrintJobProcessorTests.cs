@@ -198,8 +198,8 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.Empty(Directory.EnumerateDirectories(published));
         string failedPackage = Path.Combine(failed, "fixed-package");
         Assert.True(Directory.Exists(failedPackage));
-        Assert.True(File.Exists(Path.Combine(failedPackage, "printrxer_v3_failure.txt")));
-        Assert.Contains("PackagePublishFailed", File.ReadAllText(Path.Combine(failedPackage, "printrxer_v3_failure.txt")));
+        Assert.True(File.Exists(Path.Combine(failedPackage, "printRxer_failure.txt")));
+        Assert.Contains("PackagePublishFailed", File.ReadAllText(Path.Combine(failedPackage, "printRxer_failure.txt")));
         Assert.Contains(logs, line => line.StartsWith("PackagePublishFailed:", StringComparison.Ordinal));
     }
 
@@ -365,7 +365,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.Null(result.PackageDirectory);
         Assert.False(Directory.Exists(job));
         Assert.True(Directory.Exists(deferredJob));
-        Assert.True(File.Exists(Path.Combine(deferredJob, "printrxer_v3_failure.txt")));
+        Assert.True(File.Exists(Path.Combine(deferredJob, "printRxer_failure.txt")));
         Assert.False(Directory.Exists(handoff));
     }
 
@@ -437,7 +437,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.Equal("JobOwnerMismatch", result.Outcome);
         Assert.False(pickerOpened);
         Assert.False(Directory.Exists(job));
-        Assert.True(File.Exists(Path.Combine(deferredJob, "printrxer_v3_failure.txt")));
+        Assert.True(File.Exists(Path.Combine(deferredJob, "printRxer_failure.txt")));
     }
 
     [Fact]
@@ -552,7 +552,7 @@ public sealed class CapturedPrintJobProcessorTests
 
         Assert.Null(processor.ProcessOne());
         Assert.False(Directory.Exists(job));
-        Assert.True(File.Exists(Path.Combine(deferred, "20260509-120000000-job52", "printrxer_v3_failure.txt")));
+        Assert.True(File.Exists(Path.Combine(deferred, "20260509-120000000-job52", "printRxer_failure.txt")));
     }
 
     private static string WriteFakePdf(string captureDirectory, string payloadPath)

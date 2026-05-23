@@ -18,9 +18,9 @@ The intended flow is:
 The implementation in [PrintRxerPortMonitor.c](PrintRxerPortMonitor.c) is deliberately small:
 
 - it exposes exactly one fixed port, `printrx:`
-- it captures each job to `%ProgramData%\printrxer_v3\work\spool\<job-folder>\job.xps`
+- it captures each job to `%ProgramData%\printRxer\work\spool\<job-folder>\job.xps`
 - it writes a `metadata.json` sidecar
-- it moves the completed job into `%ProgramData%\printrxer_v3\work\incoming\<job-folder>`
+- it moves the completed job into `%ProgramData%\printRxer\work\incoming\<job-folder>`
 - it leaves PDF rendering, curated-recipient search, and Outlook automation to the managed agent
 
 ## Safety-Relevant Notes

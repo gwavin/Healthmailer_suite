@@ -61,7 +61,7 @@ The ledger is treated as safety-critical duplicate-send evidence. HealthMailer r
 
 Validation failures and duplicates are quarantined. Mail failures and chart-copy failures are archived to `failed` with distinct result outcomes. HealthMailer fails closed: malformed packages are not sendable work.
 
-Failed and quarantined packages include `result.json` and `summary.txt` where a terminal HealthMailer outcome is reached. PrintRxerV3 deferred captures include a readable `printrxer_v3_failure.txt` reason.
+Failed and quarantined packages include `result.json` and `summary.txt` where a terminal HealthMailer outcome is reached. printRxer deferred captures include a readable `printRxer_failure.txt` reason.
 
 ## Log Retention
 

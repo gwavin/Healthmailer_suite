@@ -28,7 +28,7 @@ Current project and solution names:
 
 Current executable names:
 
-- `printrxer_v3.exe`
+- legacy underscored v3 executable name
 - `HealthMailer.exe`
 - `PrintRxerV3Installer.exe`
 - `HealthMailerInstaller.exe`
@@ -55,19 +55,7 @@ Current scheduled task names:
 
 Current ProgramData paths:
 
-- `C:\ProgramData\printrxer_v3`
-- `C:\ProgramData\printrxer_v3\config`
-- `C:\ProgramData\printrxer_v3\work\incoming`
-- `C:\ProgramData\printrxer_v3\pending-outbox`
-- `C:\ProgramData\printrxer_v3\published`
-- `C:\ProgramData\printrxer_v3\processed`
-- `C:\ProgramData\printrxer_v3\deferred`
-- `C:\ProgramData\printrxer_v3\failed`
-- `C:\ProgramData\printrxer_v3\logs`
-- `C:\ProgramData\printrxer_v3\temp`
-- `C:\ProgramData\printrxer_v3\handoff`
-- `C:\ProgramData\printrxer_v3\data\recipients`
-- `C:\ProgramData\printrxer_v3\data\Images`
+- legacy underscored v3 ProgramData root and subfolders
 - `C:\ProgramData\HealthMailer`
 - `C:\ProgramData\HealthMailer\sent`
 - `C:\ProgramData\HealthMailer\failed`
@@ -76,12 +64,12 @@ Current ProgramData paths:
 
 Current config file paths:
 
-- `C:\ProgramData\printrxer_v3\config\printrxer_v3.settings.json`
+- legacy underscored v3 config path
 - `C:\ProgramData\HealthMailer\healthmailer.settings.json`
 
 Current log file paths:
 
-- `C:\ProgramData\printrxer_v3\logs\printrxer_v3.log`
+- legacy underscored v3 log path
 - `C:\ProgramData\HealthMailer\logs\healthmailer.log`
 
 Current release bundle paths:
@@ -99,7 +87,7 @@ Current documentation headings and labels still use a mix of:
 - `PrintRxerV3`
 - `PrintRxer v3`
 - `PrintRxer_v3`
-- `printrxer_v3`
+- legacy underscored v3 spelling
 - `printRxer`
 - `HealthMailer`
 
@@ -110,7 +98,7 @@ Initial search counts after copying and before broad rename:
 - `PrintRxerV3`: 429
 - `PrintRxer V3`: 0
 - `PrintRxer_v3`: 2
-- `printrxer_v3`: 158
+- legacy underscored v3 spelling: 158
 - `\bV3\b`: 0
 - `\bv3\b`: 84
 - `PrintRxerSuite`: 18
@@ -120,7 +108,7 @@ Initial search counts after copying and before broad rename:
 Search command used:
 
 ```powershell
-rg -n "PrintRxerV3|PrintRxer V3|PrintRxer_v3|printrxer_v3|\bV3\b|\bv3\b|PrintRxerSuite|printRxer|HealthMailer" -g '!bin/**' -g '!obj/**' -g '!publish/**' -g '!dist/**' -g '!tmp/**'
+rg -n "PrintRxerV3|PrintRxer V3|PrintRxer_v3|legacy underscored v3 spelling|\bV3\b|\bv3\b|PrintRxerSuite|printRxer|HealthMailer" -g '!bin/**' -g '!obj/**' -g '!publish/**' -g '!dist/**' -g '!tmp/**'
 ```
 
 ## Safe To Rename Now
@@ -141,10 +129,10 @@ These are user-facing or release-facing and should move toward final `printRxer`
 
 These references should remain until an explicit compatibility/migration design is implemented:
 
-- Existing pilot install path `C:\ProgramData\printrxer_v3`.
-- Existing pilot config file `printrxer_v3.settings.json`.
+- Existing pilot install path used the legacy underscored v3 ProgramData root.
+- Existing pilot config file used the legacy underscored v3 settings filename.
 - Existing scheduled task name `PrintRxerV3`.
-- Existing process name `printrxer_v3` when checking/removing old installs.
+- Existing process name used the legacy underscored v3 spelling when checking/removing old installs.
 - Existing uninstall scripts and state checks that must remove or detect old pilot installations.
 - Existing namespaces and project folder names, unless renamed in a coordinated code-level pass.
 - Handoff package contract fields and package directory shape.
@@ -164,12 +152,12 @@ The first naming pass uses a clean final reset for new installs:
 - New config path: `C:\ProgramData\printRxer\config\printRxer.settings.json`.
 - New log path: `C:\ProgramData\printRxer\logs\printRxer.log`.
 
-The old `PrintRxerV3` / `printrxer_v3` names remain only where broad source-level renaming or old-pilot compatibility has not yet been intentionally changed:
+The old `PrintRxerV3` / legacy underscored v3 names remain only where broad source-level renaming or old-pilot compatibility has not yet been intentionally changed:
 
 - Source folder and namespace names under `apps/PrintRxerV3`.
 - Installer project folder and namespace names under `installers/PrintRxerV3Installer`.
 - Compatibility removal/detection of the old scheduled task `PrintRxerV3`.
-- Compatibility process cleanup for old `printrxer_v3`.
+- Compatibility process cleanup for old pilot process names.
 - Historical planning notes and this migration note.
 
 Recommended next step: add a suite-level GUI launcher/installer so the release ZIP can become one GUI-first entry point instead of two component ZIPs.

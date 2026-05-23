@@ -386,7 +386,7 @@ public sealed class CapturedPrintJobProcessor
         string message = outcome + Environment.NewLine +
             "CapturedAt: " + DateTimeOffset.UtcNow.ToString("O") + Environment.NewLine +
             "Error: " + exception.GetType().Name + ": " + exception.Message + Environment.NewLine;
-        File.WriteAllText(Path.Combine(captureDirectory, "printrxer_v3_failure.txt"), message);
+        File.WriteAllText(Path.Combine(captureDirectory, "printRxer_failure.txt"), message);
     }
 
     private static void WriteFailureSummary(string captureDirectory, string outcome, string reason)
@@ -394,7 +394,7 @@ public sealed class CapturedPrintJobProcessor
         string message = outcome + Environment.NewLine +
             "CapturedAt: " + DateTimeOffset.UtcNow.ToString("O") + Environment.NewLine +
             "Reason: " + reason + Environment.NewLine;
-        File.WriteAllText(Path.Combine(captureDirectory, "printrxer_v3_failure.txt"), message);
+        File.WriteAllText(Path.Combine(captureDirectory, "printRxer_failure.txt"), message);
     }
 
     private string GetDeferredRoot()

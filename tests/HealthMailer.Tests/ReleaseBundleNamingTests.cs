@@ -95,6 +95,35 @@ public sealed class ReleaseBundleNamingTests
     }
 
     [Fact]
+    public void Source_and_docs_do_not_use_legacy_underscored_printRxer_name()
+    {
+        string repoRoot = FindRepoRoot();
+        string[] includedRoots =
+        {
+            "apps",
+            "docs",
+            "installers",
+            "native",
+            "tests",
+            "tools"
+        };
+
+        IEnumerable<string> files = includedRoots
+            .Select(root => Path.Combine(repoRoot, root))
+            .Where(Directory.Exists)
+            .SelectMany(root => Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+            .Where(path => !path.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            .Where(path => !path.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
+
+        string legacyName = "printrxer" + "_v3";
+        foreach (string file in files)
+        {
+            string text = File.ReadAllText(file);
+            Assert.DoesNotContain(legacyName, text, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void Suite_deployment_text_separates_healthmailer_user_context_from_printrxer_admin_context()
     {
         string repoRoot = FindRepoRoot();

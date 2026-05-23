@@ -39,7 +39,7 @@
 - Create: `installers/PrintRxerV3Installer/InstallForm.cs`
 - Create: `installers/PrintRxerV3Installer/InstallOptions.cs`
 
-- [ ] Build a simple form with default local handoff `C:\ProgramData\printrxer_v3\handoff`.
+- [ ] Build a simple form with default local handoff `C:\ProgramData\printRxer\handoff`.
 - [ ] Add buttons: `Continue with default` and `Choose folder...`.
 - [ ] Allow UNC folder text to be typed or pasted if folder browser is awkward.
 - [ ] Show a final confirmation before install starts.
@@ -52,9 +52,9 @@
 - Create: `installers/PrintRxerV3Installer/ProcessRunner.cs`
 
 - [ ] Copy `payload\publish\PrintRxerV3` to `C:\Program Files\PrintRxerV3`.
-- [ ] Create `C:\ProgramData\printrxer_v3` config/data/work/log folders.
+- [ ] Create `C:\ProgramData\printRxer` config/data/work/log folders.
 - [ ] Seed recipients and image only if missing.
-- [ ] Write `C:\ProgramData\printrxer_v3\config\printrxer_v3.settings.json` with selected handoff root.
+- [ ] Write `C:\ProgramData\printRxer\config\printRxer.settings.json` with selected handoff root.
 - [ ] Register the per-user `PrintRxerV3` scheduled task.
 - [ ] Install the native capture printer by running the existing internal scripts from payload/tools or by inlining their logic.
 - [ ] Run hidden; show success/failure on the form.

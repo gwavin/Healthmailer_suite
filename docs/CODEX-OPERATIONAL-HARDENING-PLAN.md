@@ -25,11 +25,11 @@ HealthMailer runs where the approved Outlook/Healthmail profile is available. It
 
 These commands are not implemented yet unless noted above:
 
-- `printrxer_v3.exe --support-bundle --output <zip>`
+- `printRxer.exe --support-bundle --output <zip>`
 - `HealthMailer.exe --support-bundle --output <zip>`
-- `printrxer_v3.exe --list-pending`
-- `printrxer_v3.exe --retry-pending`
-- `printrxer_v3.exe --clean-published --older-than-days <days> --plan-only`
+- `printRxer.exe --list-pending`
+- `printRxer.exe --retry-pending`
+- `printRxer.exe --clean-published --older-than-days <days> --plan-only`
 - `HealthMailer.exe --list-ready`
 - `HealthMailer.exe --list-failed`
 - `HealthMailer.exe --list-quarantine`
