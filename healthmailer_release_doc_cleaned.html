@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HealthMailer / printRxer Suite Release Notes</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: #1f2933;
+      background: #f7f9fb;
+      line-height: 1.55;
+    }
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 36px 22px 56px;
+      background: #ffffff;
+    }
+    h1, h2 {
+      color: #102a43;
+      line-height: 1.2;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 2rem;
+    }
+    h2 {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid #d9e2ec;
+      font-size: 1.25rem;
+    }
+    code, pre {
+      font-family: Consolas, "Courier New", monospace;
+    }
+    pre {
+      overflow-x: auto;
+      padding: 14px 16px;
+      background: #f0f4f8;
+      border: 1px solid #d9e2ec;
+      border-radius: 6px;
+    }
+    .note {
+      padding: 12px 14px;
+      border-left: 4px solid #486581;
+      background: #f0f4f8;
+    }
+    .warning {
+      padding: 12px 14px;
+      border-left: 4px solid #b7791f;
+      background: #fffbea;
+    }
+    ul {
+      padding-left: 1.4rem;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>HealthMailer / printRxer Suite Release Notes</h1>
+
+  <p>
+    This document is intended for enterprise deployment teams, third-party installers,
+    and governance reviewers preparing a controlled HealthMailer / printRxer Suite deployment.
+  </p>
+
+  <h2>Release Bundle</h2>
+  <p>
+    Obtain the approved release bundle supplied for this release. For normal installation,
+    extract the bundle and run the suite installer from the extracted folder.
+  </p>
+  <pre><code>.\PrintRxerSuiteInstaller.exe</code></pre>
+  <p>
+    Target machines do not need the .NET SDK, Windows Driver Kit, Visual Studio,
+    or C++ build tools.
+  </p>
+
+  <h2>Deployment Roles</h2>
+  <ul>
+    <li><strong>printRxer printing machine:</strong> the workstation where users print prescriptions to the local <code>printRxer</code> printer queue.</li>
+    <li><strong>HealthMailer sending machine:</strong> the machine signed into the approved Outlook/Healthmail sender mailbox.</li>
+    <li><strong>Same-machine pilot:</strong> a pilot configuration where both roles use the same local handoff folder.</li>
+  </ul>
+
+  <div class="warning">
+    <strong>HealthMailer user context:</strong>
+    HealthMailer must be installed and run under the intended Outlook/Healthmail sender Windows user.
+    Do not deploy it only as a generic system-context installation unless that exact arrangement has
+    been validated, because Outlook COM automation depends on the signed-in user profile.
+  </div>
+
+  <div class="warning">
+    <strong>printRxer administrator approval:</strong>
+    printRxer installation may require administrator approval because printer capture includes
+    the port monitor, XPS driver, and local <code>printRxer</code> printer queue.
+  </div>
+
+  <h2>Quiet Installation Examples</h2>
+  <p>Run commands from the extracted release bundle folder.</p>
+
+  <p><strong>printRxer printing machine:</strong></p>
+  <pre><code>.\printRxerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming"</code></pre>
+
+  <p><strong>HealthMailer sending machine:</strong></p>
+  <pre><code>.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail false</code></pre>
+
+  <p class="note">
+    First test runs should use <code>SendMail=false</code> unless Outlook sending has already been
+    approved for the test mailbox. Enable live sending only after the sending mailbox, user profile,
+    and governance checks are approved.
+  </p>
+
+  <p><strong>Same-machine pilot:</strong></p>
+  <pre><code>.\printRxerSetup.exe --quiet --handoff-root "C:\ProgramData\printRxer\handoff"
+.\HealthMailerSetup.exe --quiet --handoff-root "C:\ProgramData\printRxer\handoff" --send-mail false</code></pre>
+
+  <h2>Validation</h2>
+  <p>Use this enterprise validation sequence after extracting the bundle and after installation.</p>
+  <pre><code>.\PrintRxerSuiteInstaller.exe --smoke-test
+.\printRxerSetup.exe --validate
+.\HealthMailerSetup.exe --validate</code></pre>
+
+  <p>Optional HealthMailer operational validation:</p>
+  <pre><code>HealthMailer.exe --validate --config C:\ProgramData\HealthMailer\healthmailer.settings.json
+HealthMailer.exe --process-once --config C:\ProgramData\HealthMailer\healthmailer.settings.json</code></pre>
+
+  <h2>Uninstall</h2>
+  <p>Standard uninstall preserves local data, logs, and archives by default.</p>
+  <pre><code>.\printRxerSetup.exe --uninstall --quiet
+.\HealthMailerSetup.exe --uninstall --quiet</code></pre>
+
+  <p>Clean lab reset removes local data and should be used only when explicitly approved.</p>
+  <pre><code>.\printRxerSetup.exe --uninstall --quiet --remove-data
+.\HealthMailerSetup.exe --uninstall --quiet --remove-data</code></pre>
+
+  <h2>Logs</h2>
+  <p>Installer logs are written to:</p>
+  <pre><code>C:\ProgramData\printRxer\logs\printRxerInstaller.log
+C:\ProgramData\HealthMailer\logs\HealthMailerInstaller.log</code></pre>
+  <p>
+    Runtime logs should also be reviewed under the relevant ProgramData application log folders.
+  </p>
+
+  <h2>Operational Safety Controls</h2>
+  <ul>
+    <li><code>READY</code> prevents half-written package processing.</li>
+    <li>SHA256 validation prevents mismatched PDF and metadata sends.</li>
+    <li>The duplicate ledger prevents repeat sends.</li>
+    <li>Failed and quarantined packages are retained for review.</li>
+    <li>Mail send happens before optional chart/ViewPoint copy.</li>
+    <li>printRxer creates packages only; HealthMailer owns delivery through local Outlook.</li>
+  </ul>
+
+  <h2>Summary</h2>
+  <p>
+    printRxer captures print jobs, prepares validated handoff packages, and writes those packages
+    to the configured handoff folder. HealthMailer validates ready packages, sends through local
+    Outlook/Healthmail, and archives the result for review.
+  </p>
+</main>
+</body>
+</html>
