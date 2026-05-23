@@ -29,7 +29,8 @@ internal static class Program
         bool validate = HasFlag(args, "--validate");
         bool help = HasFlag(args, "--help") || HasFlag(args, "/?");
         bool nonInteractive = quiet || validate || smokeTest || help;
-        Action<string> log = message => WriteInstallLog(message, nonInteractive);
+        bool useTempLog = uninstall && removeData;
+        Action<string> log = message => WriteInstallLog(message, nonInteractive, useTempLog);
 
         try
         {
@@ -280,13 +281,16 @@ Exit codes:
         return null;
     }
 
-    private static void WriteInstallLog(string message, bool echo)
+    private static void WriteInstallLog(string message, bool echo, bool useTempLog = false)
     {
         try
         {
-            Directory.CreateDirectory(Path.Combine(InstallerPaths.ProgramDataRoot, "logs"));
+            string logRoot = useTempLog
+                ? Path.Combine(Path.GetTempPath(), "printRxer")
+                : Path.Combine(InstallerPaths.ProgramDataRoot, "logs");
+            Directory.CreateDirectory(logRoot);
             string line = "[" + DateTimeOffset.Now.ToString("O") + "] " + message;
-            File.AppendAllText(Path.Combine(InstallerPaths.ProgramDataRoot, "logs", "printRxerInstaller.log"), line + Environment.NewLine);
+            File.AppendAllText(Path.Combine(logRoot, "printRxerInstaller.log"), line + Environment.NewLine);
             if (echo)
             {
                 Console.WriteLine(message);

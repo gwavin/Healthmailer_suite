@@ -96,6 +96,8 @@ public sealed class ReleaseBundleNamingTests
         }
 
         Assert.Contains("PrinterCaptureFailed = 6", printRxer, StringComparison.Ordinal);
+        Assert.Contains("bool useTempLog = uninstall && removeData", printRxer, StringComparison.Ordinal);
+        Assert.Contains("Path.GetTempPath()", printRxer, StringComparison.Ordinal);
         Assert.Contains("HealthMailerPrerequisiteFailed = 5", healthMailer, StringComparison.Ordinal);
         Assert.Contains("--send-mail", healthMailer, StringComparison.Ordinal);
     }
