@@ -70,6 +70,18 @@ internal static class Program
                     PrintRxerUninstaller.Uninstall(removeData, log);
                 }
 
+                if (PrintRxerUninstaller.IsInstalled())
+                {
+                    log("printRxer uninstall needs review. Windows still reports one or more installed printRxer components.");
+                    return GeneralFailure;
+                }
+
+                if (removeData && PrintRxerUninstaller.HasLocalData())
+                {
+                    log("printRxer uninstall needs review. ProgramData was not fully removed.");
+                    return GeneralFailure;
+                }
+
                 log("printRxer uninstall completed.");
                 return Success;
             }

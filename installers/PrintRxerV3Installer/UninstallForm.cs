@@ -1,5 +1,8 @@
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.Versioning;
+using System.Security.Principal;
 using System.Windows.Forms;
 
 namespace PrintRxerV3Installer;
@@ -110,12 +113,39 @@ internal sealed class UninstallForm : Form
             return;
         }
 
+        if (PrintRxerUninstaller.IsInstalled() && !IsAdministrator())
+        {
+            AppendStatus("printRxer printer capture is installed and requires administrator approval to remove.");
+            if (TryRelaunchElevated())
+            {
+                Close();
+            }
+
+            return;
+        }
+
         SetBusy(true);
         _statusText.Clear();
 
         try
         {
             PrintRxerUninstaller.Uninstall(_removeData.Checked, AppendStatus);
+            if (PrintRxerUninstaller.IsInstalled())
+            {
+                string reviewMessage = "printRxer uninstall needs review. Windows still reports one or more installed printRxer components. Restart Windows and run uninstall again as an administrator.";
+                AppendStatus(reviewMessage);
+                MessageBox.Show(this, reviewMessage, "printRxer uninstall needs review", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (_removeData.Checked && PrintRxerUninstaller.HasLocalData())
+            {
+                string reviewMessage = "printRxer application components were removed, but local ProgramData could not be fully removed. It may be in use and can be removed after restart.";
+                AppendStatus(reviewMessage);
+                MessageBox.Show(this, reviewMessage, "printRxer uninstall needs review", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             AppendStatus("Uninstall completed successfully.");
             MessageBox.Show(this, "printRxer uninstall completed. Click OK to close setup.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
             Close();
@@ -132,11 +162,65 @@ internal sealed class UninstallForm : Form
         }
     }
 
+    private bool TryRelaunchElevated()
+    {
+        DialogResult approval = MessageBox.Show(
+            this,
+            "Removing printRxer printer capture requires administrator approval. Windows will ask for permission, then reopen the printRxer uninstaller.",
+            Text,
+            MessageBoxButtons.OKCancel,
+            MessageBoxIcon.Information);
+
+        if (approval != DialogResult.OK)
+        {
+            AppendStatus("Administrator relaunch was cancelled before UAC.");
+            return false;
+        }
+
+        try
+        {
+            string exePath = Environment.ProcessPath ?? Application.ExecutablePath;
+            string arguments = _removeData.Checked ? "--uninstall --remove-data" : "--uninstall";
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = exePath,
+                Arguments = arguments,
+                UseShellExecute = true,
+                Verb = "runas"
+            });
+            AppendStatus("Elevated printRxer uninstaller was started.");
+            return true;
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            AppendStatus("Administrator approval was cancelled.");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            AppendStatus("Could not start elevated uninstaller: " + ex.Message);
+            MessageBox.Show(this, "Could not start the elevated printRxer uninstaller:\n\n" + ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return false;
+        }
+    }
+
+    private static bool IsAdministrator()
+    {
+        using WindowsIdentity identity = WindowsIdentity.GetCurrent();
+        WindowsPrincipal principal = new(identity);
+        return principal.IsInRole(WindowsBuiltInRole.Administrator);
+    }
+
     private void ShowInitialState()
     {
         if (PrintRxerUninstaller.IsInstalled())
         {
             AppendStatus("Ready to uninstall printRxer. Local ProgramData evidence is preserved by default.");
+            if (!IsAdministrator())
+            {
+                AppendStatus("Administrator approval will be required to remove printer-capture components.");
+            }
+
             return;
         }
 
