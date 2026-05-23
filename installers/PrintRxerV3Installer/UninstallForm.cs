@@ -64,6 +64,7 @@ internal sealed class UninstallForm : Form
         _statusText.Size = new Size(700, 190);
 
         Controls.AddRange([title, description, _removeData, _uninstallButton, _closeButton, _statusText]);
+        Shown += (_, _) => ShowInitialState();
     }
 
     private void UninstallClicked(object? sender, EventArgs e)
@@ -71,12 +72,32 @@ internal sealed class UninstallForm : Form
         if (!PrintRxerUninstaller.IsInstalled())
         {
             _statusText.Clear();
-            if (!_removeData.Checked || !PrintRxerUninstaller.HasLocalData())
+            bool hasLocalData = PrintRxerUninstaller.HasLocalData();
+            AppendStatus("printRxer is not currently installed on this machine.");
+
+            if (!_removeData.Checked)
             {
-                AppendStatus("printRxer is not installed on this machine.");
+                if (hasLocalData)
+                {
+                    AppendStatus("Preserved local ProgramData exists at C:\\ProgramData\\printRxer.");
+                    AppendStatus("Standard uninstall leaves local data, logs, and archives in place.");
+                }
+                else
+                {
+                    AppendStatus("Nothing needs to be removed.");
+                }
+
+                MessageBox.Show(this, "printRxer is not installed on this machine. Nothing needs to be removed by standard uninstall.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            if (!hasLocalData)
+            {
                 MessageBox.Show(this, "printRxer is not installed on this machine. Nothing needs to be removed.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
+
+            AppendStatus("Lab reset is selected, so preserved local ProgramData can still be removed after confirmation.");
         }
 
         string message = _removeData.Checked
@@ -108,6 +129,26 @@ internal sealed class UninstallForm : Form
         finally
         {
             SetBusy(false);
+        }
+    }
+
+    private void ShowInitialState()
+    {
+        if (PrintRxerUninstaller.IsInstalled())
+        {
+            AppendStatus("Ready to uninstall printRxer. Local ProgramData evidence is preserved by default.");
+            return;
+        }
+
+        AppendStatus("printRxer is not currently installed on this machine.");
+        if (PrintRxerUninstaller.HasLocalData())
+        {
+            AppendStatus("Preserved local ProgramData exists at C:\\ProgramData\\printRxer.");
+            AppendStatus("Use the lab reset option only if removal of local data, logs, and archives has been approved.");
+        }
+        else
+        {
+            AppendStatus("Nothing needs to be removed.");
         }
     }
 
