@@ -54,6 +54,23 @@ function Copy-RequiredDirectory {
     }
 }
 
+function Assert-SelfContainedExecutable {
+    param(
+        [string]$Path,
+        [string]$Name
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        throw "$Name executable was not found: $Path"
+    }
+
+    $file = Get-Item -LiteralPath $Path
+    $minimumSelfContainedBytes = 50MB
+    if ($file.Length -lt $minimumSelfContainedBytes) {
+        throw "$Name appears to be framework-dependent because it is only $($file.Length) bytes. Release EXEs must be self-contained and must not require a separate .NET Desktop Runtime install."
+    }
+}
+
 function Write-Manifest {
     param([string]$Root)
 
@@ -205,6 +222,12 @@ try {
         if ($LASTEXITCODE -ne 0) {
             throw "printRxer suite installer publish failed with exit code $LASTEXITCODE"
         }
+
+        Assert-SelfContainedExecutable (Join-Path $printRxerPublish 'printRxer.exe') 'printRxer runtime'
+        Assert-SelfContainedExecutable (Join-Path $healthMailerPublish 'HealthMailer.exe') 'HealthMailer runtime'
+        Assert-SelfContainedExecutable (Join-Path $installerPublish 'printRxerInstaller.exe') 'printRxer installer'
+        Assert-SelfContainedExecutable (Join-Path $healthMailerInstallerPublish 'HealthMailerInstaller.exe') 'HealthMailer installer'
+        Assert-SelfContainedExecutable (Join-Path $suiteInstallerPublish 'PrintRxerSuiteInstaller.exe') 'printRxer suite installer'
     }
 
     $suiteRoot = Join-Path $stagingRoot ("printRxerSuite-" + $safeVersion)
@@ -277,6 +300,7 @@ Enterprise deployment examples:
   HealthMailerSetup.exe --uninstall --quiet
 
 IT owns deployment tooling. Target machines do not need the SDK, WDK, Visual Studio, or C++ build tools.
+The supplied EXEs are self-contained for Windows x64. Target machines should not need a separate .NET Desktop Runtime installation.
 
 Safety notes:
   printRxer creates validated handoff packages and does not send mail.

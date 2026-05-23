@@ -18,6 +18,9 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("printRxerSetup.exe", script, StringComparison.Ordinal);
         Assert.Contains("HealthMailerSetup.exe", script, StringComparison.Ordinal);
         Assert.Contains("New-PrintRxerSupportBundle.ps1", script, StringComparison.Ordinal);
+        Assert.Contains("Assert-SelfContainedExecutable", script, StringComparison.Ordinal);
+        Assert.Contains("must not require a separate .NET Desktop Runtime install", script, StringComparison.Ordinal);
+        Assert.Contains("Target machines should not need a separate .NET Desktop Runtime installation", script, StringComparison.Ordinal);
         Assert.Contains("printRxerSetup.exe", script, StringComparison.Ordinal);
         Assert.Contains("payload\\publish\\printRxer", script, StringComparison.Ordinal);
         Assert.DoesNotContain("PrintRxerV3Setup.exe", script, StringComparison.Ordinal);
