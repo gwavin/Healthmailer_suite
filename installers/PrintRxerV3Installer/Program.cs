@@ -51,13 +51,21 @@ internal static class Program
 
             if (uninstall && (quiet || removeData))
             {
+                bool installed = PrintRxerUninstaller.IsInstalled();
+                bool hasLocalData = PrintRxerUninstaller.HasLocalData();
+                if (!installed && !(removeData && hasLocalData))
+                {
+                    log("printRxer is not installed. Nothing to uninstall.");
+                    return Success;
+                }
+
                 if (!IsAdministrator())
                 {
                     log("printRxer uninstall requires administrator rights.");
                     return InsufficientPermissions;
                 }
 
-                if (PrintRxerUninstaller.IsInstalled() || (removeData && PrintRxerUninstaller.HasLocalData()))
+                if (installed || (removeData && hasLocalData))
                 {
                     PrintRxerUninstaller.Uninstall(removeData, log);
                 }

@@ -45,19 +45,34 @@ function Get-TaskState([string]$Name) {
 
 $warnings = New-Object System.Collections.Generic.List[string]
 $critical = New-Object System.Collections.Generic.List[string]
+$notices = New-Object System.Collections.Generic.List[string]
 
 $printConfig = $null
 $healthConfig = $null
+$printTaskState = Get-TaskState 'printRxer'
+$healthTaskState = Get-TaskState 'HealthMailer'
 if (Test-Path -LiteralPath $PrintRxerConfig) {
     $printConfig = Get-Content -LiteralPath $PrintRxerConfig | ConvertFrom-Json
 } else {
-    $critical.Add("printRxer config not found: $PrintRxerConfig")
+    if ($printTaskState -eq 'NotInstalled') {
+        $notices.Add("printRxer is not installed; config not found: $PrintRxerConfig")
+    } else {
+        $critical.Add("printRxer config not found: $PrintRxerConfig")
+    }
 }
 
 if (Test-Path -LiteralPath $HealthMailerConfig) {
     $healthConfig = Get-Content -LiteralPath $HealthMailerConfig | ConvertFrom-Json
 } else {
-    $critical.Add("HealthMailer config not found: $HealthMailerConfig")
+    if ($healthTaskState -eq 'NotInstalled') {
+        $notices.Add("HealthMailer is not installed; config not found: $HealthMailerConfig")
+    } else {
+        $critical.Add("HealthMailer config not found: $HealthMailerConfig")
+    }
+}
+
+if ($printTaskState -eq 'NotInstalled' -and $healthTaskState -eq 'NotInstalled') {
+    $notices.Add("No printRxer or HealthMailer scheduled tasks are installed. Preserved local data may remain after standard uninstall.")
 }
 
 $printPendingCount = 0
@@ -95,17 +110,18 @@ if ($healthConfig) {
 }
 
 $result = [ordered]@{
-    Status = if ($critical.Count -gt 0) { 'Critical' } elseif ($warnings.Count -gt 0) { 'Warning' } else { 'Healthy' }
+    Status = if ($critical.Count -gt 0) { 'Critical' } elseif ($warnings.Count -gt 0) { 'Warning' } elseif ($printTaskState -eq 'NotInstalled' -and $healthTaskState -eq 'NotInstalled') { 'NotInstalled' } else { 'Healthy' }
     PrintRxerConfig = $PrintRxerConfig
     HealthMailerConfig = $HealthMailerConfig
-    PrintRxerTask = Get-TaskState 'printRxer'
-    HealthMailerTask = Get-TaskState 'HealthMailer'
+    PrintRxerTask = $printTaskState
+    HealthMailerTask = $healthTaskState
     PrintRxerPendingCount = $printPendingCount
     PrintRxerOldestPendingAgeMinutes = $printPendingAge
     HealthMailerReadyCount = $healthReadyCount
     HealthMailerOldestReadyAgeMinutes = $healthReadyAge
     HealthMailerFailedCount = $failedCount
     HealthMailerQuarantineCount = $quarantineCount
+    Notices = @($notices)
     Warnings = @($warnings)
     Critical = @($critical)
     PlanOnly = [bool]$PlanOnly
@@ -118,6 +134,7 @@ if ($Json) {
     Write-Host "printRxer task: $($result.PrintRxerTask)"
     Write-Host "HealthMailer task: $($result.HealthMailerTask)"
     Write-Host "Pending/READY/failed/quarantine: $printPendingCount/$healthReadyCount/$failedCount/$quarantineCount"
+    foreach ($item in $notices) { Write-Host "NOTICE: $item" }
     foreach ($item in $warnings) { Write-Warning $item }
     foreach ($item in $critical) { Write-Error $item -ErrorAction Continue }
 }

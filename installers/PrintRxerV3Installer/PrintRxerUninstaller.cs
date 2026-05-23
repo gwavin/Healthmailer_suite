@@ -5,7 +5,6 @@ internal static class PrintRxerUninstaller
     public static bool IsInstalled()
     {
         return Directory.Exists(InstallerPaths.ProgramFilesRoot) ||
-            File.Exists(InstallerPaths.ConfigPath) ||
             TaskExists() ||
             PrinterStackExists();
     }
