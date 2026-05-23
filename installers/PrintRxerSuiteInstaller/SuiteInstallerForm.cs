@@ -130,9 +130,15 @@ internal sealed class SuiteInstallerForm : Form
             return;
         }
 
-        string message = setupKind == SetupKind.HealthMailer
-            ? "HealthMailer setup will run as the current Windows user. Use the Outlook/Healthmail sender account so the scheduled task and Outlook COM automation use the correct profile."
-            : "printRxer setup includes printer capture. Windows will ask for administrator approval while it installs the app files, port monitor, driver, and local printer queue. After install, run validation to confirm the scheduled task principal.";
+        bool isUninstall = arguments.Contains("--uninstall", StringComparison.OrdinalIgnoreCase);
+        bool elevate = setupKind == SetupKind.PrintRxer && !isUninstall;
+
+        string message = setupKind switch
+        {
+            SetupKind.HealthMailer => "HealthMailer setup will run as the current Windows user. Use the Outlook/Healthmail sender account so the scheduled task and Outlook COM automation use the correct profile.",
+            SetupKind.PrintRxer when isUninstall => "printRxer uninstall will check whether printRxer is installed. Standard uninstall preserves local data, logs, and archives by default.",
+            _ => "printRxer setup includes printer capture. Windows will ask for administrator approval while it installs the app files, port monitor, driver, and local printer queue. After install, run validation to confirm the scheduled task principal."
+        };
 
         DialogResult confirm = MessageBox.Show(this, message, Text, MessageBoxButtons.OKCancel, MessageBoxIcon.Information);
 
@@ -144,7 +150,7 @@ internal sealed class SuiteInstallerForm : Form
         RunUserAction(() =>
         {
             AppendStatus("Starting " + Path.GetFileName(setupPath) + ".");
-            ProcessRunner.Start(setupPath, arguments, elevate: setupKind == SetupKind.PrintRxer);
+            ProcessRunner.Start(setupPath, arguments, elevate: elevate);
             AppendStatus(Path.GetFileName(setupPath) + " was started. Complete that setup window to continue.");
         });
     }

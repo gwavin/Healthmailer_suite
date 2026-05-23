@@ -52,7 +52,10 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("excludes PDF payloads by default", form, StringComparison.Ordinal);
         Assert.Contains("HealthMailer setup will run as the current Windows user", form, StringComparison.Ordinal);
         Assert.Contains("printRxer setup includes printer capture", form, StringComparison.Ordinal);
-        Assert.Contains("ProcessRunner.Start(setupPath, arguments, elevate: setupKind == SetupKind.PrintRxer)", form, StringComparison.Ordinal);
+        Assert.Contains("bool isUninstall = arguments.Contains(\"--uninstall\"", form, StringComparison.Ordinal);
+        Assert.Contains("bool elevate = setupKind == SetupKind.PrintRxer && !isUninstall", form, StringComparison.Ordinal);
+        Assert.Contains("printRxer uninstall will check whether printRxer is installed", form, StringComparison.Ordinal);
+        Assert.Contains("ProcessRunner.Start(setupPath, arguments, elevate: elevate)", form, StringComparison.Ordinal);
         Assert.DoesNotContain("ProcessRunner.StartElevated(setupPath, arguments)", form, StringComparison.Ordinal);
         Assert.Contains("MinimumSize = new Size(560, 360)", form, StringComparison.Ordinal);
         Assert.Contains("TableLayoutPanel panel", form, StringComparison.Ordinal);
