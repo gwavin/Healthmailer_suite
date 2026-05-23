@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HealthMailer / printRxer Suite Release Notes</title>
+  <title>HealthMailer / printRxer Suite Release and Deployment Notes</title>
   <style>
     body {
       margin: 0;
@@ -59,7 +59,7 @@
 </head>
 <body>
 <main>
-  <h1>HealthMailer / printRxer Suite Release Notes</h1>
+  <h1>HealthMailer / printRxer Suite Release and Deployment Notes</h1>
 
   <p>
     This document is intended for enterprise deployment teams, third-party installers,
@@ -84,6 +84,12 @@
     <li><strong>Same-machine pilot:</strong> a pilot configuration where both roles use the same local handoff folder.</li>
   </ul>
 
+  <p>
+    The same handoff folder must be configured for both components. For two-machine deployments,
+    use a UNC path rather than a mapped drive. Access should be restricted to the required
+    printing, sending, and support identities.
+  </p>
+
   <div class="warning">
     <strong>HealthMailer user context:</strong>
     HealthMailer must be installed and run under the intended Outlook/Healthmail sender Windows user.
@@ -104,7 +110,11 @@
   <pre><code>.\printRxerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming"</code></pre>
 
   <p><strong>HealthMailer sending machine:</strong></p>
-  <pre><code>.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail false</code></pre>
+  <pre><code># First validation / dry-run deployment
+.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail false
+
+# Live sending deployment, after approval
+.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true</code></pre>
 
   <p class="note">
     First test runs should use <code>SendMail=false</code> unless Outlook sending has already been
@@ -151,6 +161,15 @@ C:\ProgramData\HealthMailer\logs\HealthMailerInstaller.log</code></pre>
     <li>Failed and quarantined packages are retained for review.</li>
     <li>Mail send happens before optional chart/ViewPoint copy.</li>
     <li>printRxer creates packages only; HealthMailer owns delivery through local Outlook.</li>
+  </ul>
+
+  <h2>Evidence to Retain</h2>
+  <ul>
+    <li>Release bundle filename and version.</li>
+    <li>Suite smoke-test result.</li>
+    <li>Component validation results.</li>
+    <li>Installer logs.</li>
+    <li>Any test package result.json and summary.txt files.</li>
   </ul>
 
   <h2>Summary</h2>
