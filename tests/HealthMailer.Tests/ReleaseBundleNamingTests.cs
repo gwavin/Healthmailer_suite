@@ -60,6 +60,8 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("printRxer uninstall will check whether printRxer is installed", form, StringComparison.Ordinal);
         Assert.Contains("ProcessRunner.Start(setupPath, arguments, elevate: elevate)", form, StringComparison.Ordinal);
         Assert.DoesNotContain("ProcessRunner.StartElevated(setupPath, arguments)", form, StringComparison.Ordinal);
+        Assert.Contains("No printRxer or HealthMailer log folder exists yet", form, StringComparison.Ordinal);
+        Assert.DoesNotContain("Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)", form, StringComparison.Ordinal);
         Assert.Contains("MinimumSize = new Size(560, 360)", form, StringComparison.Ordinal);
         Assert.Contains("TableLayoutPanel panel", form, StringComparison.Ordinal);
     }

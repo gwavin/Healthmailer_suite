@@ -201,11 +201,19 @@ internal sealed class SuiteInstallerForm : Form
 
     private void OpenLogsFolder()
     {
-        string target = Directory.Exists(SuitePaths.PrintRxerLogsRoot)
+        string? target = Directory.Exists(SuitePaths.PrintRxerLogsRoot)
             ? SuitePaths.PrintRxerLogsRoot
             : Directory.Exists(SuitePaths.HealthMailerLogsRoot)
                 ? SuitePaths.HealthMailerLogsRoot
-                : Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                : null;
+
+        if (target is null)
+        {
+            string message = "No printRxer or HealthMailer log folder exists yet. Install or validate a component first; logs will appear under C:\\ProgramData\\printRxer\\logs or C:\\ProgramData\\HealthMailer\\logs.";
+            AppendStatus(message);
+            MessageBox.Show(this, message, Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
 
         Process.Start(new ProcessStartInfo
         {
