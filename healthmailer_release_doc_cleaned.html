@@ -155,6 +155,11 @@ rename &lt;handoff folder&gt;\recipients\recipients.csv.tmp recipients.csv</code
   <pre><code>.\PrintRxerSuiteInstaller.exe --smoke-test
 .\printRxerSetup.exe --validate
 .\HealthMailerSetup.exe --validate</code></pre>
+  <p>
+    The suite smoke test writes <code>PrintRxerSuiteInstaller.smoke-test.log</code> to the
+    extracted bundle folder where possible. The log records OK/MISS lines, PASS/FAIL, and the
+    smoke-test exit code.
+  </p>
 
   <p>Optional HealthMailer operational validation:</p>
   <pre><code>HealthMailer.exe --validate --config C:\ProgramData\HealthMailer\healthmailer.settings.json

@@ -82,7 +82,7 @@ Normal user-facing install path:
 
 Do not ask normal users to run PowerShell scripts directly. Scripts in `payload\tools` are support internals used by the GUI or by instructed support sessions. Printer capture repair is an Advanced / repair action, not a separate normal install role.
 
-Support can run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted ZIP to verify the bundle layout without installing any component. Automation that needs the exit code should run it with `Start-Process -Wait -PassThru`.
+Support can run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted ZIP to verify the bundle layout without installing any component. It writes `PrintRxerSuiteInstaller.smoke-test.log` to the extracted bundle folder where possible. Automation that needs the exit code should run it with `Start-Process -Wait -PassThru`.
 
 Component ZIPs may still be published for targeted support, but the suite ZIP is the preferred release path.
 

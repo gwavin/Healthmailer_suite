@@ -48,6 +48,8 @@ powershell -ExecutionPolicy Bypass -File .\tools\New-PrintRxerSuiteReleaseBundle
 
 The generated ZIPs are written under `dist\`. For normal installation, use `printRxerSuite-<version>.zip`, extract it, and run `PrintRxerSuiteInstaller.exe`.
 
+Support can run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted bundle folder to validate the bundle layout without installing anything. It writes `PrintRxerSuiteInstaller.smoke-test.log` beside the suite installer where possible.
+
 ## Short Enterprise Examples
 
 Run commands from the extracted suite ZIP root when IT deployment tooling requires quiet mode.
