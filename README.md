@@ -1,152 +1,88 @@
-﻿# printRxer suite
+# HealthMailer / printRxer Suite
 
-This repository contains the two workstation-side components for the printRxer workflow.
-
-```text
-printRxer machine
-  print to local printRxer printer -> picker -> validated handoff package
-
-HealthMailer machine
-  handoff watcher -> Outlook COM send -> optional chart-folder copy
-```
-
-The applications are intentionally built and deployed as separate EXEs. `printRxer` can be installed by itself on the machine where prescriptions are printed and does not require Outlook. `HealthMailer` can be installed by itself on the machine/account that is signed in to Outlook/Healthmail and does not require printRxer.
-
-## Licensing Status
-
-This project is currently maintained as a development/prototype repository.
-No public open-source licence has yet been applied.
-Do not redistribute or reuse without explicit permission from the repository owner.
-
-## Projects
-
-- `apps/PrintRxerV3`: currently retained source path for printRxer printing capture and package creation. It does not send mail.
-- `apps/HealthMailer`: consumes ready handoff packages, validates them, sends via local Outlook COM, and archives them.
-- `native` and `assets/print-capture`: the Windows print-capture layer that creates the local `printRxer` printer queue and writes captured jobs into the printRxer incoming folder.
-- `installers/PrintRxerSuiteInstaller`: the GUI-first release launcher for normal installs, validation, support bundles, and uninstall/repair entry points.
-- `assets/recipients` and `assets/branding`: bundled fallback picker data and branding copied into ProgramData during printRxer install.
-- `tests/HealthMailer.Tests`: HealthMailer contract and processing tests.
-- `apps/PrintRxerV3/tests`: printRxer tests.
-
-## Start By Role
-
-Pilot owner or governance reviewer:
-
-- [docs/QUICKSTART.md](docs/QUICKSTART.md)
-- [DEPLOYMENT.md](DEPLOYMENT.md)
-- [SECURITY.md](SECURITY.md)
-- [docs/HANDOFF-CONTRACT.md](docs/HANDOFF-CONTRACT.md)
-- [docs/HANDOFF-FOLDER-SETUP.md](docs/HANDOFF-FOLDER-SETUP.md)
-
-Desktop engineering or installer reviewer:
-
-- [DEPLOYMENT.md](DEPLOYMENT.md)
-- [UNINSTALL.md](UNINSTALL.md)
-- [apps/PrintRxerV3/INSTALL.md](apps/PrintRxerV3/INSTALL.md)
-- [apps/PrintRxerV3/UNINSTALL.md](apps/PrintRxerV3/UNINSTALL.md)
-- [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
-- [docs/RELEASE-CHECKLIST.md](docs/RELEASE-CHECKLIST.md)
-
-Support analyst:
-
-- [docs/OPERATIONS-RUNBOOK.md](docs/OPERATIONS-RUNBOOK.md)
-- [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
-- [docs/RECIPIENTS.md](docs/RECIPIENTS.md)
-- [UNINSTALL.md](UNINSTALL.md)
-
-Security reviewer:
-
-- [SECURITY.md](SECURITY.md)
-- [docs/HANDOFF-FOLDER-SETUP.md](docs/HANDOFF-FOLDER-SETUP.md)
-- [docs/HANDOFF-CONTRACT.md](docs/HANDOFF-CONTRACT.md)
-
-Developer:
-
-- [PrintRxerSuite.slnx](PrintRxerSuite.slnx)
-- [apps/HealthMailer/README.md](apps/HealthMailer/README.md)
-- [apps/PrintRxerV3/README.md](apps/PrintRxerV3/README.md)
-- [apps/PrintRxerV3/CONFIGURATION.md](apps/PrintRxerV3/CONFIGURATION.md)
-
-## Shared Contract
-
-The two executables communicate through a local or shared folder containing package directories with:
+This project contains the two workstation-side components for the printRxer workflow.
 
 ```text
-request.json
-prescription.pdf
-request.sha256
-summary.txt
-READY
+printRxer printing machine
+  print to local printRxer printer -> recipient picker -> validated handoff package
+
+HealthMailer sending machine
+  handoff watcher -> package validation -> local Outlook/Healthmail send -> archive evidence
 ```
 
-HealthMailer processes only non-staging package directories that contain `READY`, and it validates the PDF signature and SHA256 before sending. Each terminal package receives `result.json` plus `summary.txt`; optional HTML summaries are self-contained. HealthMailer also keeps `processed-ledger.jsonl` to prevent duplicate sends by package ID or completed package hash.
+`printRxer` creates validated handoff packages and does not send mail. `HealthMailer` watches the configured handoff folder, validates complete packages, sends through local Outlook/Healthmail, and archives the result.
 
-## Build And Test
+## Preferred Deployment Note
 
-The suite targets `net8.0-windows`, which is the preferred deployable runtime for hospital IT environments. Project files allow major-version roll-forward so local development can still run on newer installed Windows Desktop runtimes.
+Use [healthmailer_release_doc_cleaned.html](healthmailer_release_doc_cleaned.html) as the preferred external-facing release and deployment note for third-party installers, IT deployment teams, and governance reviewers.
+
+The remaining Markdown files are internal/support/engineering references. They are useful for development, troubleshooting, and operations, but should not be presented as equally authoritative external deployment instructions.
+
+## Components
+
+- `apps/PrintRxerV3`: printRxer source path retained for compatibility; final user-facing product name is `printRxer`.
+- `apps/HealthMailer`: handoff watcher, validation, Outlook/Healthmail send, and evidence archival.
+- `native` and `assets/print-capture`: local Windows printer-capture layer.
+- `installers/PrintRxerSuiteInstaller`: GUI-first suite launcher for install, validation, support bundle, logs, and advanced repair/uninstall.
+- `assets/recipients`: bundled recipient fallback data.
+- `tests`: HealthMailer and printRxer contract/regression tests.
+
+## Release Model
+
+Generated release EXEs are self-contained Windows x64 executables. Target install machines should not need:
+
+- .NET SDK
+- WDK
+- Visual Studio
+- C++ build tools
+- separate .NET Desktop Runtime installation
+
+A development/build machine still needs the .NET SDK.
+
+Create a release bundle from the project root:
 
 ```powershell
 dotnet test .\PrintRxerSuite.slnx
-```
-
-Publish HealthMailer:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Publish-HealthMailer.ps1
-```
-
-Publish printRxer:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\Publish-printRxer.ps1
-```
-
-Create a prebuilt install bundle for IT:
-
-```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\New-PrintRxerSuiteReleaseBundle.ps1
 ```
 
-The generated ZIPs are written under `dist\`:
+The generated ZIPs are written under `dist\`. For normal installation, use `printRxerSuite-<version>.zip`, extract it, and run `PrintRxerSuiteInstaller.exe`.
 
-- `printRxerSuite-<version>.zip`: GUI-first release bundle. Extract it and run `PrintRxerSuiteInstaller.exe`.
-- `printRxer-<version>.zip`: minimum files to install/uninstall the printRxer printing-machine side.
-- `HealthMailer-<version>.zip`: minimum files to install/uninstall the Outlook sending side.
+## Short Enterprise Examples
 
-Generated app EXEs stay out of git; use GitHub Releases for distribution. Normal installs should use the suite ZIP and GUI launcher. Component ZIPs and PowerShell scripts remain support/internal paths unless support explicitly instructs otherwise.
+Run commands from the extracted suite ZIP root when IT deployment tooling requires quiet mode.
 
-## Release Bundles
+```powershell
+.\printRxerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming"
+.\printRxerSetup.exe --validate
 
-For install-only handoff to IT, publish a GitHub Release rather than asking the target machine to rebuild from source. Pushing a tag such as `v0.1.0` runs `.github/workflows/release-bundle.yml`, builds/tests/publishes the suite, creates the suite ZIP plus the two role-specific ZIPs, and attaches them to the release.
+.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true
+.\HealthMailerSetup.exe --validate
+```
 
-The release bundle is intended for machines without Visual Studio, the .NET SDK, or WDK. Rebuilding native printer components still requires the appropriate build tools on a development machine.
+Standard uninstall preserves local data/logs/archives by default:
 
-## Install Both Apps
+```powershell
+.\printRxerSetup.exe --uninstall --quiet
+.\HealthMailerSetup.exe --uninstall --quiet
+```
 
-HealthMailer and printRxer may be installed on the same machine or on different machines. Both installers/configs ask for the same handoff folder, which may be local or UNC. Use UNC paths directly for two-machine deployments; do not rely on mapped drives.
+Clean lab reset is explicit:
 
-Normal install path:
+```powershell
+.\printRxerSetup.exe --uninstall --quiet --remove-data
+.\HealthMailerSetup.exe --uninstall --quiet --remove-data
+```
 
-1. Download `printRxerSuite-<version>.zip` from the GitHub Release.
-2. Extract the ZIP.
-3. Run `PrintRxerSuiteInstaller.exe`.
-4. Use the GUI to choose `Install printRxer printing machine`, `Install HealthMailer sending machine`, or `Same-machine pilot: install both`, then validate the installation.
+## Safety Notes
 
-Support can run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted ZIP to verify the release bundle layout without installing anything. Automation that needs the exit code should run it with `Start-Process -Wait -PassThru`.
+- `READY` prevents half-written package processing.
+- SHA256 validation prevents mismatched PDF/metadata sends.
+- The duplicate ledger prevents repeat sends.
+- `result.json` and `summary.txt` provide terminal evidence for sent, failed, and quarantined packages.
+- printRxer installation/removal may require administrator/UAC approval because printer capture includes a port monitor, XPS driver, and local `printRxer` printer queue.
+- HealthMailer must be installed and run as the intended Outlook/Healthmail sender Windows user; Outlook COM automation depends on that signed-in user profile.
 
-The printRxer printing-machine install requires Administrator/UAC approval because printRxer includes a native Windows port monitor, a local XPS driver, and the `printRxer` printer queue. Printer repair actions are available under Advanced / repair.
+## Licensing Status
 
-The HealthMailer sending-machine install should be run as the intended Outlook/Healthmail sender user so the scheduled task and Outlook COM automation use the correct Windows profile. It does not install printer capture.
-
-printRxer is used by printing to a local printer queue named `printRxer`. It captures the print job, prepares the handoff package, and sends that package to the configured handoff folder for HealthMailer. If the share is down, packages remain local and are retried at the configured interval.
-
-The preferred printRxer recipient list is derived from the handoff folder as `<HandoffRoot>\recipients\recipients.csv`. printRxer reads that central file in the background, keeps `C:\ProgramData\printRxer\data\recipients\recipients.cache.csv` as a last-known-good copy, and falls back to `bundled-recipients.csv` if needed. Runtime users should not need write access to the central recipients folder.
-
-## Uninstall Both Apps
-
-Use `PrintRxerSuiteInstaller.exe`, then choose `Advanced / repair`. Standard uninstall preserves local data/logs/archives by default.
-
-## Deployment Shape
-
-Deploy `printRxer` where the user prints and selects the recipient. Deploy `HealthMailer` where the Outlook profile is available and authorised to send Healthmail. The handoff folder can be local or shared, but if shared it must be locked down by server-side ACLs to the minimum necessary writer, watcher, and support identities.
-
+This project is currently maintained as a development/prototype repository. No public open-source licence has yet been applied. Do not redistribute or reuse without explicit permission from the repository owner.

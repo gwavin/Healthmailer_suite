@@ -33,7 +33,7 @@ The supplied scheduled-task installers create per-user interactive tasks. Health
 
 ## Prerequisites
 
-- Windows workstation or server capable of running `.NET 8` Windows Desktop apps.
+- Windows x64 workstation or server capable of running Windows Desktop applications. The supplied release EXEs are self-contained and should not require a separate .NET Desktop Runtime installation.
 - Outlook installed and signed in on the HealthMailer machine when `SendMail=true`.
 - Local or UNC handoff folder agreed with IT.
 - Folder ACLs configured before live PHI testing.
