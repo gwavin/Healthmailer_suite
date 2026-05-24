@@ -90,6 +90,30 @@
     printing, sending, and support identities.
   </p>
 
+  <h2>Recipient List Updates</h2>
+  <p>
+    printRxer reads the preferred recipient list from the configured handoff folder. The active
+    runtime file must be placed here:
+  </p>
+  <pre><code>&lt;handoff folder&gt;\recipients\recipients.csv</code></pre>
+  <p>
+    A third-party master file may be supplied using the current naming convention, for example:
+  </p>
+  <pre><code>C:\Users\gavin\Documents\Testing\22052026\HM-Recipients-22-05-2026_Master.csv</code></pre>
+  <p>
+    To update recipients while the software is running, copy the supplied master CSV into the
+    handoff recipient folder as a temporary file, then rename it to <code>recipients.csv</code>.
+    This avoids clients reading a half-written file.
+  </p>
+  <pre><code>copy HM-Recipients-22-05-2026_Master.csv &lt;handoff folder&gt;\recipients\recipients.csv.tmp
+rename &lt;handoff folder&gt;\recipients\recipients.csv.tmp recipients.csv</code></pre>
+  <p class="note">
+    printRxer refreshes the central recipient list in the background and keeps a local last-known-good
+    cache. The normal printRxer user should only need read access to the handoff recipient folder.
+    The recipients CSV is an address book/configuration file only and must not contain patient names,
+    MRNs, prescription details, or other patient-identifiable information.
+  </p>
+
   <div class="warning">
     <strong>HealthMailer user context:</strong>
     HealthMailer must be installed and run under the intended Outlook/Healthmail sender Windows user.
