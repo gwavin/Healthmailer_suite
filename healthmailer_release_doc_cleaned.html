@@ -105,8 +105,15 @@
     handoff recipient folder as a temporary file, then rename it to <code>recipients.csv</code>.
     This avoids clients reading a half-written file.
   </p>
-  <pre><code>copy HM-Recipients-22-05-2026_Master.csv &lt;handoff folder&gt;\recipients\recipients.csv.tmp
-rename &lt;handoff folder&gt;\recipients\recipients.csv.tmp recipients.csv</code></pre>
+  <pre><code>$handoffRoot = "\\server\HealthMailerDrop$\incoming"
+$source = "C:\Users\gavin\Documents\Testing\22052026\HM-Recipients-22-05-2026_Master.csv"
+$recipientFolder = Join-Path $handoffRoot "recipients"
+$temporaryFile = Join-Path $recipientFolder "recipients.csv.tmp"
+$activeFile = Join-Path $recipientFolder "recipients.csv"
+
+New-Item -ItemType Directory -Force -Path $recipientFolder
+Copy-Item -LiteralPath $source -Destination $temporaryFile -Force
+Move-Item -LiteralPath $temporaryFile -Destination $activeFile -Force</code></pre>
   <p class="note">
     printRxer refreshes the central recipient list in the background and keeps a local last-known-good
     cache. The normal printRxer user should only need read access to the handoff recipient folder.
@@ -128,17 +135,39 @@ rename &lt;handoff folder&gt;\recipients\recipients.csv.tmp recipients.csv</code
   </div>
 
   <h2>Quiet / Enterprise Installation Commands</h2>
-  <p>Run commands from the extracted release bundle folder.</p>
+  <p>
+    Run commands from the extracted release bundle folder. When using PowerShell, use
+    <code>Start-Process -Wait -PassThru</code> so GUI executables complete and return an exit code.
+  </p>
 
   <p><strong>printRxer printing machine:</strong></p>
-  <pre><code>.\printRxerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming"</code></pre>
+  <pre><code>$p = Start-Process -FilePath .\printRxerSetup.exe -ArgumentList @(
+  "--quiet",
+  "--handoff-root",
+  "\\server\HealthMailerDrop$\incoming"
+) -Wait -PassThru
+$p.ExitCode</code></pre>
 
   <p><strong>HealthMailer sending machine:</strong></p>
   <pre><code># First validation / dry-run deployment
-.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail false
+$p = Start-Process -FilePath .\HealthMailerSetup.exe -ArgumentList @(
+  "--quiet",
+  "--handoff-root",
+  "\\server\HealthMailerDrop$\incoming",
+  "--send-mail",
+  "false"
+) -Wait -PassThru
+$p.ExitCode
 
 # Live sending deployment, after approval
-.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true</code></pre>
+$p = Start-Process -FilePath .\HealthMailerSetup.exe -ArgumentList @(
+  "--quiet",
+  "--handoff-root",
+  "\\server\HealthMailerDrop$\incoming",
+  "--send-mail",
+  "true"
+) -Wait -PassThru
+$p.ExitCode</code></pre>
 
   <p class="note">
     First test runs should use <code>SendMail=false</code> unless Outlook sending has already been
@@ -147,14 +176,34 @@ rename &lt;handoff folder&gt;\recipients\recipients.csv.tmp recipients.csv</code
   </p>
 
   <p><strong>Same-machine pilot:</strong></p>
-  <pre><code>.\printRxerSetup.exe --quiet --handoff-root "C:\ProgramData\printRxer\handoff"
-.\HealthMailerSetup.exe --quiet --handoff-root "C:\ProgramData\printRxer\handoff" --send-mail false</code></pre>
+  <pre><code>$handoffRoot = "C:\ProgramData\printRxer\handoff"
+
+$p = Start-Process -FilePath .\printRxerSetup.exe -ArgumentList @(
+  "--quiet",
+  "--handoff-root",
+  $handoffRoot
+) -Wait -PassThru
+$p.ExitCode
+
+$p = Start-Process -FilePath .\HealthMailerSetup.exe -ArgumentList @(
+  "--quiet",
+  "--handoff-root",
+  $handoffRoot,
+  "--send-mail",
+  "false"
+) -Wait -PassThru
+$p.ExitCode</code></pre>
 
   <h2>Validation</h2>
   <p>Use this enterprise validation sequence after extracting the bundle and after installation.</p>
-  <pre><code>.\PrintRxerSuiteInstaller.exe --smoke-test
-.\printRxerSetup.exe --validate
-.\HealthMailerSetup.exe --validate</code></pre>
+  <pre><code>$p = Start-Process -FilePath .\PrintRxerSuiteInstaller.exe -ArgumentList "--smoke-test" -Wait -PassThru
+$p.ExitCode
+
+$p = Start-Process -FilePath .\printRxerSetup.exe -ArgumentList "--validate" -Wait -PassThru
+$p.ExitCode
+
+$p = Start-Process -FilePath .\HealthMailerSetup.exe -ArgumentList "--validate" -Wait -PassThru
+$p.ExitCode</code></pre>
   <p>
     The suite smoke test writes <code>PrintRxerSuiteInstaller.smoke-test.log</code> to the
     extracted bundle folder where possible. The log records OK/MISS lines, PASS/FAIL, and the
@@ -162,17 +211,34 @@ rename &lt;handoff folder&gt;\recipients\recipients.csv.tmp recipients.csv</code
   </p>
 
   <p>Optional HealthMailer operational validation:</p>
-  <pre><code>HealthMailer.exe --validate --config C:\ProgramData\HealthMailer\healthmailer.settings.json
-HealthMailer.exe --process-once --config C:\ProgramData\HealthMailer\healthmailer.settings.json</code></pre>
+  <pre><code>$healthMailer = ".\payload\publish\HealthMailer\HealthMailer.exe"
+$config = "C:\ProgramData\HealthMailer\healthmailer.settings.json"
+
+$p = Start-Process -FilePath $healthMailer -ArgumentList @("--validate", "--config", $config) -Wait -PassThru
+$p.ExitCode
+
+$p = Start-Process -FilePath $healthMailer -ArgumentList @("--process-once", "--config", $config) -Wait -PassThru
+$p.ExitCode</code></pre>
 
   <h2>Uninstall</h2>
   <p>Standard uninstall preserves local data, logs, and archives by default.</p>
-  <pre><code>.\printRxerSetup.exe --uninstall --quiet
-.\HealthMailerSetup.exe --uninstall --quiet</code></pre>
+  <p class="note">
+    If printRxer printer capture is installed, run printRxer uninstall or lab reset from an
+    administrator PowerShell session so Windows can remove printer, driver, port, and ProgramData
+    components. Exit code <code>3</code> means insufficient permissions.
+  </p>
+  <pre><code>$p = Start-Process -FilePath .\printRxerSetup.exe -ArgumentList @("--uninstall", "--quiet") -Wait -PassThru
+$p.ExitCode
+
+$p = Start-Process -FilePath .\HealthMailerSetup.exe -ArgumentList @("--uninstall", "--quiet") -Wait -PassThru
+$p.ExitCode</code></pre>
 
   <p>Clean lab reset removes local data and should be used only when explicitly approved.</p>
-  <pre><code>.\printRxerSetup.exe --uninstall --quiet --remove-data
-.\HealthMailerSetup.exe --uninstall --quiet --remove-data</code></pre>
+  <pre><code>$p = Start-Process -FilePath .\printRxerSetup.exe -ArgumentList @("--uninstall", "--quiet", "--remove-data") -Wait -PassThru
+$p.ExitCode
+
+$p = Start-Process -FilePath .\HealthMailerSetup.exe -ArgumentList @("--uninstall", "--quiet", "--remove-data") -Wait -PassThru
+$p.ExitCode</code></pre>
 
   <h2>Logs</h2>
   <p>Installer logs are written to:</p>
