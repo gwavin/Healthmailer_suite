@@ -116,6 +116,25 @@ public sealed class ReleaseBundleNamingTests
     }
 
     [Fact]
+    public void HealthMailer_uninstaller_separates_active_install_from_preserved_data()
+    {
+        string repoRoot = FindRepoRoot();
+        string uninstaller = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "HealthMailerUninstaller.cs"));
+        string program = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "Program.cs"));
+
+        string isInstalledBody = uninstaller.Substring(
+            uninstaller.IndexOf("public static bool IsInstalled()", StringComparison.Ordinal),
+            uninstaller.IndexOf("public static bool HasLocalData()", StringComparison.Ordinal) - uninstaller.IndexOf("public static bool IsInstalled()", StringComparison.Ordinal));
+
+        Assert.DoesNotContain("ConfigPath", isInstalledBody, StringComparison.Ordinal);
+        Assert.Contains("public static bool HasLocalData()", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("icacls $path /grant:r", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("Remove-Item -LiteralPath $path -Recurse -Force", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("bool useTempLog = uninstall && removeData", program, StringComparison.Ordinal);
+        Assert.Contains("HealthMailer uninstall needs review. ProgramData was not fully removed.", program, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Source_and_docs_do_not_use_legacy_underscored_printRxer_name()
     {
         string repoRoot = FindRepoRoot();

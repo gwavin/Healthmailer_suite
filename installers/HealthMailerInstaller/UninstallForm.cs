@@ -45,6 +45,7 @@ internal sealed class UninstallForm : Form
         _statusText.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top | AnchorStyles.Bottom;
 
         Controls.AddRange([title, description, _removeData, _uninstallButton, _closeButton, _statusText]);
+        Shown += (_, _) => ShowInitialState();
     }
 
     private void UninstallClicked(object? sender, EventArgs e)
@@ -52,9 +53,32 @@ internal sealed class UninstallForm : Form
         if (!HealthMailerUninstaller.IsInstalled())
         {
             _statusText.Clear();
-            AppendStatus("HealthMailer is not installed on this machine.");
-            MessageBox.Show(this, "HealthMailer is not installed on this machine. Nothing needs to be removed.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
+            bool hasLocalData = HealthMailerUninstaller.HasLocalData();
+            AppendStatus("HealthMailer is not currently installed on this machine.");
+
+            if (!_removeData.Checked)
+            {
+                if (hasLocalData)
+                {
+                    AppendStatus("Preserved local ProgramData exists at C:\\ProgramData\\HealthMailer.");
+                    AppendStatus("Standard uninstall leaves local data, logs, and archives in place.");
+                }
+                else
+                {
+                    AppendStatus("Nothing needs to be removed.");
+                }
+
+                MessageBox.Show(this, "HealthMailer is not installed on this machine. Nothing needs to be removed by standard uninstall.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            if (!hasLocalData)
+            {
+                MessageBox.Show(this, "HealthMailer is not installed on this machine. Nothing needs to be removed.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            AppendStatus("Lab reset is selected, so preserved local ProgramData can still be removed after confirmation.");
         }
 
         string message = _removeData.Checked
@@ -74,6 +98,22 @@ internal sealed class UninstallForm : Form
         try
         {
             HealthMailerUninstaller.Uninstall(_removeData.Checked, AppendStatus);
+            if (HealthMailerUninstaller.IsInstalled())
+            {
+                string reviewMessage = "HealthMailer uninstall needs review. Windows still reports one or more installed HealthMailer components. Restart Windows and run uninstall again.";
+                AppendStatus(reviewMessage);
+                MessageBox.Show(this, reviewMessage, "HealthMailer uninstall needs review", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (_removeData.Checked && HealthMailerUninstaller.HasLocalData())
+            {
+                string reviewMessage = "HealthMailer application components were removed, but local ProgramData could not be fully removed. It may be in use and can be removed after restart.";
+                AppendStatus(reviewMessage);
+                MessageBox.Show(this, reviewMessage, "HealthMailer uninstall needs review", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
             AppendStatus("Uninstall completed successfully.");
             MessageBox.Show(this, "HealthMailer uninstall completed. Click OK to close setup.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
             Close();
@@ -89,6 +129,26 @@ internal sealed class UninstallForm : Form
             _uninstallButton.Enabled = true;
             _closeButton.Enabled = true;
             Cursor = Cursors.Default;
+        }
+    }
+
+    private void ShowInitialState()
+    {
+        if (HealthMailerUninstaller.IsInstalled())
+        {
+            AppendStatus("Ready to uninstall HealthMailer. Local ProgramData evidence is preserved by default.");
+            return;
+        }
+
+        AppendStatus("HealthMailer is not currently installed on this machine.");
+        if (HealthMailerUninstaller.HasLocalData())
+        {
+            AppendStatus("Preserved local ProgramData exists at C:\\ProgramData\\HealthMailer.");
+            AppendStatus("Use the lab reset option only if removal of local data, logs, and archives has been approved.");
+        }
+        else
+        {
+            AppendStatus("Nothing needs to be removed.");
         }
     }
 

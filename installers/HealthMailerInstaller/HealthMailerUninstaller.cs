@@ -6,8 +6,12 @@ internal static class HealthMailerUninstaller
     {
         return Directory.Exists(InstallerPaths.ProgramFilesRoot) ||
             Directory.Exists(InstallerPaths.LegacyProgramFilesRoot) ||
-            File.Exists(InstallerPaths.ConfigPath) ||
             TaskExists();
+    }
+
+    public static bool HasLocalData()
+    {
+        return Directory.Exists(InstallerPaths.ProgramDataRoot);
     }
 
     public static void Uninstall(bool removeData, Action<string> log)
@@ -34,6 +38,13 @@ internal static class HealthMailerUninstaller
         if (Directory.Exists(InstallerPaths.LegacyProgramFilesRoot))
         {
             TryStep(() => DeleteDirectoryBestEffort(InstallerPaths.LegacyProgramFilesRoot, log), "Legacy application file cleanup", log);
+        }
+
+        if (removeData && Directory.Exists(InstallerPaths.ProgramDataRoot))
+        {
+            log("Checking for late-created ProgramData folders.");
+            TryStep(() => RemoveWatcher(log), "Late watcher cleanup", log);
+            TryStep(() => DeleteDirectoryBestEffort(InstallerPaths.ProgramDataRoot, log), "Final ProgramData cleanup", log);
         }
     }
 
@@ -109,7 +120,21 @@ Get-Process -Name 'HealthMailer' -ErrorAction SilentlyContinue | Stop-Process -F
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            log("Could not remove " + path + " automatically. It may be in use and can be removed after restart. " + ex.Message);
+            string command = @"
+$path = '" + path.Replace("'", "''", StringComparison.Ordinal) + @"'
+$identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+icacls $path /grant:r ""${identity}:(OI)(CI)F"" /T /C | Out-String
+Get-ChildItem -LiteralPath $path -Force -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+    icacls $_.FullName /grant:r ""${identity}:F"" /C | Out-String
+}
+Remove-Item -LiteralPath $path -Recurse -Force -ErrorAction Stop
+";
+            string output = ProcessRunner.PowerShell(command, requireSuccess: false);
+            LogOutput(output, log);
+            if (Directory.Exists(path))
+            {
+                log("Could not remove " + path + " automatically. It may be in use and can be removed after restart. " + ex.Message);
+            }
         }
     }
 

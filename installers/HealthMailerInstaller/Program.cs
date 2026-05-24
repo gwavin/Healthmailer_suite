@@ -28,7 +28,8 @@ internal static class Program
         bool validate = HasFlag(args, "--validate");
         bool help = HasFlag(args, "--help") || HasFlag(args, "/?");
         bool nonInteractive = quiet || validate || smokeTest || help;
-        Action<string> log = message => WriteInstallLog(message, nonInteractive);
+        bool useTempLog = uninstall && removeData;
+        Action<string> log = message => WriteInstallLog(message, nonInteractive, useTempLog);
 
         try
         {
@@ -50,9 +51,29 @@ internal static class Program
 
             if (uninstall && (quiet || removeData))
             {
-                if (HealthMailerUninstaller.IsInstalled())
+                bool installed = HealthMailerUninstaller.IsInstalled();
+                bool hasLocalData = HealthMailerUninstaller.HasLocalData();
+                if (!installed && !(removeData && hasLocalData))
+                {
+                    log("HealthMailer is not installed. Nothing to uninstall.");
+                    return Success;
+                }
+
+                if (installed || (removeData && hasLocalData))
                 {
                     HealthMailerUninstaller.Uninstall(removeData, log);
+                }
+
+                if (HealthMailerUninstaller.IsInstalled())
+                {
+                    log("HealthMailer uninstall needs review. Windows still reports one or more installed HealthMailer components.");
+                    return GeneralFailure;
+                }
+
+                if (removeData && HealthMailerUninstaller.HasLocalData())
+                {
+                    log("HealthMailer uninstall needs review. ProgramData was not fully removed.");
+                    return GeneralFailure;
                 }
 
                 log("HealthMailer uninstall completed.");
@@ -252,13 +273,16 @@ Exit codes:
         return false;
     }
 
-    private static void WriteInstallLog(string message, bool echo)
+    private static void WriteInstallLog(string message, bool echo, bool useTempLog = false)
     {
         try
         {
-            Directory.CreateDirectory(Path.Combine(InstallerPaths.ProgramDataRoot, "logs"));
+            string logRoot = useTempLog
+                ? Path.Combine(Path.GetTempPath(), "HealthMailer")
+                : Path.Combine(InstallerPaths.ProgramDataRoot, "logs");
+            Directory.CreateDirectory(logRoot);
             string line = "[" + DateTimeOffset.Now.ToString("O") + "] " + message;
-            File.AppendAllText(Path.Combine(InstallerPaths.ProgramDataRoot, "logs", "HealthMailerInstaller.log"), line + Environment.NewLine);
+            File.AppendAllText(Path.Combine(logRoot, "HealthMailerInstaller.log"), line + Environment.NewLine);
             if (echo)
             {
                 Console.WriteLine(message);
