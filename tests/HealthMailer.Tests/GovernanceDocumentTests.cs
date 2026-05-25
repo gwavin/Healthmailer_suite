@@ -23,6 +23,15 @@ public sealed class GovernanceDocumentTests
         Assert.DoesNotContain(@"Documents\Testing", text, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void HealthMailer_gui_installer_makes_live_sending_choice_explicit()
+    {
+        string text = File.ReadAllText(Path.Combine(RepositoryRoot(), "installers", "HealthMailerInstaller", "InstallForm.cs"));
+
+        Assert.Contains("Enable live Outlook sending", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("new InstallOptions(_selectedHandoffRoot, _sendMailCheckBox.Checked)", text, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string RepositoryRoot()
     {
         string current = AppContext.BaseDirectory;

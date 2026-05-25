@@ -23,7 +23,7 @@ public sealed class RecipientSelectionDialog : Form
     private readonly Func<RecipientRefreshResult>? _refreshRecipients;
     private readonly Label _recipientSourceLabel = new();
     private readonly System.Windows.Forms.Timer _autoCloseTimer = new();
-    private readonly DateTimeOffset _autoCloseAtUtc;
+    private DateTimeOffset? _autoCloseStartedAtUtc;
     private RecipientRecord? _explicitlySelectedRecipient;
 
     public PickerSelection? Selection { get; private set; }
@@ -37,7 +37,6 @@ public sealed class RecipientSelectionDialog : Form
     {
         _previewPrescription = previewPrescription;
         _refreshRecipients = refreshRecipients;
-        _autoCloseAtUtc = DateTimeOffset.UtcNow.AddMinutes(3);
         _recipients = recipients.OrderBy(recipient => recipient.RecipientName, StringComparer.OrdinalIgnoreCase).ToList();
         Text = "Choose Recipient";
         Width = 1120;
@@ -205,12 +204,13 @@ public sealed class RecipientSelectionDialog : Form
         cancelButton.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
         _autoCloseTimer.Interval = 1000;
         _autoCloseTimer.Tick += delegate { AutoCloseIfExpired(); };
+        Load += delegate { StartAutoCloseTimer(); };
         Shown += delegate
         {
+            StartAutoCloseTimer();
             PositionOnPrimaryWorkArea();
             BringPickerToFront();
             _searchBox.Focus();
-            _autoCloseTimer.Start();
         };
         FormClosing += delegate { _autoCloseTimer.Stop(); };
         Disposed += delegate { _autoCloseTimer.Dispose(); };
@@ -491,7 +491,8 @@ public sealed class RecipientSelectionDialog : Form
 
     private void AutoCloseIfExpired()
     {
-        if (Selection is not null || DateTimeOffset.UtcNow < _autoCloseAtUtc)
+        DateTimeOffset startedAt = _autoCloseStartedAtUtc ?? DateTimeOffset.UtcNow;
+        if (!RecipientPickerTimeout.ShouldAutoClose(startedAt, DateTimeOffset.UtcNow, Selection is not null))
         {
             return;
         }
@@ -499,6 +500,15 @@ public sealed class RecipientSelectionDialog : Form
         _autoCloseTimer.Stop();
         DialogResult = DialogResult.Cancel;
         Close();
+    }
+
+    private void StartAutoCloseTimer()
+    {
+        _autoCloseStartedAtUtc ??= DateTimeOffset.UtcNow;
+        if (!_autoCloseTimer.Enabled)
+        {
+            _autoCloseTimer.Start();
+        }
     }
 
     private void PreviewPrescription(Button previewButton)
@@ -678,4 +688,14 @@ public sealed class RecipientSelectionDialog : Form
 
     [DllImport("user32.dll")]
     private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+}
+
+public static class RecipientPickerTimeout
+{
+    public static readonly TimeSpan Timeout = TimeSpan.FromMinutes(3);
+
+    public static bool ShouldAutoClose(DateTimeOffset shownAtUtc, DateTimeOffset nowUtc, bool selectionCompleted)
+    {
+        return !selectionCompleted && nowUtc - shownAtUtc >= Timeout;
+    }
 }

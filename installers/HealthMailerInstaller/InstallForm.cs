@@ -38,6 +38,12 @@ internal sealed class InstallForm : Form
     private readonly Button _installButton = new() { Text = "Install" };
     private readonly Button _uninstallButton = new() { Text = "Uninstall..." };
     private readonly Button _closeButton = new() { Text = "Close" };
+    private readonly CheckBox _sendMailCheckBox = new()
+    {
+        Text = "Enable live Outlook sending for approved recipient domains",
+        AutoSize = true,
+        Checked = false
+    };
 
     private string _selectedHandoffRoot = InstallerPaths.DefaultHandoffRoot;
 
@@ -98,6 +104,8 @@ internal sealed class InstallForm : Form
         layout.Controls.Add(customPathRow);
         layout.Controls.Add(Spacer(12));
         layout.Controls.Add(CreateWrappedLabel("HealthMailer must run on the Windows account with the approved classic Outlook/Healthmail profile.", 40));
+        layout.Controls.Add(_sendMailCheckBox);
+        layout.Controls.Add(CreateWrappedLabel("Leave this unchecked for dry-run validation. Check it only when this installer is being run by the approved Outlook/Healthmail sender user and live sending is approved.", 50));
         layout.Controls.Add(CreateButtonRow(_nextButton, _closeButton, _uninstallButton));
 
         _nextButton.Click -= NextClicked;
@@ -121,7 +129,10 @@ internal sealed class InstallForm : Form
 
         layout.Controls.Add(CreateWrappedLabel("HealthMailer will watch:", 30));
         layout.Controls.Add(_reviewText);
-        layout.Controls.Add(CreateWrappedLabel("After installation, HealthMailer will run as this Windows user and send through the approved local classic Outlook profile.", 48));
+        string mode = _sendMailCheckBox.Checked
+            ? "Live Outlook sending will be enabled for approved recipient domains."
+            : "Dry-run/no-send mode will be enabled; packages will validate but no email will be sent.";
+        layout.Controls.Add(CreateWrappedLabel("After installation, HealthMailer will run as this Windows user. " + mode, 60));
         _statusPanel.Controls.Clear();
         layout.Controls.Add(_statusPanel);
         layout.Controls.Add(CreateButtonRow(_installButton, _closeButton, _backButton));
@@ -250,7 +261,7 @@ internal sealed class InstallForm : Form
     {
         DialogResult confirm = MessageBox.Show(
             this,
-            "Install HealthMailer watching this handoff folder?\n\n" + _selectedHandoffRoot,
+                "Install HealthMailer watching this handoff folder?\n\n" + _selectedHandoffRoot + "\n\nLive Outlook sending: " + (_sendMailCheckBox.Checked ? "enabled" : "disabled"),
             Text,
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Question);
@@ -265,7 +276,7 @@ internal sealed class InstallForm : Form
 
         try
         {
-            HealthMailerInstallerEngine.Install(new InstallOptions(_selectedHandoffRoot), AppendStatus);
+            HealthMailerInstallerEngine.Install(new InstallOptions(_selectedHandoffRoot, _sendMailCheckBox.Checked), AppendStatus);
             AppendStatus("Install completed successfully.");
             MessageBox.Show(this, "HealthMailer was installed successfully. Click OK to close setup.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
             Close();
