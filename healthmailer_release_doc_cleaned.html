@@ -101,9 +101,9 @@
   </p>
   <pre><code>C:\Users\gavin\Documents\Testing\22052026\HM-Recipients-22-05-2026_Master.csv</code></pre>
   <p>
-    To update recipients while the software is running, copy the supplied master CSV into the
-    handoff recipient folder as a temporary file, then rename it to <code>recipients.csv</code>.
-    This avoids clients reading a half-written file.
+    To update recipients, copy the supplied master CSV into the handoff recipient folder as a
+    temporary file, then rename it to <code>recipients.csv</code>. This avoids clients reading a
+    half-written file.
   </p>
   <pre><code>$handoffRoot = "\\server\HealthMailerDrop$\incoming"
 $source = "C:\Users\gavin\Documents\Testing\22052026\HM-Recipients-22-05-2026_Master.csv"
@@ -115,10 +115,12 @@ New-Item -ItemType Directory -Force -Path $recipientFolder
 Copy-Item -LiteralPath $source -Destination $temporaryFile -Force
 Move-Item -LiteralPath $temporaryFile -Destination $activeFile -Force</code></pre>
   <p class="note">
-    printRxer refreshes the central recipient list in the background and keeps a local last-known-good
-    cache. The normal printRxer user should only need read access to the handoff recipient folder.
-    The recipients CSV is an address book/configuration file only and must not contain patient names,
-    MRNs, prescription details, or other patient-identifiable information.
+    printRxer refreshes the central recipient list on startup, periodically while the application is
+    running, and when the user or support clicks <strong>Refresh recipients</strong> in the picker.
+    Updates are not intended to be immediate on every workstation, especially if a machine has been
+    asleep or printRxer has not restarted. The normal printRxer user should only need read access to
+    the handoff recipient folder. The recipients CSV is an address book/configuration file only and
+    must not contain patient names, MRNs, prescription details, or other patient-identifiable information.
   </p>
 
   <div class="warning">
