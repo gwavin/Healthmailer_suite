@@ -65,6 +65,7 @@ public sealed class HandoffWatcherTests
             LocalRoot = Path.Combine(root, "local"),
             PollIntervalSeconds = 1,
             SendMail = true,
+            ConfigCreatedByInstaller = true,
             LiveSendingApproved = true
         };
 

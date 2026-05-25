@@ -119,7 +119,11 @@ Windows user: {Environment.UserName}
         try
         {
             recipients = GetProperty(mailItem, "Recipients");
-            InvokeMethod(recipients, "ResolveAll");
+            object resolved = InvokeMethod(recipients, "ResolveAll");
+            if (resolved is not bool ok || !ok)
+            {
+                throw new InvalidOperationException("Outlook could not resolve all recipients.");
+            }
         }
         finally
         {

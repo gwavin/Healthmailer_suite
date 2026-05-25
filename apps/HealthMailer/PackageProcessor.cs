@@ -112,9 +112,9 @@ public sealed class PackageProcessor
                 return true;
             }
 
-            if (!_config.LiveSendingApproved)
+            if (!_config.ConfigCreatedByInstaller || !_config.LiveSendingApproved)
             {
-                ProcessingResult notApproved = CreateResult(package, PackageOutcome.ValidationFailed, "Live sending is not approved by explicit configuration. Run HealthMailerSetup.exe or the quiet installer to approve live sending.", mailSent: false, chartCopied: false);
+                ProcessingResult notApproved = CreateResult(package, PackageOutcome.ValidationFailed, "Live sending is not approved by installer-created configuration.", mailSent: false, chartCopied: false);
                 WriteAndArchive(packageDirectory, notApproved, _config.QuarantineRoot, claim);
                 _log($"Live sending not approved for package {package.PackageId}");
                 return true;

@@ -11,7 +11,7 @@ public sealed class GovernanceDocumentTests
 
         Assert.Contains("patient-identifiable information", text, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("HSE-controlled", text, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("approved support/governance channels", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("approved HSE support/governance channels", text, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -30,6 +30,45 @@ public sealed class GovernanceDocumentTests
 
         Assert.Contains("Enable live Outlook sending", text, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("new InstallOptions(_selectedHandoffRoot, _sendMailCheckBox.Checked)", text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void HealthMailer_quiet_installer_requires_explicit_send_mail_argument()
+    {
+        string text = File.ReadAllText(Path.Combine(RepositoryRoot(), "installers", "HealthMailerInstaller", "Program.cs"));
+
+        Assert.Contains("Missing required argument: --send-mail true|false", text, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("value = true;" + Environment.NewLine + "            error = null;" + Environment.NewLine + "            return true;", text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Support_bundle_script_copies_actual_healthmailer_config_and_hse_transfer_warning()
+    {
+        string text = File.ReadAllText(Path.Combine(RepositoryRoot(), "tools", "New-PrintRxerSupportBundle.ps1"));
+
+        Assert.Contains(@"C:\ProgramData\HealthMailer\healthmailer.settings.json", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(@"HealthMailer\healthmailer.settings.json", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Do not email or transfer this bundle except through approved HSE support/governance channels.", text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Release_bundle_script_writes_metadata_and_latest_artifact_manifest()
+    {
+        string text = File.ReadAllText(Path.Combine(RepositoryRoot(), "tools", "New-PrintRxerSuiteReleaseBundle.ps1"));
+
+        Assert.Contains("BUILD-METADATA.txt", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("LATEST_RELEASE_ARTIFACTS.txt", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("CleanOutputRoot", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Get-FileHash", text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Outlook_resolve_all_false_fails_before_send()
+    {
+        string text = File.ReadAllText(Path.Combine(RepositoryRoot(), "apps", "HealthMailer", "MailHandoff.cs"));
+
+        Assert.Contains("Outlook could not resolve all recipients.", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ResolveAll", text, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string RepositoryRoot()

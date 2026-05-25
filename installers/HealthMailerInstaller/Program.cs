@@ -95,6 +95,12 @@ internal static class Program
                     return MissingRequiredArgument;
                 }
 
+                if (GetOption(args, "--send-mail") is null)
+                {
+                    log("Missing required argument: --send-mail true|false");
+                    return MissingRequiredArgument;
+                }
+
                 if (!TryGetBoolOption(args, "--send-mail", out bool sendMail, out string? error))
                 {
                     log(error ?? "Invalid --send-mail value.");
@@ -221,7 +227,7 @@ if ($task) {
 HealthMailerSetup.exe
 
 Usage:
-  HealthMailerSetup.exe --quiet --handoff-root <path> [--send-mail true|false]
+  HealthMailerSetup.exe --quiet --handoff-root <path> --send-mail true|false
   HealthMailerSetup.exe --uninstall --quiet [--remove-data]
   HealthMailerSetup.exe --validate
   HealthMailerSetup.exe --help
@@ -258,9 +264,9 @@ Exit codes:
         string? text = GetOption(args, name);
         if (string.IsNullOrWhiteSpace(text))
         {
-            value = true;
-            error = null;
-            return true;
+            value = false;
+            error = name + " must be true or false.";
+            return false;
         }
 
         if (bool.TryParse(text, out value))

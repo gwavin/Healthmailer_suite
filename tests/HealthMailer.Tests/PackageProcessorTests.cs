@@ -69,6 +69,7 @@ public sealed class PackageProcessorTests
             HandoffRoot = handoffRoot,
             LocalRoot = localRoot,
             SendMail = true,
+            ConfigCreatedByInstaller = true,
             LiveSendingApproved = true,
             ChartCopy = new ChartCopyOptions
             {
@@ -295,6 +296,25 @@ public sealed class PackageProcessorTests
         string quarantine = Path.Combine(paths.LocalRoot, "quarantine", "pkg-domain-bad");
         Assert.True(Directory.Exists(quarantine));
         Assert.Contains("RecipientRejected", File.ReadAllText(Path.Combine(quarantine, "result.json")));
+    }
+
+    [Fact]
+    public void ProcessAvailablePackages_rejects_live_send_without_installer_created_marker()
+    {
+        TestPaths paths = CreatePaths();
+        CreatePackage(paths.HandoffRoot, "pkg-not-installer-approved");
+        RecordingMailer mailer = new();
+        HealthMailerConfig config = CreateConfig(paths);
+        config.ConfigCreatedByInstaller = false;
+        config.LiveSendingApproved = true;
+
+        int processed = new PackageProcessor(config, mailer, _ => { }).ProcessAvailablePackages();
+
+        Assert.Equal(1, processed);
+        Assert.Empty(mailer.Sent);
+        string quarantine = Path.Combine(paths.LocalRoot, "quarantine", "pkg-not-installer-approved");
+        Assert.True(Directory.Exists(quarantine));
+        Assert.Contains("installer-created", File.ReadAllText(Path.Combine(quarantine, "result.json")), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

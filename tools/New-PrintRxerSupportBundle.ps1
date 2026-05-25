@@ -65,7 +65,7 @@ This support bundle may contain patient-identifiable information. PDF payload fi
 
 The bundle is HSE-machine/admin-restricted audit-support evidence for troubleshooting, clinical communication evidence, and governance review. Store it only on HSE-controlled machines or approved HSE storage. Limit access to administrators and approved support/audit personnel.
 
-Do not email this bundle or transfer it outside approved support/governance channels, including approved HSE support/governance channels. ProgramData evidence should be preserved by default for audit and support unless an approved retention process says otherwise.
+Do not email or transfer this bundle except through approved HSE support/governance channels. ProgramData evidence should be preserved by default for audit and support unless an approved retention process says otherwise.
 "@
 Set-Content -LiteralPath (Join-Path $bundleRoot 'README.txt') -Value $notes -Encoding UTF8
 
@@ -74,6 +74,7 @@ Copy-IfPresent 'C:\ProgramData\printRxer\logs' (Join-Path $bundleRoot 'printRxer
 Copy-IfPresent 'C:\ProgramData\printRxer\failed' (Join-Path $bundleRoot 'printRxer\failed')
 
 Copy-IfPresent 'C:\ProgramData\HealthMailer\config' (Join-Path $bundleRoot 'HealthMailer\config')
+Copy-IfPresent 'C:\ProgramData\HealthMailer\healthmailer.settings.json' (Join-Path $bundleRoot 'HealthMailer\healthmailer.settings.json')
 Copy-IfPresent 'C:\ProgramData\HealthMailer\logs' (Join-Path $bundleRoot 'HealthMailer\logs')
 Copy-IfPresent 'C:\ProgramData\HealthMailer\failed' (Join-Path $bundleRoot 'HealthMailer\failed')
 Copy-IfPresent 'C:\ProgramData\HealthMailer\quarantine' (Join-Path $bundleRoot 'HealthMailer\quarantine')

@@ -3,7 +3,8 @@ param(
     [string]$OutputRoot = ".\dist",
     [switch]$SkipTests,
     [switch]$SkipPublish,
-    [switch]$SkipSmokeTest
+    [switch]$SkipSmokeTest,
+    [switch]$CleanOutputRoot
 )
 
 $ErrorActionPreference = 'Stop'
@@ -101,6 +102,51 @@ function New-ZipFromFolder {
     Write-Step "Created $ZipPath"
 }
 
+function Get-GitValue {
+    param([string[]]$Arguments)
+
+    $value = & git @Arguments 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        return "unknown"
+    }
+
+    return (($value | Out-String).Trim())
+}
+
+function Write-BuildMetadata {
+    param(
+        [string]$Folder,
+        [string]$Version,
+        [string]$BuildTimeUtc,
+        [string]$GitCommit,
+        [string]$GitRef,
+        [string]$DirtyState
+    )
+
+    Write-Text (Join-Path $Folder 'BUILD-METADATA.txt') @"
+Version: $Version
+BuildTimeUtc: $BuildTimeUtc
+GitCommit: $GitCommit
+GitRef: $GitRef
+DirtyState: $DirtyState
+"@
+}
+
+function Write-LatestArtifacts {
+    param(
+        [string]$OutputRoot,
+        [string[]]$ZipPaths
+    )
+
+    $lines = foreach ($zipPath in $ZipPaths) {
+        $item = Get-Item -LiteralPath $zipPath
+        $hash = Get-FileHash -LiteralPath $zipPath -Algorithm SHA256
+        "$($item.FullName)`t$($item.Length)`t$($item.LastWriteTimeUtc.ToString('O'))`t$($hash.Hash.ToLowerInvariant())"
+    }
+
+    Set-Content -LiteralPath (Join-Path $OutputRoot 'LATEST_RELEASE_ARTIFACTS.txt') -Value $lines -Encoding UTF8
+}
+
 function Write-Text {
     param(
         [string]$Path,
@@ -174,6 +220,21 @@ try {
     $safeVersion = $Version -replace '[^A-Za-z0-9_.-]', '-'
     $outputRootFull = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputRoot)
     New-Item -ItemType Directory -Force -Path $outputRootFull | Out-Null
+
+    if ($CleanOutputRoot) {
+        Write-Step "Cleaning old release ZIPs from output root."
+        Get-ChildItem -LiteralPath $outputRootFull -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -like 'printRxerSuite-*.zip' -or $_.Name -like 'printRxer-*.zip' -or $_.Name -like 'HealthMailer-*.zip' } |
+            Remove-Item -Force
+    }
+
+    $buildTimeUtc = (Get-Date).ToUniversalTime().ToString("O")
+    $gitCommit = Get-GitValue @('rev-parse', 'HEAD')
+    $gitRef = Get-GitValue @('branch', '--show-current')
+    if ([string]::IsNullOrWhiteSpace($gitRef)) {
+        $gitRef = Get-GitValue @('rev-parse', '--abbrev-ref', 'HEAD')
+    }
+    $dirtyState = if ([string]::IsNullOrWhiteSpace((git status --porcelain))) { "clean" } else { "dirty" }
 
     $stagingRoot = Join-Path $outputRootFull ("printRxerSuite-release-" + $safeVersion)
     if (Test-Path -LiteralPath $stagingRoot) {
@@ -324,6 +385,7 @@ Safety notes:
   HealthMailer sends through local Outlook/Healthmail on the sender machine.
   The support bundle excludes PDF payloads by default, but package metadata, result evidence, logs, recipient details, MRNs/patient hints, package IDs, hashes, and audit metadata may still contain PHI. Keep support bundles on HSE-controlled machines or approved HSE storage, restrict them to administrators and approved support/audit personnel, and do not email or transfer them outside approved HSE support/governance channels.
 "@
+    Write-BuildMetadata $suiteRoot $Version $buildTimeUtc $gitCommit $gitRef $dirtyState
 
     Write-Step "Creating printRxer-only bundle."
     Copy-RequiredFile (Join-Path $installerPublish 'printRxerInstaller.exe') (Join-Path $printRxerRoot 'printRxerSetup.exe')
@@ -375,6 +437,7 @@ Notes:
   ProgramData files are preserved by default as audit/support evidence. Use --remove-data only for a clean lab reset.
   Full guidance: healthmailer_release_doc.html
 "@
+    Write-BuildMetadata $printRxerRoot $Version $buildTimeUtc $gitCommit $gitRef $dirtyState
 
     Write-Step "Creating HealthMailer-only bundle."
     Copy-RequiredFile (Join-Path $healthMailerInstallerPublish 'HealthMailerInstaller.exe') (Join-Path $healthMailerRoot 'HealthMailerSetup.exe')
@@ -415,6 +478,7 @@ Notes:
   ProgramData files are preserved by default as audit/support evidence. Use --remove-data only for a clean lab reset.
   Full guidance: healthmailer_release_doc.html
 "@
+    Write-BuildMetadata $healthMailerRoot $Version $buildTimeUtc $gitCommit $gitRef $dirtyState
 
     $printRxerZip = Join-Path $outputRootFull ("printRxer-" + $safeVersion + ".zip")
     $healthMailerZip = Join-Path $outputRootFull ("HealthMailer-" + $safeVersion + ".zip")
@@ -429,10 +493,14 @@ Notes:
         Test-SuiteZipSmoke -ZipPath $suiteZip -StagingRoot $stagingRoot
     }
 
-    Write-Step "Bundles created:"
-    Write-Output $suiteZip
-    Write-Output $printRxerZip
-    Write-Output $healthMailerZip
+    $createdZips = @($suiteZip, $printRxerZip, $healthMailerZip)
+    Write-LatestArtifacts -OutputRoot $outputRootFull -ZipPaths $createdZips
+
+    Write-Step "Bundles created with SHA256:"
+    foreach ($zip in $createdZips) {
+        $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+        Write-Output "$zip  $hash"
+    }
 } finally {
     Pop-Location
 }

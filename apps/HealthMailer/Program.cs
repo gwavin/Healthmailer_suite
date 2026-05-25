@@ -313,9 +313,9 @@ public static class Program
         config.Logging.Normalize();
         if (config.SendMail)
         {
-            if (!config.LiveSendingApproved)
+            if (!config.ConfigCreatedByInstaller || !config.LiveSendingApproved)
             {
-                throw new InvalidOperationException("HealthMailer live sending is not approved. Run HealthMailerSetup.exe or the quiet installer to create an approved live-sending configuration.");
+                throw new InvalidOperationException("HealthMailer live sending is not approved by installer-created configuration. Run HealthMailerSetup.exe or the quiet installer to create an approved live-sending configuration.");
             }
 
             validateOutlook();
