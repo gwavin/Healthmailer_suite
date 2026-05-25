@@ -135,15 +135,15 @@ public sealed class PackageProcessor
             catch (Exception ex)
             {
                 ProcessingResult chartFailed = CreateResult(package, PackageOutcome.ChartCopyFailed, ex.Message, mailSent: true, chartCopied: false);
-                WriteAndArchive(packageDirectory, chartFailed, _config.FailedRoot, claim);
                 _ledger.Append(chartFailed);
+                WriteAndArchive(packageDirectory, chartFailed, _config.FailedRoot, claim);
                 _log($"Chart copy failed after mail for package {package.PackageId}: {ex.Message}");
                 return true;
             }
 
             ProcessingResult sent = CreateResult(package, PackageOutcome.Sent, "Package processed.", mailSent: true, chartCopied: chartCopied, chartCopyPath: chartPath);
-            WriteAndArchive(packageDirectory, sent, _config.SentRoot, claim);
             _ledger.Append(sent);
+            WriteAndArchive(packageDirectory, sent, _config.SentRoot, claim);
             _log($"Processed package {package.PackageId} for {package.RecipientEmail}");
             return true;
         }
@@ -153,12 +153,12 @@ public sealed class PackageProcessor
             ProcessingResult failed = loadResult.Package is null
                 ? CreateResult(name, PackageOutcome.Failed, ex.Message)
                 : CreateResult(loadResult.Package, PackageOutcome.MailFailed, ex.Message, mailSent: false, chartCopied: false);
-            WriteAndArchive(packageDirectory, failed, _config.FailedRoot, claim);
             if (loadResult.Package is not null)
             {
                 _ledger.Append(failed);
             }
 
+            WriteAndArchive(packageDirectory, failed, _config.FailedRoot, claim);
             _log($"Package failed for {name}: {ex.Message}");
             return true;
         }
