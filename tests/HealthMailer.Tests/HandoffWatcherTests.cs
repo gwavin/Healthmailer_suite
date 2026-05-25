@@ -64,7 +64,8 @@ public sealed class HandoffWatcherTests
             HandoffRoot = handoffRoot,
             LocalRoot = Path.Combine(root, "local"),
             PollIntervalSeconds = 1,
-            SendMail = true
+            SendMail = true,
+            LiveSendingApproved = true
         };
 
         PackageProcessor processor = new(config, mailer, message =>
@@ -165,7 +166,7 @@ public sealed class HandoffWatcherTests
         File.WriteAllText(Path.Combine(packageDirectory, "request.json"), JsonSerializer.Serialize(new
         {
             packageId,
-            selectedRecipientEmail = "recipient@example.ie",
+            selectedRecipientEmail = "recipient@healthmail.ie",
             selectedRecipientName = "Recipient",
             subject = "Prescription",
             body = "Please see attached.",

@@ -96,6 +96,30 @@ public sealed class PackageProcessor
                 return true;
             }
 
+            if (!TryValidateRecipientForSendBoundary(package.RecipientEmail, _config.AllowedRecipientDomains, out string recipientError))
+            {
+                ProcessingResult rejected = CreateResult(package, PackageOutcome.RecipientRejected, recipientError, mailSent: false, chartCopied: false);
+                WriteAndArchive(packageDirectory, rejected, _config.QuarantineRoot, claim);
+                _log($"Recipient rejected for package {package.PackageId}: {recipientError}");
+                return true;
+            }
+
+            if (!_config.SendMail)
+            {
+                ProcessingResult noSend = CreateResult(package, PackageOutcome.ValidatedNoSend, "Package validated. SendMail is false; no email was sent.", mailSent: false, chartCopied: false);
+                WriteAndArchive(packageDirectory, noSend, _config.ValidatedNoSendRoot, claim);
+                _log($"Validated package without sending mail: {package.PackageId}");
+                return true;
+            }
+
+            if (!_config.LiveSendingApproved)
+            {
+                ProcessingResult notApproved = CreateResult(package, PackageOutcome.ValidationFailed, "Live sending is not approved by explicit configuration. Run HealthMailerSetup.exe or the quiet installer to approve live sending.", mailSent: false, chartCopied: false);
+                WriteAndArchive(packageDirectory, notApproved, _config.QuarantineRoot, claim);
+                _log($"Live sending not approved for package {package.PackageId}");
+                return true;
+            }
+
             if (_config.SendMail)
             {
                 _mailHandoff.Send(package);
@@ -110,14 +134,14 @@ public sealed class PackageProcessor
             }
             catch (Exception ex)
             {
-                ProcessingResult chartFailed = CreateResult(package, PackageOutcome.ChartCopyFailed, ex.Message, mailSent: _config.SendMail, chartCopied: false);
+                ProcessingResult chartFailed = CreateResult(package, PackageOutcome.ChartCopyFailed, ex.Message, mailSent: true, chartCopied: false);
                 WriteAndArchive(packageDirectory, chartFailed, _config.FailedRoot, claim);
                 _ledger.Append(chartFailed);
                 _log($"Chart copy failed after mail for package {package.PackageId}: {ex.Message}");
                 return true;
             }
 
-            ProcessingResult sent = CreateResult(package, PackageOutcome.Sent, "Package processed.", mailSent: _config.SendMail, chartCopied: chartCopied, chartCopyPath: chartPath);
+            ProcessingResult sent = CreateResult(package, PackageOutcome.Sent, "Package processed.", mailSent: true, chartCopied: chartCopied, chartCopyPath: chartPath);
             WriteAndArchive(packageDirectory, sent, _config.SentRoot, claim);
             _ledger.Append(sent);
             _log($"Processed package {package.PackageId} for {package.RecipientEmail}");
@@ -251,6 +275,42 @@ public sealed class PackageProcessor
 
         CopyDirectory(sourceDirectory, destination);
         Directory.Delete(sourceDirectory, recursive: true);
+    }
+
+    private static bool TryValidateRecipientForSendBoundary(string recipientEmail, IReadOnlyCollection<string> allowedDomains, out string error)
+    {
+        error = string.Empty;
+        if (string.IsNullOrWhiteSpace(recipientEmail))
+        {
+            error = "Recipient email rejected: address is blank.";
+            return false;
+        }
+
+        System.Net.Mail.MailAddress address;
+        try
+        {
+            address = new System.Net.Mail.MailAddress(recipientEmail);
+        }
+        catch (Exception ex) when (ex is FormatException or ArgumentException)
+        {
+            error = "Recipient email rejected: address is malformed.";
+            return false;
+        }
+
+        if (!string.Equals(address.Address, recipientEmail.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            error = "Recipient email rejected: address is malformed.";
+            return false;
+        }
+
+        string domain = address.Host;
+        if (!allowedDomains.Any(allowed => string.Equals(domain, allowed, StringComparison.OrdinalIgnoreCase)))
+        {
+            error = "Recipient email rejected: domain is not in the approved HealthMailer allow-list.";
+            return false;
+        }
+
+        return true;
     }
 
     private static void CopyDirectory(string sourceDirectory, string destinationDirectory)

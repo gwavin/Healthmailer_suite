@@ -253,6 +253,9 @@ public static class Program
         HealthMailerConfig config = new()
         {
             HandoffRoot = handoffDialog.SelectedPath,
+            SendMail = false,
+            ConfigCreatedByInstaller = true,
+            LiveSendingApproved = false,
             ChartCopy = chartOptions
         };
         config.EnsureDirectories();
@@ -310,6 +313,11 @@ public static class Program
         config.Logging.Normalize();
         if (config.SendMail)
         {
+            if (!config.LiveSendingApproved)
+            {
+                throw new InvalidOperationException("HealthMailer live sending is not approved. Run HealthMailerSetup.exe or the quiet installer to create an approved live-sending configuration.");
+            }
+
             validateOutlook();
         }
 

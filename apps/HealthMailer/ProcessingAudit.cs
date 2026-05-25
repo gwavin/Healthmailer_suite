@@ -12,7 +12,9 @@ public enum PackageOutcome
     Duplicate,
     ValidationFailed,
     ChartCopyFailed,
-    MailFailed
+    MailFailed,
+    ValidatedNoSend,
+    RecipientRejected
 }
 
 public sealed record ProcessingResult
@@ -115,7 +117,8 @@ public sealed class ProcessedPackageLedger
             result.CompletedAtUtc,
             result.RecipientEmail,
             result.PdfSha256,
-            result.CompletedPackageHash
+            result.CompletedPackageHash,
+            result.MailSent
         }) + Environment.NewLine;
 
         lock (_sync)
@@ -125,7 +128,7 @@ public sealed class ProcessedPackageLedger
             using StreamWriter writer = new(stream);
             writer.Write(line);
             writer.Flush();
-            AddToCacheIfSent(result.Outcome.ToString(), result.PackageId, result.CompletedPackageHash);
+            AddToCacheIfSent(result.Outcome.ToString(), result.MailSent, result.PackageId, result.CompletedPackageHash);
             UpdateLoadedFileState();
         }
 
@@ -164,8 +167,12 @@ public sealed class ProcessedPackageLedger
                 using JsonDocument document = JsonDocument.Parse(line);
                 JsonElement root = document.RootElement;
                 string outcome = root.TryGetProperty("outcome", out JsonElement status) ? status.ToString() : string.Empty;
+                bool mailSent =
+                    root.TryGetProperty("mailSent", out JsonElement camelMailSent) && camelMailSent.ValueKind == JsonValueKind.True ||
+                    root.TryGetProperty("MailSent", out JsonElement pascalMailSent) && pascalMailSent.ValueKind == JsonValueKind.True;
                 AddToCacheIfSent(
                     outcome,
+                    mailSent,
                     TryRead(root, "packageId", "PackageId"),
                     TryRead(root, "completedPackageHash", "CompletedPackageHash"));
             }
@@ -178,9 +185,9 @@ public sealed class ProcessedPackageLedger
         UpdateLoadedFileState(info);
     }
 
-    private void AddToCacheIfSent(string outcome, string packageId, string completedPackageHash)
+    private void AddToCacheIfSent(string outcome, bool mailSent, string packageId, string completedPackageHash)
     {
-        if (!string.Equals(outcome, PackageOutcome.Sent.ToString(), StringComparison.OrdinalIgnoreCase))
+        if (!mailSent && !string.Equals(outcome, PackageOutcome.Sent.ToString(), StringComparison.OrdinalIgnoreCase))
         {
             return;
         }

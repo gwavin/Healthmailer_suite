@@ -80,6 +80,57 @@ public sealed class RecipientSourceServiceTests
     }
 
     [Fact]
+    public void Loads_stale_cache_with_warning_before_block_threshold()
+    {
+        string root = NewTempRoot();
+        string local = Path.Combine(root, "local");
+        string cache = Path.Combine(local, "recipients.cache.csv");
+        WriteCentralCsv(cache, "cache-1", "Cache Clinic", "cache@example.ie");
+        File.SetLastWriteTimeUtc(cache, DateTime.UtcNow.AddDays(-45));
+
+        RecipientService service = new(new RecipientSourceOptions
+        {
+            HandoffRoot = Path.Combine(root, "missing-handoff"),
+            LocalRecipientRoot = local,
+            MaxCacheAgeDaysWarning = 30,
+            MaxCacheAgeDaysBlock = 365
+        });
+
+        RecipientSnapshot snapshot = service.LoadLocalFirst();
+
+        Assert.Equal(RecipientSourceKind.Cache, snapshot.SourceUsed);
+        Assert.Contains("stale", snapshot.Warning, StringComparison.OrdinalIgnoreCase);
+        RecipientSourceStatus status = ReadStatus(local);
+        Assert.True(status.CacheAgeDays >= 44);
+        Assert.Equal("Warning", status.CacheAgeStatus);
+    }
+
+    [Fact]
+    public void Blocks_cache_older_than_block_threshold_and_uses_bundled_fallback()
+    {
+        string root = NewTempRoot();
+        string local = Path.Combine(root, "local");
+        string cache = Path.Combine(local, "recipients.cache.csv");
+        WriteCentralCsv(cache, "cache-1", "Cache Clinic", "cache@example.ie");
+        WriteBundledCsv(Path.Combine(local, "bundled-recipients.csv"), "bundled-1", "Bundled Clinic", "bundled@example.ie");
+        File.SetLastWriteTimeUtc(cache, DateTime.UtcNow.AddDays(-400));
+
+        RecipientService service = new(new RecipientSourceOptions
+        {
+            HandoffRoot = Path.Combine(root, "missing-handoff"),
+            LocalRecipientRoot = local,
+            MaxCacheAgeDaysWarning = 30,
+            MaxCacheAgeDaysBlock = 365
+        });
+
+        RecipientSnapshot snapshot = service.LoadLocalFirst();
+
+        Assert.Equal(RecipientSourceKind.BundledFallback, snapshot.SourceUsed);
+        Assert.Contains("Bundled Clinic", Assert.Single(snapshot.Recipients).RecipientName);
+        Assert.Contains("cache blocked", snapshot.Warning, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Loads_bundled_fallback_when_central_and_cache_unavailable()
     {
         string root = NewTempRoot();

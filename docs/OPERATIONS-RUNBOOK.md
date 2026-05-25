@@ -116,7 +116,9 @@ Preferred path:
 2. Choose `Create support bundle`.
 3. Review the generated bundle before sending it outside approved support channels.
 
-The support bundle excludes PDF payloads by default and includes available configs, logs, recent failed/quarantine evidence, scheduled task status, printer status, process status, and a SHA256 manifest.
+The support bundle excludes PDF payloads by default and includes available configs, logs, recent failed/quarantine evidence, scheduled task status, printer status, process status, and a SHA256 manifest. PDF exclusion does not mean the bundle is free of PHI: package metadata, `result.json`, `summary.txt`, logs, failed/quarantine evidence, recipient details, MRNs/patient hints, package IDs, hashes, and audit metadata may still be present.
+
+Treat support bundles as HSE-machine/admin-restricted audit-support evidence for troubleshooting, clinical communication evidence, and governance review. Store them only on HSE-controlled machines or approved HSE storage, limit access to administrators and approved support/audit personnel, and do not email or transfer them outside approved HSE support/governance channels. Preserve ProgramData evidence by default for audit and support unless an approved retention process says otherwise.
 
 If collecting manually, gather:
 

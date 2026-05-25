@@ -17,6 +17,8 @@ HealthMailer watcher
         |
 validate READY + PDF signature + SHA256
         |
+recipient domain allow-list + live-send approval
+        |
 Outlook COM send using current user profile
         |
 optional chart/ViewPoint copy
@@ -69,7 +71,12 @@ HealthMailer rejects packages unless all of these are true:
 - `request.json`, `prescription.pdf`, and `request.sha256` exist
 - `prescription.pdf` begins with `%PDF-`
 - the actual PDF SHA256 matches both `request.json` and `request.sha256`
-- a selected recipient email is present
+- a selected recipient email is present, well-formed, and in the HealthMailer allowed domain list
+
+`SendMail=false` is a dry-run/no-send mode. Valid packages are archived under
+`validated-no-send`, `MailSent` remains `false`, and the duplicate-send ledger
+is not poisoned for a later approved live send. Live Outlook sending requires
+`SendMail=true` and `LiveSendingApproved=true` in an explicit configuration.
 
 Every terminal processing attempt writes `result.json` and a human-readable
 `summary.txt` into the package before it is archived. `summary.html` can be
@@ -82,9 +89,9 @@ HealthMailer also maintains:
 %ProgramData%\HealthMailer\processed-ledger.jsonl
 ```
 
-The ledger records successfully sent package IDs and completed package hashes.
+The ledger records package IDs and completed package hashes once `MailSent=true`.
 If either value is seen again, HealthMailer quarantines the duplicate instead of
-sending it.
+sending it, including cases where chart/ViewPoint copy failed after mail handoff.
 
 The default processing order is:
 
@@ -101,6 +108,7 @@ Processed packages are moved out of the handoff folder into:
 
 ```text
 %ProgramData%\HealthMailer\sent
+%ProgramData%\HealthMailer\validated-no-send
 %ProgramData%\HealthMailer\failed
 %ProgramData%\HealthMailer\quarantine
 ```

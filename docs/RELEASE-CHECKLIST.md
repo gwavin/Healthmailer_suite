@@ -22,7 +22,7 @@
 - [ ] `Install HealthMailer sending machine` opens the HealthMailer component installer as the current Outlook/Healthmail sender user.
 - [ ] `Same-machine pilot: install both` starts the printRxer printing installer and HealthMailer sending installer.
 - [ ] `Open logs folder` opens an existing component log folder, or reports clearly that no log folder exists yet.
-- [ ] `Create support bundle` creates a ZIP and excludes PDF payloads by default.
+- [ ] `Create support bundle` creates a ZIP and excludes PDF payloads by default, with README wording that warns package metadata/log/result evidence may still contain PHI and must stay within approved HSE support/governance channels.
 - [ ] `Advanced / repair` offers printer-capture repair plus separate printRxer and HealthMailer actions, with elevation requested only for printRxer/printer-capture paths that require it.
 - [ ] printRxer installed alone with local handoff folder.
 - [ ] printRxer installed alone with UNC handoff folder.
@@ -39,7 +39,7 @@
 ## HealthMailer Validation
 
 - [ ] `SendMail=false` dry-run validation does not require Outlook.
-- [ ] `SendMail=true` validation checks Outlook COM registration.
+- [ ] `SendMail=true` requires explicit live-sending approval in config and checks Outlook COM registration.
 - [ ] `--process-once` processes waiting packages.
 - [ ] Missing `READY` is ignored.
 - [ ] Bad PDF hash is quarantined.

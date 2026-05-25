@@ -1,3 +1,3 @@
 namespace HealthMailerInstaller;
 
-internal sealed record InstallOptions(string HandoffRoot, bool SendMail = true);
+internal sealed record InstallOptions(string HandoffRoot, bool SendMail = false);

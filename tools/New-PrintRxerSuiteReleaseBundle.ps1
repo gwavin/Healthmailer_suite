@@ -322,7 +322,7 @@ The supplied EXEs are self-contained for Windows x64. Target machines should not
 Safety notes:
   printRxer creates validated handoff packages and does not send mail.
   HealthMailer sends through local Outlook/Healthmail on the sender machine.
-  The support bundle excludes PDF payloads by default. Review logs before sharing them outside approved support channels.
+  The support bundle excludes PDF payloads by default, but package metadata, result evidence, logs, recipient details, MRNs/patient hints, package IDs, hashes, and audit metadata may still contain PHI. Keep support bundles on HSE-controlled machines or approved HSE storage, restrict them to administrators and approved support/audit personnel, and do not email or transfer them outside approved HSE support/governance channels.
 "@
 
     Write-Step "Creating printRxer-only bundle."
@@ -372,7 +372,7 @@ Notes:
   The installer asks for the handoff folder. Use the default local folder for same-machine testing, or choose/type a UNC path for a shared HealthMailer handoff.
   printRxer includes the application, watcher task, recipient cache handling, native port monitor, PrintRxer XPS driver, and local printer queue named printRxer.
   Installing or removing printRxer printer capture requires administrator approval. In this release, the printRxer component installer still runs as an administrator because app-file installation and printer capture are coupled; validation reports the scheduled task principal so IT can confirm task ownership.
-  ProgramData files are preserved by default. Use --remove-data only for a clean lab reset.
+  ProgramData files are preserved by default as audit/support evidence. Use --remove-data only for a clean lab reset.
   Full guidance: healthmailer_release_doc.html
 "@
 
@@ -410,9 +410,9 @@ Uninstall:
 
 Notes:
   Run setup as the intended Outlook/Healthmail sender user so the scheduled task and Outlook COM automation use the correct Windows profile.
-  Outlook must be installed and signed in as the approved sender user if SendMail=true.
+  Outlook must be installed and signed in as the approved sender user if SendMail=true. Live sending also requires explicit installer-created approval in the HealthMailer configuration.
   The installer asks for the handoff folder. Use the same folder configured for printRxer.
-  ProgramData files are preserved by default. Use --remove-data only for a clean lab reset.
+  ProgramData files are preserved by default as audit/support evidence. Use --remove-data only for a clean lab reset.
   Full guidance: healthmailer_release_doc.html
 "@
 

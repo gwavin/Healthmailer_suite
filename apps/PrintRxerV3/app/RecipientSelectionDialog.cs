@@ -22,6 +22,8 @@ public sealed class RecipientSelectionDialog : Form
     private readonly Action? _previewPrescription;
     private readonly Func<RecipientRefreshResult>? _refreshRecipients;
     private readonly Label _recipientSourceLabel = new();
+    private readonly System.Windows.Forms.Timer _autoCloseTimer = new();
+    private readonly DateTimeOffset _autoCloseAtUtc;
     private RecipientRecord? _explicitlySelectedRecipient;
 
     public PickerSelection? Selection { get; private set; }
@@ -35,6 +37,7 @@ public sealed class RecipientSelectionDialog : Form
     {
         _previewPrescription = previewPrescription;
         _refreshRecipients = refreshRecipients;
+        _autoCloseAtUtc = DateTimeOffset.UtcNow.AddMinutes(3);
         _recipients = recipients.OrderBy(recipient => recipient.RecipientName, StringComparer.OrdinalIgnoreCase).ToList();
         Text = "Choose Recipient";
         Width = 1120;
@@ -200,12 +203,17 @@ public sealed class RecipientSelectionDialog : Form
         previewButton.Click += delegate { PreviewPrescription(previewButton); };
         prepareButton.Click += delegate { CompleteSelection(); };
         cancelButton.Click += delegate { DialogResult = DialogResult.Cancel; Close(); };
+        _autoCloseTimer.Interval = 1000;
+        _autoCloseTimer.Tick += delegate { AutoCloseIfExpired(); };
         Shown += delegate
         {
             PositionOnPrimaryWorkArea();
             BringPickerToFront();
             _searchBox.Focus();
+            _autoCloseTimer.Start();
         };
+        FormClosing += delegate { _autoCloseTimer.Stop(); };
+        Disposed += delegate { _autoCloseTimer.Dispose(); };
 
         RefreshRecipients();
         UpdateSelectedRecipientField();
@@ -426,10 +434,15 @@ public sealed class RecipientSelectionDialog : Form
         return snapshot.SourceUsed switch
         {
             RecipientSourceKind.Central => "central list",
-            RecipientSourceKind.Cache => "cached central list from " + File.GetLastWriteTime(snapshot.SourcePath).ToString("dd MMM yyyy HH:mm"),
-            RecipientSourceKind.BundledFallback => "bundled fallback list",
+            RecipientSourceKind.Cache => AppendWarning("cached central list from " + File.GetLastWriteTime(snapshot.SourcePath).ToString("dd MMM yyyy HH:mm"), snapshot.Warning),
+            RecipientSourceKind.BundledFallback => AppendWarning("bundled fallback list", snapshot.Warning),
             _ => "no usable recipient list"
         };
+    }
+
+    private static string AppendWarning(string source, string warning)
+    {
+        return string.IsNullOrWhiteSpace(warning) ? source : source + " - " + warning;
     }
 
     private void UpdateSelectedRecipientField()
@@ -471,7 +484,20 @@ public sealed class RecipientSelectionDialog : Form
             Body = _bodyBox.Text,
             SelectedAt = DateTimeOffset.UtcNow
         };
+        _autoCloseTimer.Stop();
         DialogResult = DialogResult.OK;
+        Close();
+    }
+
+    private void AutoCloseIfExpired()
+    {
+        if (Selection is not null || DateTimeOffset.UtcNow < _autoCloseAtUtc)
+        {
+            return;
+        }
+
+        _autoCloseTimer.Stop();
+        DialogResult = DialogResult.Cancel;
         Close();
     }
 

@@ -36,5 +36,7 @@ public sealed class RecipientSourceStatus
     public int ActiveRecipientCount { get; init; }
     public DateTimeOffset? CentralLastWriteTimeUtc { get; init; }
     public long CentralLengthBytes { get; init; }
+    public double? CacheAgeDays { get; init; }
+    public string CacheAgeStatus { get; init; } = string.Empty;
     public string Warning { get; init; } = string.Empty;
 }

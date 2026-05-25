@@ -67,6 +67,8 @@ Failed and quarantined packages include `result.json` and `summary.txt` where a 
 
 HealthMailer caps and rotates `healthmailer.log` using the `Logging` config. Defaults keep the active log plus five rotated logs at 10 MB each, limiting local log growth without adding PHI beyond existing operational metadata.
 
+Support bundles and ProgramData archives are audit-support evidence and may contain patient-identifiable information even when PDF payload files are excluded. Package metadata, `result.json`, `summary.txt`, logs, failed/quarantine evidence, recipient details, MRNs/patient hints, package IDs, hashes, and audit metadata may be present. Keep this evidence on HSE-controlled machines or approved HSE storage, restrict access to administrators and approved support/audit personnel, and do not email or transfer it outside approved HSE support/governance channels. Standard uninstall preserves ProgramData evidence by default so audit/support evidence is not accidentally removed.
+
 ## Folder Access
 
 Ordinary users should not browse, edit, or delete HealthMailer archives, logs, config, or ledger. Shared handoff folders should be configured by IT and restricted to the minimum required identities.

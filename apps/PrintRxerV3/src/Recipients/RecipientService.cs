@@ -34,7 +34,8 @@ public sealed class RecipientService : IDisposable
     {
         Directory.CreateDirectory(_options.LocalRecipientRoot);
 
-        if (_options.Mode != RecipientSourceMode.HandoffDerivedRequired && TryLoadLocal(_options.CacheRecipientFile, RecipientSourceKind.Cache, out RecipientSnapshot cache))
+        string cacheWarning = string.Empty;
+        if (_options.Mode != RecipientSourceMode.HandoffDerivedRequired && TryLoadCache(out RecipientSnapshot cache, out cacheWarning))
         {
             SetCurrent(cache);
             WriteStatus(cache, centralAvailable: false, centralValid: false, cache.Warning);
@@ -43,6 +44,11 @@ public sealed class RecipientService : IDisposable
 
         if (_options.UseBundledFallback && _options.Mode != RecipientSourceMode.HandoffDerivedRequired && TryLoadBundled(out RecipientSnapshot bundled))
         {
+            if (!string.IsNullOrWhiteSpace(cacheWarning))
+            {
+                bundled = bundled with { Warning = cacheWarning + "; using bundled fallback list." };
+            }
+
             SetCurrent(bundled);
             WriteStatus(bundled, centralAvailable: false, centralValid: false, bundled.Warning);
             return bundled;
@@ -151,6 +157,38 @@ public sealed class RecipientService : IDisposable
         return TryLoadLocal(bundled, RecipientSourceKind.BundledFallback, out snapshot);
     }
 
+    private bool TryLoadCache(out RecipientSnapshot snapshot, out string warning)
+    {
+        warning = string.Empty;
+        FileInfo file = new(_options.CacheRecipientFile);
+        if (file.Exists)
+        {
+            double ageDays = (DateTime.UtcNow - file.LastWriteTimeUtc).TotalDays;
+            if (ageDays > _options.MaxCacheAgeDaysBlock)
+            {
+                warning = $"Recipient cache blocked because it is {Math.Floor(ageDays)} days old; maximum allowed age is {_options.MaxCacheAgeDaysBlock} days.";
+                snapshot = RecipientSnapshot.Empty(warning);
+                return false;
+            }
+
+            if (TryLoadLocal(file.FullName, RecipientSourceKind.Cache, out snapshot))
+            {
+                if (ageDays > _options.MaxCacheAgeDaysWarning)
+                {
+                    snapshot = snapshot with { Warning = $"Recipient cache is stale: {Math.Floor(ageDays)} days old; warning threshold is {_options.MaxCacheAgeDaysWarning} days." };
+                }
+
+                return true;
+            }
+
+            warning = snapshot.Warning;
+            return false;
+        }
+
+        snapshot = RecipientSnapshot.Empty("Recipient source not found: " + _options.CacheRecipientFile);
+        return false;
+    }
+
     private static bool TryLoadLocal(string path, RecipientSourceKind sourceKind, out RecipientSnapshot snapshot)
     {
         try
@@ -198,6 +236,8 @@ public sealed class RecipientService : IDisposable
                 ActiveRecipientCount = snapshot.Recipients.Count,
                 CentralLastWriteTimeUtc = central?.LastWriteTimeUtc,
                 CentralLengthBytes = central?.Length ?? 0,
+                CacheAgeDays = GetCacheAgeDays(),
+                CacheAgeStatus = GetCacheAgeStatus(),
                 Warning = warning
             };
 
@@ -206,5 +246,32 @@ public sealed class RecipientService : IDisposable
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SystemException)
         {
         }
+    }
+
+    private double? GetCacheAgeDays()
+    {
+        FileInfo file = new(_options.CacheRecipientFile);
+        return file.Exists ? Math.Round((DateTime.UtcNow - file.LastWriteTimeUtc).TotalDays, 1) : null;
+    }
+
+    private string GetCacheAgeStatus()
+    {
+        double? ageDays = GetCacheAgeDays();
+        if (ageDays is null)
+        {
+            return "Unavailable";
+        }
+
+        if (ageDays > _options.MaxCacheAgeDaysBlock)
+        {
+            return "Blocked";
+        }
+
+        if (ageDays > _options.MaxCacheAgeDaysWarning)
+        {
+            return "Warning";
+        }
+
+        return "Fresh";
     }
 }

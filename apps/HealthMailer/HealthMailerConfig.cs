@@ -12,10 +12,16 @@ public sealed class HealthMailerConfig
     public bool WriteHtmlSummary { get; set; }
     public ChartCopyOptions ChartCopy { get; set; } = new();
     public LoggingOptions Logging { get; set; } = new();
-    public bool SendMail { get; set; } = true;
+    public bool SendMail { get; set; }
+    public bool ConfigCreatedByInstaller { get; set; }
+    public bool LiveSendingApproved { get; set; }
+    public string[] AllowedRecipientDomains { get; set; } = ["healthmail.ie", "hse.ie", "nmh.ie", "rotunda.ie"];
 
     [JsonIgnore]
     public string SentRoot => Path.Combine(LocalRoot, "sent");
+
+    [JsonIgnore]
+    public string ValidatedNoSendRoot => Path.Combine(LocalRoot, "validated-no-send");
 
     [JsonIgnore]
     public string FailedRoot => Path.Combine(LocalRoot, "failed");
@@ -36,11 +42,13 @@ public sealed class HealthMailerConfig
     {
         Directory.CreateDirectory(LocalRoot);
         Directory.CreateDirectory(SentRoot);
+        Directory.CreateDirectory(ValidatedNoSendRoot);
         Directory.CreateDirectory(FailedRoot);
         Directory.CreateDirectory(QuarantineRoot);
         Directory.CreateDirectory(LogsRoot);
         SecurityUtilities.TryHardenRuntimeDirectory(LocalRoot);
         SecurityUtilities.TryHardenArchiveDirectory(SentRoot);
+        SecurityUtilities.TryHardenArchiveDirectory(ValidatedNoSendRoot);
         SecurityUtilities.TryHardenArchiveDirectory(FailedRoot);
         SecurityUtilities.TryHardenArchiveDirectory(QuarantineRoot);
         SecurityUtilities.TryHardenLogDirectory(LogsRoot);
@@ -83,6 +91,8 @@ public sealed class HealthMailerConfig
         if (!File.Exists(configPath))
         {
             HealthMailerConfig created = new();
+            created.SendMail = false;
+            created.LiveSendingApproved = false;
             created.EnsureDirectories();
             created.Save(configPath);
             return created;
@@ -112,6 +122,11 @@ public sealed class HealthMailerConfig
 
         config.ChartCopy ??= new ChartCopyOptions();
         config.Logging ??= new LoggingOptions();
+        if (config.AllowedRecipientDomains is null || config.AllowedRecipientDomains.Length == 0)
+        {
+            config.AllowedRecipientDomains = ["healthmail.ie", "hse.ie", "nmh.ie", "rotunda.ie"];
+        }
+
         config.Logging.Normalize();
         config.EnsureDirectories();
         return config;

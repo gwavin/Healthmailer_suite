@@ -54,7 +54,10 @@ internal static class HealthMailerInstallerEngine
                 RequireMrn = true
             },
             Logging = new { MaxLogBytes = 10485760, MaxLogFiles = 5 },
-            SendMail = options.SendMail
+            SendMail = options.SendMail,
+            ConfigCreatedByInstaller = true,
+            LiveSendingApproved = options.SendMail,
+            AllowedRecipientDomains = new[] { "healthmail.ie", "hse.ie", "nmh.ie", "rotunda.ie" }
         };
 
         string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });

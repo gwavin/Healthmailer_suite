@@ -99,14 +99,14 @@
   <p>
     A third-party master file may be supplied using the current naming convention, for example:
   </p>
-  <pre><code>C:\Users\gavin\Documents\Testing\22052026\HM-Recipients-22-05-2026_Master.csv</code></pre>
+  <pre><code>\\approved-server\approved-share\HM-Recipients_Master.csv</code></pre>
   <p>
     To update recipients, copy the supplied master CSV into the handoff recipient folder as a
     temporary file, then rename it to <code>recipients.csv</code>. This avoids clients reading a
     half-written file.
   </p>
   <pre><code>$handoffRoot = "\\server\HealthMailerDrop$\incoming"
-$source = "C:\Users\gavin\Documents\Testing\22052026\HM-Recipients-22-05-2026_Master.csv"
+$source = "\\approved-server\approved-share\HM-Recipients_Master.csv"
 $recipientFolder = Join-Path $handoffRoot "recipients"
 $temporaryFile = Join-Path $recipientFolder "recipients.csv.tmp"
 $activeFile = Join-Path $recipientFolder "recipients.csv"
@@ -121,6 +121,7 @@ Move-Item -LiteralPath $temporaryFile -Destination $activeFile -Force</code></pr
     asleep or printRxer has not restarted. The normal printRxer user should only need read access to
     the handoff recipient folder. The recipients CSV is an address book/configuration file only and
     must not contain patient names, MRNs, prescription details, or other patient-identifiable information.
+    Support bundles and ProgramData evidence may contain patient-identifiable package/audit metadata and must remain on HSE-controlled machines or approved HSE support/governance channels.
   </p>
 
   <div class="warning">

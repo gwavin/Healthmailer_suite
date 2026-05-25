@@ -76,11 +76,6 @@ public static class HandoffPackageLoader
                 patientName = TryExtractPatientName(originText);
             }
 
-            if (string.IsNullOrWhiteSpace(recipientEmail))
-            {
-                return PackageLoadResult.Fail("Package request does not contain selectedRecipientEmail.");
-            }
-
             return PackageLoadResult.Ok(new DeliveryPackage
             {
                 PackageDirectory = packageDirectory,

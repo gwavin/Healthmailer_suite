@@ -60,6 +60,28 @@ public sealed class ProcessingAuditTests
     }
 
     [Fact]
+    public void HasSent_treats_mail_sent_true_as_duplicate_protection_even_when_outcome_is_not_sent()
+    {
+        string ledgerPath = CreateLedgerPath();
+        ProcessedPackageLedger ledger = new(ledgerPath);
+        DeliveryPackage package = CreatePackage("pkg-chart-failed", "hash-chart-failed");
+
+        ledger.Append(new ProcessingResult
+        {
+            PackageId = "pkg-chart-failed",
+            Outcome = PackageOutcome.ChartCopyFailed,
+            CompletedAtUtc = DateTimeOffset.UtcNow,
+            RecipientEmail = "recipient@healthmail.ie",
+            PdfSha256 = "pdf-hash",
+            CompletedPackageHash = "hash-chart-failed",
+            MailSent = true
+        });
+
+        Assert.True(ledger.HasSent(package));
+        Assert.Contains("MailSent", File.ReadAllText(ledgerPath));
+    }
+
+    [Fact]
     public void HasSent_ignores_malformed_json_lines()
     {
         string ledgerPath = CreateLedgerPath();

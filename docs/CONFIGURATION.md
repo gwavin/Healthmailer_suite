@@ -23,7 +23,10 @@ The installer asks for the handoff folder and optional ViewPoint/chart folder, w
 | `PollIntervalSeconds` | Fallback polling interval in addition to file watcher events. | `5` |
 | `StaleLockMinutes` | Age after which `.healthmailer.lock` may be retried. | `30` |
 | `WriteHtmlSummary` | Enables self-contained `summary.html`. | `false` |
-| `SendMail` | Sends through Outlook when true. Dry-run/no-send when false. | `true` |
+| `SendMail` | Sends through Outlook when true and live sending is explicitly approved. Dry-run/no-send when false. | `false` |
+| `ConfigCreatedByInstaller` | Marker written by HealthMailer setup for installed configurations. | `false` |
+| `LiveSendingApproved` | Required marker for live Outlook sending. Quiet install sets this only when `--send-mail true` is explicitly requested. | `false` |
+| `AllowedRecipientDomains` | Final HealthMailer send-boundary recipient domain allow-list. | `healthmail.ie`, `hse.ie`, `nmh.ie`, `rotunda.ie` |
 | `Logging.MaxLogBytes` | Active log size cap before rotation. | `10485760` |
 | `Logging.MaxLogFiles` | Number of rotated logs to keep. | `5` |
 | `ChartCopy.Enabled` | Enables post-mail chart/ViewPoint copy. | `false` |
@@ -35,6 +38,7 @@ Derived paths under `LocalRoot`:
 
 ```text
 sent
+validated-no-send
 failed
 quarantine
 logs
@@ -50,7 +54,15 @@ processed-ledger.jsonl
   "PollIntervalSeconds": 5,
   "StaleLockMinutes": 30,
   "WriteHtmlSummary": false,
-  "SendMail": true,
+  "SendMail": false,
+  "ConfigCreatedByInstaller": true,
+  "LiveSendingApproved": false,
+  "AllowedRecipientDomains": [
+    "healthmail.ie",
+    "hse.ie",
+    "nmh.ie",
+    "rotunda.ie"
+  ],
   "Logging": {
     "MaxLogBytes": 10485760,
     "MaxLogFiles": 5
@@ -74,6 +86,14 @@ processed-ledger.jsonl
   "StaleLockMinutes": 30,
   "WriteHtmlSummary": true,
   "SendMail": true,
+  "ConfigCreatedByInstaller": true,
+  "LiveSendingApproved": true,
+  "AllowedRecipientDomains": [
+    "healthmail.ie",
+    "hse.ie",
+    "nmh.ie",
+    "rotunda.ie"
+  ],
   "Logging": {
     "MaxLogBytes": 10485760,
     "MaxLogFiles": 5
@@ -109,7 +129,7 @@ Key fields include `IncomingRoot`, `ProcessedRoot`, `DeferredRoot`, `LocalOutbox
 HealthMailer.exe --validate --config C:\ProgramData\HealthMailer\healthmailer.settings.json
 ```
 
-If `SendMail=false`, validation does not require Outlook COM registration.
+If `SendMail=false`, validation does not require Outlook COM registration and processed packages are archived under `validated-no-send` with `MailSent=false`. If `SendMail=true`, `LiveSendingApproved=true` is required and validation checks Outlook COM registration.
 
 ## Process Once
 

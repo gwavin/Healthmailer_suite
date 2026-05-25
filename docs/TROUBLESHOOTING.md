@@ -149,3 +149,5 @@ Get-ChildItem C:\ProgramData\HealthMailer\logs\healthmailer*.log
 Get-ChildItem C:\ProgramData\printRxer\logs\printRxer*.log
 ```
 
+Support bundles exclude PDF payloads by default, but they may still contain patient-identifiable information in package metadata, `result.json`, `summary.txt`, logs, failed/quarantine evidence, recipient details, MRNs/patient hints, package IDs, hashes, and audit metadata. Treat them as HSE-machine/admin-restricted audit-support evidence. Keep them on HSE-controlled machines or approved HSE storage, restrict access to administrators and approved support/audit personnel, and do not email or transfer them outside approved HSE support/governance channels.
+

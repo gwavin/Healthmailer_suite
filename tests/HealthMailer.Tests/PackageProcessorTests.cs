@@ -68,6 +68,8 @@ public sealed class PackageProcessorTests
         {
             HandoffRoot = handoffRoot,
             LocalRoot = localRoot,
+            SendMail = true,
+            LiveSendingApproved = true,
             ChartCopy = new ChartCopyOptions
             {
                 Enabled = true,
@@ -85,6 +87,38 @@ public sealed class PackageProcessorTests
         Assert.Single(Directory.GetFiles(chartRoot, "*.pdf"));
         Assert.True(File.Exists(Path.Combine(localRoot, "sent", "pkg-1", "result.json")));
         Assert.Contains("Status: Sent", File.ReadAllText(Path.Combine(localRoot, "sent", "pkg-1", "summary.txt")));
+    }
+
+    [Fact]
+    public void ProcessAvailablePackages_sendmail_false_validates_without_sent_outcome_or_duplicate_poisoning()
+    {
+        TestPaths paths = CreatePaths();
+        CreatePackage(paths.HandoffRoot, "pkg-dry-run");
+        RecordingMailer mailer = new();
+        HealthMailerConfig config = CreateConfig(paths);
+        config.SendMail = false;
+
+        int processed = new PackageProcessor(config, mailer, _ => { }).ProcessAvailablePackages();
+
+        Assert.Equal(1, processed);
+        Assert.Empty(mailer.Sent);
+        string archived = Path.Combine(paths.LocalRoot, "validated-no-send", "pkg-dry-run");
+        Assert.True(Directory.Exists(archived));
+        string resultJson = File.ReadAllText(Path.Combine(archived, "result.json"));
+        Assert.Contains("ValidatedNoSend", resultJson);
+        Assert.Contains("\"MailSent\": false", resultJson);
+        Assert.Contains("Mail sent: False", File.ReadAllText(Path.Combine(archived, "summary.txt")));
+
+        CreatePackage(paths.HandoffRoot, "pkg-dry-run");
+        RecordingMailer liveMailer = new();
+        HealthMailerConfig liveConfig = CreateConfig(paths);
+        liveConfig.SendMail = true;
+        liveConfig.LiveSendingApproved = true;
+
+        int liveProcessed = new PackageProcessor(liveConfig, liveMailer, _ => { }).ProcessAvailablePackages();
+
+        Assert.Equal(1, liveProcessed);
+        Assert.Single(liveMailer.Sent);
     }
 
     [Fact]
@@ -107,8 +141,8 @@ public sealed class PackageProcessorTests
 
         Assert.Equal(1, processed);
         Assert.False(Directory.Exists(packageDirectory));
-        Assert.True(File.Exists(Path.Combine(rootB, "sent", "pkg-cross-root", "result.json")));
-        Assert.True(File.Exists(Path.Combine(rootB, "sent", "pkg-cross-root", "prescription.pdf")));
+        Assert.True(File.Exists(Path.Combine(rootB, "validated-no-send", "pkg-cross-root", "result.json")));
+        Assert.True(File.Exists(Path.Combine(rootB, "validated-no-send", "pkg-cross-root", "prescription.pdf")));
     }
 
     [Fact]
@@ -203,6 +237,64 @@ public sealed class PackageProcessorTests
         string failed = Path.Combine(paths.LocalRoot, "failed", "pkg-chart-fail");
         Assert.True(Directory.Exists(failed));
         Assert.Contains("ChartCopyFailed", File.ReadAllText(Path.Combine(failed, "result.json")));
+        Assert.Contains("\"MailSent\": true", File.ReadAllText(Path.Combine(failed, "result.json")));
+    }
+
+    [Fact]
+    public void ProcessAvailablePackages_chart_copy_failure_after_mail_duplicate_protects_reintroduced_package()
+    {
+        TestPaths paths = CreatePaths(chartEnabled: true);
+        CreatePackage(paths.HandoffRoot, "pkg-chart-duplicate");
+        RecordingMailer mailer = new();
+        ThrowingChartCopy chartCopy = new();
+        HealthMailerConfig config = CreateConfig(paths);
+        PackageProcessor processor = new(config, mailer, chartCopy, _ => { });
+        processor.ProcessAvailablePackages();
+        CreatePackage(paths.HandoffRoot, "pkg-chart-duplicate");
+
+        int processed = processor.ProcessAvailablePackages();
+
+        Assert.Equal(1, processed);
+        Assert.Single(mailer.Sent);
+        Assert.True(Directory.Exists(Path.Combine(paths.LocalRoot, "quarantine", "pkg-chart-duplicate")));
+    }
+
+    [Theory]
+    [InlineData("recipient@healthmail.ie")]
+    [InlineData("recipient@hse.ie")]
+    [InlineData("recipient@nmh.ie")]
+    [InlineData("recipient@rotunda.ie")]
+    [InlineData("RECIPIENT@HEALTHMAIL.IE")]
+    public void ProcessAvailablePackages_allows_approved_recipient_domains_at_send_boundary(string email)
+    {
+        TestPaths paths = CreatePaths();
+        CreatePackage(paths.HandoffRoot, "pkg-domain-ok", recipientEmail: email);
+        RecordingMailer mailer = new();
+
+        int processed = CreateProcessor(paths, mailer).ProcessAvailablePackages();
+
+        Assert.Equal(1, processed);
+        Assert.Single(mailer.Sent);
+    }
+
+    [Theory]
+    [InlineData("recipient@gmail.com")]
+    [InlineData("recipient@example.com")]
+    [InlineData("")]
+    [InlineData("not-an-address")]
+    public void ProcessAvailablePackages_rejects_unapproved_or_malformed_recipient_at_send_boundary(string email)
+    {
+        TestPaths paths = CreatePaths();
+        CreatePackage(paths.HandoffRoot, "pkg-domain-bad", recipientEmail: email);
+        RecordingMailer mailer = new();
+
+        int processed = CreateProcessor(paths, mailer).ProcessAvailablePackages();
+
+        Assert.Equal(1, processed);
+        Assert.Empty(mailer.Sent);
+        string quarantine = Path.Combine(paths.LocalRoot, "quarantine", "pkg-domain-bad");
+        Assert.True(Directory.Exists(quarantine));
+        Assert.Contains("RecipientRejected", File.ReadAllText(Path.Combine(quarantine, "result.json")));
     }
 
     [Fact]
@@ -309,7 +401,7 @@ public sealed class PackageProcessorTests
         Assert.DoesNotContain("https://", html, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string CreatePackage(string root, string packageId, bool includeReady = true, bool corruptRequestHash = false)
+    private static string CreatePackage(string root, string packageId, bool includeReady = true, bool corruptRequestHash = false, string recipientEmail = "recipient@healthmail.ie")
     {
         string packageDirectory = Path.Combine(root, packageId);
         Directory.CreateDirectory(packageDirectory);
@@ -319,7 +411,7 @@ public sealed class PackageProcessorTests
         File.WriteAllText(Path.Combine(packageDirectory, "request.json"), JsonSerializer.Serialize(new
         {
             packageId,
-            selectedRecipientEmail = "recipient@example.ie",
+            selectedRecipientEmail = recipientEmail,
             selectedRecipientName = "Recipient",
             subject = "Prescription",
             body = "Please see attached.",
@@ -354,6 +446,9 @@ public sealed class PackageProcessorTests
         {
             HandoffRoot = paths.HandoffRoot,
             LocalRoot = paths.LocalRoot,
+            SendMail = true,
+            ConfigCreatedByInstaller = true,
+            LiveSendingApproved = true,
             ChartCopy = new ChartCopyOptions
             {
                 Enabled = !string.IsNullOrWhiteSpace(paths.ChartRoot),

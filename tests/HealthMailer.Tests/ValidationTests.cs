@@ -31,4 +31,32 @@ public sealed class ValidationTests
 
         Assert.True(Directory.Exists(config.LocalRoot));
     }
+
+    [Fact]
+    public void Validate_rejects_live_sending_without_explicit_approval()
+    {
+        HealthMailerConfig config = new()
+        {
+            HandoffRoot = Path.Combine(Path.GetTempPath(), "healthmailer-validate-" + Guid.NewGuid().ToString("N"), "handoff"),
+            LocalRoot = Path.Combine(Path.GetTempPath(), "healthmailer-validate-" + Guid.NewGuid().ToString("N"), "local"),
+            SendMail = true,
+            LiveSendingApproved = false
+        };
+
+        InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() => Program.ValidateConfiguration(config, static () => "ok"));
+
+        Assert.Contains("live sending", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Load_missing_config_creates_safe_dry_run_config()
+    {
+        string configPath = Path.Combine(Path.GetTempPath(), "healthmailer-missing-config-" + Guid.NewGuid().ToString("N"), "healthmailer.settings.json");
+
+        HealthMailerConfig config = HealthMailerConfig.Load(configPath);
+
+        Assert.False(config.SendMail);
+        Assert.False(config.LiveSendingApproved);
+        Assert.True(File.Exists(configPath));
+    }
 }

@@ -61,8 +61,11 @@ $notes = @"
 printRxer support bundle
 Created: $(Get-Date -Format o)
 
-This bundle excludes PDF payload files by default.
-Review logs and configuration before sending them outside approved support channels.
+This support bundle may contain patient-identifiable information. PDF payload files are excluded by default, but package metadata, result.json, summary.txt, logs, failed/quarantine evidence, recipient details, MRNs/patient hints, package IDs, hashes, and audit metadata may still be present.
+
+The bundle is HSE-machine/admin-restricted audit-support evidence for troubleshooting, clinical communication evidence, and governance review. Store it only on HSE-controlled machines or approved HSE storage. Limit access to administrators and approved support/audit personnel.
+
+Do not email this bundle or transfer it outside approved support/governance channels, including approved HSE support/governance channels. ProgramData evidence should be preserved by default for audit and support unless an approved retention process says otherwise.
 "@
 Set-Content -LiteralPath (Join-Path $bundleRoot 'README.txt') -Value $notes -Encoding UTF8
 
