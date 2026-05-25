@@ -1,6 +1,6 @@
 ﻿# printRxer Configuration
 
-printRxer currently uses command-line options rather than a persistent JSON config file.
+printRxer uses a persistent JSON config file, with command-line options available for support and development scenarios.
 
 ## Options
 

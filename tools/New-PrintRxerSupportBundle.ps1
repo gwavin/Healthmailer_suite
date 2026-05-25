@@ -68,8 +68,7 @@ Set-Content -LiteralPath (Join-Path $bundleRoot 'README.txt') -Value $notes -Enc
 
 Copy-IfPresent 'C:\ProgramData\printRxer\config' (Join-Path $bundleRoot 'printRxer\config')
 Copy-IfPresent 'C:\ProgramData\printRxer\logs' (Join-Path $bundleRoot 'printRxer\logs')
-Copy-IfPresent 'C:\ProgramData\printRxer\archive\failed' (Join-Path $bundleRoot 'printRxer\archive\failed')
-Copy-IfPresent 'C:\ProgramData\printRxer\archive\quarantine' (Join-Path $bundleRoot 'printRxer\archive\quarantine')
+Copy-IfPresent 'C:\ProgramData\printRxer\failed' (Join-Path $bundleRoot 'printRxer\failed')
 
 Copy-IfPresent 'C:\ProgramData\HealthMailer\config' (Join-Path $bundleRoot 'HealthMailer\config')
 Copy-IfPresent 'C:\ProgramData\HealthMailer\logs' (Join-Path $bundleRoot 'HealthMailer\logs')

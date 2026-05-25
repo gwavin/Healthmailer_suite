@@ -11,7 +11,7 @@ The intended flow is:
 1. a workstation prints to the local `printRxer` queue
 2. the port monitor captures the XPS payload locally
 3. the managed agent processes that local job directory
-4. the managed agent hands the result to Outlook
+4. the managed agent creates the HealthMailer handoff package
 
 ## Current Scope
 
@@ -21,7 +21,7 @@ The implementation in [PrintRxerPortMonitor.c](PrintRxerPortMonitor.c) is delibe
 - it captures each job to `%ProgramData%\printRxer\work\spool\<job-folder>\job.xps`
 - it writes a `metadata.json` sidecar
 - it moves the completed job into `%ProgramData%\printRxer\work\incoming\<job-folder>`
-- it leaves PDF rendering, curated-recipient search, and Outlook automation to the managed agent
+- it leaves PDF rendering, curated-recipient search, and package creation to the managed agent
 
 ## Safety-Relevant Notes
 

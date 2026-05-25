@@ -161,7 +161,7 @@ C:\ProgramData\HealthMailer\logs\HealthMailerInstaller.log
 printRxer can be built from its app project during development:
 
 ```powershell
-dotnet publish .\apps\printRxer\app\printRxer.App.csproj -c Release -r win-x64 --self-contained true
+dotnet publish .\apps\PrintRxerV3\app\PrintRxerV3.App.csproj -c Release -r win-x64 --self-contained true
 ```
 
 ## HealthMailer Install

@@ -112,6 +112,23 @@ function Write-Text {
     Set-Content -LiteralPath $Path -Value $Content -Encoding UTF8
 }
 
+function Copy-ReleaseDocumentation {
+    param([string]$Destination)
+
+    Copy-RequiredFile '.\healthmailer_release_doc_cleaned.html' (Join-Path $Destination 'healthmailer_release_doc.html')
+
+    foreach ($doc in @(
+        'RECIPIENTS.md',
+        'TROUBLESHOOTING.md',
+        'OPERATIONS-RUNBOOK.md',
+        'HANDOFF-CONTRACT.md',
+        'HANDOFF-FOLDER-SETUP.md',
+        'CONFIGURATION.md'
+    )) {
+        Copy-RequiredFile (Join-Path '.\docs' $doc) (Join-Path $Destination ('docs\' + $doc))
+    }
+}
+
 function Test-SuiteZipSmoke {
     param(
         [string]$ZipPath,
@@ -244,7 +261,7 @@ try {
     Copy-RequiredDirectory $printRxerPublish (Join-Path $suiteRoot 'payload\publish\printRxer')
     Copy-RequiredDirectory $healthMailerPublish (Join-Path $suiteRoot 'payload\publish\HealthMailer')
     Copy-RequiredDirectory '.\assets' (Join-Path $suiteRoot 'payload\assets')
-    Copy-RequiredDirectory '.\docs' (Join-Path $suiteRoot 'docs')
+    Copy-ReleaseDocumentation $suiteRoot
     foreach ($tool in @(
         'Install-PrintRxerCapturePrinter.ps1',
         'Install-PrintRxerPortMonitor.ps1',
@@ -323,7 +340,7 @@ Safety notes:
     )) {
         Copy-RequiredFile (Join-Path '.\tools' $tool) (Join-Path $printRxerRoot ('payload\tools\' + $tool))
     }
-    Copy-RequiredFile '.\docs\PrintRxer_HealthMailer_IT_QRG_v2.docx' (Join-Path $printRxerRoot 'printRxer-Install-Guide.docx')
+    Copy-RequiredFile '.\healthmailer_release_doc_cleaned.html' (Join-Path $printRxerRoot 'healthmailer_release_doc.html')
     Get-ChildItem -LiteralPath (Join-Path $printRxerRoot 'payload\publish\printRxer') -Filter '*.pdb' -File -ErrorAction SilentlyContinue |
         Remove-Item -Force
 
@@ -356,14 +373,14 @@ Notes:
   printRxer includes the application, watcher task, recipient cache handling, native port monitor, PrintRxer XPS driver, and local printer queue named printRxer.
   Installing or removing printRxer printer capture requires administrator approval. In this release, the printRxer component installer still runs as an administrator because app-file installation and printer capture are coupled; validation reports the scheduled task principal so IT can confirm task ownership.
   ProgramData files are preserved by default. Use --remove-data only for a clean lab reset.
-  Full guidance: printRxer-Install-Guide.docx
+  Full guidance: healthmailer_release_doc.html
 "@
 
     Write-Step "Creating HealthMailer-only bundle."
     Copy-RequiredFile (Join-Path $healthMailerInstallerPublish 'HealthMailerInstaller.exe') (Join-Path $healthMailerRoot 'HealthMailerSetup.exe')
     Copy-RequiredDirectory $healthMailerPublish (Join-Path $healthMailerRoot 'payload\publish\HealthMailer')
     Copy-RequiredDirectory '.\assets\branding' (Join-Path $healthMailerRoot 'payload\assets\branding')
-    Copy-RequiredFile '.\docs\PrintRxer_HealthMailer_IT_QRG_v2.docx' (Join-Path $healthMailerRoot 'HealthMailer-Install-Guide.docx')
+    Copy-RequiredFile '.\healthmailer_release_doc_cleaned.html' (Join-Path $healthMailerRoot 'healthmailer_release_doc.html')
     Get-ChildItem -LiteralPath (Join-Path $healthMailerRoot 'payload\publish\HealthMailer') -Filter '*.pdb' -File -ErrorAction SilentlyContinue |
         Remove-Item -Force
 
@@ -396,7 +413,7 @@ Notes:
   Outlook must be installed and signed in as the approved sender user if SendMail=true.
   The installer asks for the handoff folder. Use the same folder configured for printRxer.
   ProgramData files are preserved by default. Use --remove-data only for a clean lab reset.
-  Full guidance: HealthMailer-Install-Guide.docx
+  Full guidance: healthmailer_release_doc.html
 "@
 
     $printRxerZip = Join-Path $outputRootFull ("printRxer-" + $safeVersion + ".zip")

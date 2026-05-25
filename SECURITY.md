@@ -12,7 +12,7 @@ The active runtime does not introduce:
 - external upload service
 - embedded mail credentials
 
-PrintRxerV3 creates packages only. HealthMailer owns delivery and hands mail to the locally signed-in Outlook profile through COM automation.
+printRxer creates packages only. HealthMailer owns delivery and hands mail to the locally signed-in Outlook profile through COM automation.
 
 This split directly addresses the original printRxer operational pain point where every printing workstation needed a usable Outlook posture. Shared carts, F3/web-only Office users, and Citrix-style printing workstations can now hand off to a separate approved HealthMailer machine.
 
@@ -33,9 +33,9 @@ The `READY` marker prevents half-written packages from being processed. SHA256 v
 
 ## Print Capture Controls
 
-PrintRxerV3 does not process another user's captured job by default. If `submittingUserSid` is present in `metadata.json`, it must match the current Windows user SID before the picker opens. If the SID is missing, the capture is deferred by default unless an explicit import/test override is used.
+printRxer does not process another user's captured job by default. If `submittingUserSid` is present in `metadata.json`, it must match the current Windows user SID before the picker opens. If the SID is missing, the capture is deferred by default unless an explicit import/test override is used.
 
-PrintRxerV3 also waits for the captured payload to be stable before opening the picker. The payload must exist, be non-empty, be old enough to satisfy the stability window, and be readable. This avoids picker prompts for partially written XPS/OXPS files.
+printRxer also waits for the captured payload to be stable before opening the picker. The payload must exist, be non-empty, be old enough to satisfy the stability window, and be readable. This avoids picker prompts for partially written XPS/OXPS files.
 
 ## Audit Evidence
 
@@ -78,7 +78,7 @@ Local folder hardening is role-specific:
 - local handoff/drop folder: SYSTEM and Administrators Full Control, runtime user Modify, Builtin Users Modify only for intentional same-machine drop compatibility
 - HealthMailer local root, sent, failed, quarantine, logs, and ledger: SYSTEM and Administrators Full Control, runtime user Modify, no generic Builtin Users rule
 - config file: SYSTEM and Administrators Full Control, runtime user Read/ReadAndExecute after install, no generic Builtin Users rule
-- PrintRxerV3 local outbox, published, failed, logs, temp, and config folders: restricted to SYSTEM, Administrators, and the runtime user; local handoff/drop is the only PrintRxerV3 folder that may allow broader local write access
+- printRxer local outbox, published, failed, logs, temp, and config folders: restricted to SYSTEM, Administrators, and the runtime user; local handoff/drop is the only printRxer folder that may allow broader local write access
 
 ## Chart/ViewPoint Copy
 
