@@ -31,14 +31,19 @@ public sealed class ChartCopyWriter : IChartCopyWriter
         Directory.CreateDirectory(options.DestinationRoot);
         string fileName = BuildFileName(package, options.FileNameTemplate);
         string destinationPath = Path.Combine(options.DestinationRoot, fileName);
-        if (File.Exists(destinationPath))
+
+        while (File.Exists(destinationPath))
         {
             string stem = Path.GetFileNameWithoutExtension(fileName);
             destinationPath = Path.Combine(options.DestinationRoot, stem + "-" + Guid.NewGuid().ToString("N")[..8] + ".pdf");
         }
 
         File.Copy(package.AttachmentPath, destinationPath, overwrite: false);
-        File.WriteAllText(Path.ChangeExtension(destinationPath, ".json"), JsonSerializer.Serialize(new
+
+        string finalJsonPath = Path.ChangeExtension(destinationPath, ".json");
+        string tmpJsonPath = finalJsonPath + ".tmp";
+
+        File.WriteAllText(tmpJsonPath, JsonSerializer.Serialize(new
         {
             package.PackageId,
             package.PatientName,
@@ -46,6 +51,9 @@ public sealed class ChartCopyWriter : IChartCopyWriter
             package.PdfSha256,
             CopiedAt = DateTimeOffset.UtcNow
         }, new JsonSerializerOptions { WriteIndented = true }));
+
+        File.Move(tmpJsonPath, finalJsonPath, overwrite: false);
+
         return destinationPath;
     }
 

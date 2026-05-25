@@ -34,67 +34,7 @@ public static partial class XpsPdfRenderer
                 renderPath = normalizedPath;
             }
 
-            List<PdfPageImage> pages = [];
-            using (XpsDocument xpsDocument = new(renderPath, FileAccess.Read))
-            {
-                FixedDocumentSequence sequence = xpsDocument.GetFixedDocumentSequence();
-                if (sequence is null)
-                {
-                    throw new InvalidDataException("The XPS document does not contain a readable FixedDocumentSequence.");
-                }
-
-                DocumentPaginator paginator = ((IDocumentPaginatorSource)sequence).DocumentPaginator;
-                if (!paginator.IsPageCountValid)
-                {
-                    paginator.ComputePageCount();
-                }
-
-                if (maxPageCount > 0 && paginator.PageCount > maxPageCount)
-                {
-                    throw new InvalidOperationException("The XPS document has " + paginator.PageCount.ToString(CultureInfo.InvariantCulture) + " pages, which exceeds the configured maximum of " + maxPageCount.ToString(CultureInfo.InvariantCulture) + ".");
-                }
-
-                for (int pageIndex = 0; pageIndex < paginator.PageCount; pageIndex++)
-                {
-                    DocumentPage page = paginator.GetPage(pageIndex);
-                    Size size = page.Size;
-                    int pixelWidth = Math.Max(1, (int)Math.Ceiling(size.Width / 96.0 * dpi));
-                    int pixelHeight = Math.Max(1, (int)Math.Ceiling(size.Height / 96.0 * dpi));
-                    long renderedPixels = (long)pixelWidth * pixelHeight;
-                    if (maxRenderedPixelsPerPage > 0 && renderedPixels > maxRenderedPixelsPerPage)
-                    {
-                        throw new InvalidOperationException("XPS page " + (pageIndex + 1).ToString(CultureInfo.InvariantCulture) + " would render to " + renderedPixels.ToString(CultureInfo.InvariantCulture) + " pixels, which exceeds the configured maximum of " + maxRenderedPixelsPerPage.ToString(CultureInfo.InvariantCulture) + ".");
-                    }
-
-                    RenderTargetBitmap bitmap = new(pixelWidth, pixelHeight, dpi, dpi, PixelFormats.Pbgra32);
-                    DrawingVisual visual = new();
-                    using (DrawingContext drawingContext = visual.RenderOpen())
-                    {
-                        drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, size.Width, size.Height));
-                        drawingContext.DrawRectangle(new VisualBrush(page.Visual), null, new Rect(0, 0, size.Width, size.Height));
-                    }
-
-                    bitmap.Render(visual);
-                    JpegBitmapEncoder encoder = new()
-                    {
-                        QualityLevel = Math.Max(1, Math.Min(100, jpegQuality))
-                    };
-                    encoder.Frames.Add(BitmapFrame.Create(bitmap));
-
-                    using MemoryStream imageStream = new();
-                    encoder.Save(imageStream);
-                    pages.Add(new PdfPageImage
-                    {
-                        ImageBytes = imageStream.ToArray(),
-                        PixelWidth = pixelWidth,
-                        PixelHeight = pixelHeight,
-                        WidthPoints = size.Width * 72.0 / 96.0,
-                        HeightPoints = size.Height * 72.0 / 96.0
-                    });
-                }
-            }
-
-            MinimalPdfWriter.Write(pdfPath, pages);
+            MinimalPdfWriter.Write(pdfPath, RenderPages(renderPath, dpi, jpegQuality, maxPageCount, maxRenderedPixelsPerPage));
         }
         finally
         {
@@ -102,6 +42,71 @@ public static partial class XpsPdfRenderer
             {
                 TryDelete(normalizedPath);
             }
+        }
+    }
+
+    private static IEnumerable<PdfPageImage> RenderPages(
+        string renderPath,
+        int dpi,
+        int jpegQuality,
+        int maxPageCount,
+        long maxRenderedPixelsPerPage)
+    {
+        using XpsDocument xpsDocument = new(renderPath, FileAccess.Read);
+        FixedDocumentSequence sequence = xpsDocument.GetFixedDocumentSequence();
+        if (sequence is null)
+        {
+            throw new InvalidDataException("The XPS document does not contain a readable FixedDocumentSequence.");
+        }
+
+        DocumentPaginator paginator = ((IDocumentPaginatorSource)sequence).DocumentPaginator;
+        if (!paginator.IsPageCountValid)
+        {
+            paginator.ComputePageCount();
+        }
+
+        if (maxPageCount > 0 && paginator.PageCount > maxPageCount)
+        {
+            throw new InvalidOperationException("The XPS document has " + paginator.PageCount.ToString(CultureInfo.InvariantCulture) + " pages, which exceeds the configured maximum of " + maxPageCount.ToString(CultureInfo.InvariantCulture) + ".");
+        }
+
+        for (int pageIndex = 0; pageIndex < paginator.PageCount; pageIndex++)
+        {
+            DocumentPage page = paginator.GetPage(pageIndex);
+            Size size = page.Size;
+            int pixelWidth = Math.Max(1, (int)Math.Ceiling(size.Width / 96.0 * dpi));
+            int pixelHeight = Math.Max(1, (int)Math.Ceiling(size.Height / 96.0 * dpi));
+            long renderedPixels = (long)pixelWidth * pixelHeight;
+            if (maxRenderedPixelsPerPage > 0 && renderedPixels > maxRenderedPixelsPerPage)
+            {
+                throw new InvalidOperationException("XPS page " + (pageIndex + 1).ToString(CultureInfo.InvariantCulture) + " would render to " + renderedPixels.ToString(CultureInfo.InvariantCulture) + " pixels, which exceeds the configured maximum of " + maxRenderedPixelsPerPage.ToString(CultureInfo.InvariantCulture) + ".");
+            }
+
+            RenderTargetBitmap bitmap = new(pixelWidth, pixelHeight, dpi, dpi, PixelFormats.Pbgra32);
+            DrawingVisual visual = new();
+            using (DrawingContext drawingContext = visual.RenderOpen())
+            {
+                drawingContext.DrawRectangle(Brushes.White, null, new Rect(0, 0, size.Width, size.Height));
+                drawingContext.DrawRectangle(new VisualBrush(page.Visual), null, new Rect(0, 0, size.Width, size.Height));
+            }
+
+            bitmap.Render(visual);
+            JpegBitmapEncoder encoder = new()
+            {
+                QualityLevel = Math.Max(1, Math.Min(100, jpegQuality))
+            };
+            encoder.Frames.Add(BitmapFrame.Create(bitmap));
+
+            using MemoryStream imageStream = new();
+            encoder.Save(imageStream);
+            yield return new PdfPageImage
+            {
+                ImageBytes = imageStream.ToArray(),
+                PixelWidth = pixelWidth,
+                PixelHeight = pixelHeight,
+                WidthPoints = size.Width * 72.0 / 96.0,
+                HeightPoints = size.Height * 72.0 / 96.0
+            };
         }
     }
 
