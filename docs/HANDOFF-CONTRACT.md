@@ -26,7 +26,7 @@ Required fields include:
   "preparedAt": "2026-05-11T09:00:01Z",
   "readyAt": "2026-05-11T09:00:02Z",
   "selectedRecipientName": "Example Pharmacy",
-  "selectedRecipientEmail": "pharmacy@example.ie",
+  "selectedRecipientEmail": "pharmacy@healthmail.ie",
   "subject": "Prescription",
   "body": "Please see attached.",
   "pdfSha256": "lowercase-hex-sha256",
@@ -59,6 +59,27 @@ Format:
 <pdf-sha256>  prescription.pdf
 ```
 
+## Recipient Selection
+
+printRxer requires an explicit recipient selection before it creates a handoff
+package. The recipient picker auto-closes after 3 minutes if no selection is
+completed. A timeout is treated as cancellation: no package is created and the
+print job is deferred rather than silently selecting the first row.
+
+HealthMailer also revalidates recipients at the final send boundary. By
+default, live sends are restricted to these recipient domains:
+
+```text
+healthmail.ie
+hse.ie
+nmh.ie
+rotunda.ie
+```
+
+Domain comparison is case-insensitive. Addresses outside the configured
+HealthMailer allow-list, blank addresses, and malformed addresses are rejected
+without Outlook send and archived with recipient-rejection evidence.
+
 ## HealthMailer Outputs
 
 Before archival, HealthMailer writes:
@@ -81,7 +102,7 @@ Example:
   "outcome": "Sent",
   "completedAtUtc": "2026-05-11T09:00:10Z",
   "message": "Package processed.",
-  "recipientEmail": "pharmacy@example.ie",
+  "recipientEmail": "pharmacy@healthmail.ie",
   "pdfSha256": "lowercase-hex-sha256",
   "completedPackageHash": "lowercase-hex-sha256",
   "mailSent": true,
@@ -99,6 +120,8 @@ Example:
 | `Quarantined` | Reserved for quarantined safety outcome. | `quarantine` |
 | `Duplicate` | Package ID or completed package hash already sent. | `quarantine` |
 | `ValidationFailed` | Package malformed or hash mismatch. | `quarantine` |
+| `RecipientRejected` | Recipient email is blank, malformed, or outside the HealthMailer allowed domain list. | `quarantine` |
+| `ValidatedNoSend` | Package validated while `SendMail=false`; no Outlook send occurred. | `validated-no-send` |
 | `ChartCopyFailed` | Mail succeeded, chart copy failed. | `failed` |
 | `MailFailed` | Outlook handoff failed before chart copy. | `failed` |
 
