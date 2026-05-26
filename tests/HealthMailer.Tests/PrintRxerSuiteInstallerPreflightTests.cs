@@ -40,6 +40,8 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
             "SuiteInstallerForm.cs"));
 
         Assert.Contains("RunForResult(setupPath, arguments, elevate: elevate)", source);
+        Assert.Contains("RunPrintRxerInstall", source);
+        Assert.Contains("--quiet --handoff-root", source);
         Assert.Contains("ValidatePrintRxerAfterSetup", source);
         Assert.Contains("--validate", source);
         Assert.Contains("Windows should show a printer named printRxer", source);

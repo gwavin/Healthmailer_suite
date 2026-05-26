@@ -57,6 +57,8 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("printRxer setup includes printer capture", form, StringComparison.Ordinal);
         Assert.Contains("bool isUninstall = arguments.Contains(\"--uninstall\"", form, StringComparison.Ordinal);
         Assert.Contains("bool elevate = setupKind == SetupKind.PrintRxer && !isUninstall", form, StringComparison.Ordinal);
+        Assert.Contains("RunPrintRxerInstall", form, StringComparison.Ordinal);
+        Assert.Contains("--quiet --handoff-root", form, StringComparison.Ordinal);
         Assert.Contains("printRxer uninstall will check whether printRxer is installed", form, StringComparison.Ordinal);
         Assert.Contains("ProcessRunner.RunForResult(setupPath, arguments, elevate: elevate)", form, StringComparison.Ordinal);
         Assert.Contains("ValidatePrintRxerAfterSetup", form, StringComparison.Ordinal);

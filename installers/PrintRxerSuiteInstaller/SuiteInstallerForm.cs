@@ -26,7 +26,7 @@ internal sealed class SuiteInstallerForm : Form
         Size = new Size(940, 700);
         Icon = InstallerBranding.TryCreateIcon();
 
-        Button installPrintRxer = CreateButton("Install printRxer printing machine", (_, _) => RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer));
+        Button installPrintRxer = CreateButton("Install printRxer printing machine", (_, _) => RunPrintRxerInstall());
         Button installHealthMailer = CreateButton("Install HealthMailer sending machine", (_, _) => RunSetup(SuitePaths.HealthMailerSetupPath, SetupKind.HealthMailer));
         Button sameMachinePilot = CreateButton("Same-machine pilot: install both", (_, _) => RunSameMachinePilot());
         Button validate = CreateButton("Validate installation", (_, _) => RunValidation());
@@ -105,7 +105,7 @@ internal sealed class SuiteInstallerForm : Form
             return;
         }
 
-        RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer);
+        RunPrintRxerInstall();
         RunSetup(SuitePaths.HealthMailerSetupPath, SetupKind.HealthMailer);
     }
 
@@ -167,6 +167,133 @@ internal sealed class SuiteInstallerForm : Form
                 ValidatePrintRxerAfterSetup();
             }
         });
+    }
+
+    private void RunPrintRxerInstall()
+    {
+        if (!File.Exists(SuitePaths.PrintRxerSetupPath))
+        {
+            MessageBox.Show(this, "The expected installer was not found:\n\n" + SuitePaths.PrintRxerSetupPath, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        string handoffRoot = PromptForPrintRxerHandoffRoot();
+        if (string.IsNullOrWhiteSpace(handoffRoot))
+        {
+            return;
+        }
+
+        DialogResult confirm = MessageBox.Show(
+            this,
+            "printRxer will install the app, watcher task, native port monitor, driver, and local printer queue named printRxer." +
+            Environment.NewLine + Environment.NewLine +
+            "Windows will ask for administrator approval." +
+            Environment.NewLine + Environment.NewLine +
+            "Handoff folder:" + Environment.NewLine + handoffRoot,
+            Text,
+            MessageBoxButtons.OKCancel,
+            MessageBoxIcon.Information);
+
+        if (confirm != DialogResult.OK)
+        {
+            return;
+        }
+
+        RunUserAction(() =>
+        {
+            AppendStatus("Installing printRxer printing machine with handoff folder: " + handoffRoot);
+            string arguments = "--quiet --handoff-root \"" + EscapeArgument(handoffRoot) + "\"";
+            ProcessResult setupResult = ProcessRunner.RunForResult(SuitePaths.PrintRxerSetupPath, arguments, elevate: true);
+            AppendStatus("printRxerSetup.exe closed with exit code " + setupResult.ExitCode + ".");
+            if (!string.IsNullOrWhiteSpace(setupResult.Output))
+            {
+                AppendStatus(setupResult.Output);
+            }
+
+            if (setupResult.ExitCode != 0)
+            {
+                throw new InvalidOperationException("printRxerSetup.exe returned exit code " + setupResult.ExitCode + ".");
+            }
+
+            ValidatePrintRxerAfterSetup();
+        });
+    }
+
+    private string PromptForPrintRxerHandoffRoot()
+    {
+        using Form dialog = new()
+        {
+            Text = "printRxer handoff folder",
+            StartPosition = FormStartPosition.CenterParent,
+            MinimumSize = new Size(640, 260),
+            Size = new Size(700, 280),
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            MaximizeBox = false,
+            MinimizeBox = false
+        };
+
+        TableLayoutPanel panel = new()
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 5,
+            Padding = new Padding(20)
+        };
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        TextBox handoffBox = new()
+        {
+            Text = @"C:\ProgramData\printRxer\handoff",
+            Dock = DockStyle.Fill
+        };
+
+        Button browse = CreateButton("Browse...", (_, _) =>
+        {
+            using FolderBrowserDialog picker = new()
+            {
+                Description = "Select the HealthMailer handoff folder. You may paste a UNC path directly into the text box.",
+                SelectedPath = Directory.Exists(handoffBox.Text) ? handoffBox.Text : @"C:\ProgramData\printRxer\handoff",
+                ShowNewFolderButton = true
+            };
+
+            if (picker.ShowDialog(dialog) == DialogResult.OK)
+            {
+                handoffBox.Text = picker.SelectedPath;
+            }
+        });
+        browse.Width = 110;
+        browse.Height = 30;
+
+        TableLayoutPanel pathRow = new() { Dock = DockStyle.Fill, ColumnCount = 2, AutoSize = true };
+        pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        pathRow.Controls.Add(handoffBox, 0, 0);
+        pathRow.Controls.Add(browse, 1, 0);
+
+        Button ok = CreateButton("Install", (_, _) => dialog.DialogResult = DialogResult.OK);
+        Button cancel = CreateButton("Cancel", (_, _) => dialog.DialogResult = DialogResult.Cancel);
+        FlowLayoutPanel buttons = new()
+        {
+            AutoSize = true,
+            Dock = DockStyle.Right,
+            FlowDirection = FlowDirection.RightToLeft
+        };
+        buttons.Controls.Add(cancel);
+        buttons.Controls.Add(ok);
+
+        panel.Controls.Add(new Label { Text = "Choose the folder where printRxer will place HealthMailer handoff packages.", AutoSize = true, Dock = DockStyle.Fill });
+        panel.Controls.Add(new Label { Text = "Use the default local folder for same-machine testing, or paste a shared UNC path for two-machine deployment.", AutoSize = false, Height = 42, Dock = DockStyle.Fill });
+        panel.Controls.Add(pathRow);
+        panel.Controls.Add(new Panel());
+        panel.Controls.Add(buttons);
+        dialog.Controls.Add(panel);
+
+        return dialog.ShowDialog(this) == DialogResult.OK ? handoffBox.Text.Trim() : string.Empty;
     }
 
     private void ValidatePrintRxerAfterSetup()
@@ -362,6 +489,11 @@ internal sealed class SuiteInstallerForm : Form
         _statusText.SelectionStart = _statusText.TextLength;
         _statusText.ScrollToCaret();
         Application.DoEvents();
+    }
+
+    private static string EscapeArgument(string value)
+    {
+        return value.Replace("\"", "\\\"", StringComparison.Ordinal);
     }
 
     private enum SetupKind
