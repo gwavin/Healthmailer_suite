@@ -62,6 +62,11 @@ public static class HandoffPackageLoader
             string subject = FirstNonEmpty(Read(root, "subject"), ReadNested(root, "pickerSelection", "subject"), "Clinical document");
             string body = FirstNonEmpty(Read(root, "body"), ReadNested(root, "pickerSelection", "body"));
             string packageId = FirstNonEmpty(Read(root, "packageId"), directoryName);
+            string documentKind = FirstNonEmpty(Read(root, "documentKind"), ReadNested(root, "pickerSelection", "documentKind"), "ClinicalDocument");
+            string documentName = FirstNonEmpty(Read(root, "documentName"), ReadNested(root, "pickerSelection", "documentName"), "Clinical document");
+            string attachmentDisplayName = AttachmentDisplayName.Sanitize(
+                FirstNonEmpty(Read(root, "attachmentDisplayName"), ReadNested(root, "pickerSelection", "attachmentDisplayName")),
+                documentKind);
             string patientName = FirstNonEmpty(Read(root, "patientName"), ReadNested(root, "patient", "name"));
             string mrn = FirstNonEmpty(Read(root, "mrn"), Read(root, "MRN"), ReadNested(root, "patient", "mrn"));
 
@@ -87,6 +92,9 @@ public static class HandoffPackageLoader
                 AttachmentPath = pdfPath,
                 PdfSha256 = actualHash,
                 CompletedPackageHash = ComputeCompletedPackageHash(requestPath, pdfPath, hashPath),
+                DocumentKind = documentKind,
+                DocumentName = documentName,
+                AttachmentDisplayName = attachmentDisplayName,
                 PatientName = patientName,
                 Mrn = mrn
             });

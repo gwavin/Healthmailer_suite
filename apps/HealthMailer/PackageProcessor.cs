@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace HealthMailer;
 
 public sealed class PackageProcessor
@@ -82,7 +84,13 @@ public sealed class PackageProcessor
             PackageLoadResult loadResult = HandoffPackageLoader.TryLoad(packageDirectory);
             if (!loadResult.Success || loadResult.Package is null)
             {
-                WriteAndArchive(packageDirectory, CreateResult(name, PackageOutcome.ValidationFailed, loadResult.Error), _config.QuarantineRoot, claim);
+                RequestAttachmentMetadata metadata = TryReadRequestMetadata(packageDirectory);
+                WriteAndArchive(packageDirectory, CreateResult(name, PackageOutcome.ValidationFailed, loadResult.Error) with
+                {
+                    DocumentKind = metadata.DocumentKind,
+                    DocumentName = metadata.DocumentName,
+                    AttachmentDisplayName = metadata.AttachmentDisplayName
+                }, _config.QuarantineRoot, claim);
                 _log($"Validation failed for package {name}: {loadResult.Error}");
                 return true;
             }
@@ -232,6 +240,51 @@ public sealed class PackageProcessor
         };
     }
 
+    private static RequestAttachmentMetadata TryReadRequestMetadata(string packageDirectory)
+    {
+        try
+        {
+            string requestPath = Path.Combine(packageDirectory, "request.json");
+            if (!File.Exists(requestPath))
+            {
+                return new RequestAttachmentMetadata();
+            }
+
+            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(requestPath));
+            JsonElement root = document.RootElement;
+            string documentKind = FirstNonEmpty(Read(root, "documentKind"), ReadNested(root, "pickerSelection", "documentKind"), "ClinicalDocument");
+            string documentName = FirstNonEmpty(
+                Read(root, "documentName"),
+                ReadNested(root, "pickerSelection", "documentName"),
+                string.Equals(documentKind, "Prescription", StringComparison.OrdinalIgnoreCase) ? "Prescription" : "Clinical document");
+            string attachmentDisplayName = AttachmentDisplayName.Sanitize(
+                FirstNonEmpty(Read(root, "attachmentDisplayName"), ReadNested(root, "pickerSelection", "attachmentDisplayName")),
+                documentKind);
+            return new RequestAttachmentMetadata(documentKind, documentName, attachmentDisplayName);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return new RequestAttachmentMetadata();
+        }
+
+        static string Read(JsonElement root, string name)
+        {
+            return root.TryGetProperty(name, out JsonElement value) ? value.ToString() : string.Empty;
+        }
+
+        static string ReadNested(JsonElement root, string parent, string child)
+        {
+            return root.TryGetProperty(parent, out JsonElement parentElement) && parentElement.ValueKind == JsonValueKind.Object
+                ? Read(parentElement, child)
+                : string.Empty;
+        }
+
+        static string FirstNonEmpty(params string[] values)
+        {
+            return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
+        }
+    }
+
     private static ProcessingResult CreateResult(
         DeliveryPackage package,
         PackageOutcome outcome,
@@ -249,6 +302,10 @@ public sealed class PackageProcessor
             RecipientEmail = package.RecipientEmail,
             PdfSha256 = package.PdfSha256,
             CompletedPackageHash = package.CompletedPackageHash,
+            DocumentKind = package.DocumentKind,
+            DocumentName = package.DocumentName,
+            InternalPackagePdf = Path.GetFileName(package.AttachmentPath),
+            AttachmentDisplayName = package.AttachmentDisplayName,
             MailSent = mailSent,
             ChartCopied = chartCopied,
             ChartCopyPath = chartCopyPath
@@ -368,4 +425,9 @@ public sealed class PackageProcessor
             _stream?.Dispose();
         }
     }
+
+    private sealed record RequestAttachmentMetadata(
+        string DocumentKind = "",
+        string DocumentName = "",
+        string AttachmentDisplayName = "");
 }

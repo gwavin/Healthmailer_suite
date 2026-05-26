@@ -29,6 +29,7 @@ Before a package is marked ready, printRxer verifies that:
 - Workstation name and workstation domain.
 - Print job origin metadata where available.
 - Picker selection details.
+- Document kind, document name, and outbound attachment display filename.
 - Selected recipient name and email address.
 - Subject and body prepared by the picker.
 - PDF SHA256.
@@ -37,6 +38,12 @@ Before a package is marked ready, printRxer verifies that:
 - Audit note.
 
 The package provides local audit evidence for the workstation handoff. Documentation and UI text should use "audit evidence", not "non-repudiation".
+
+The internal PDF remains named `prescription.pdf` so HealthMailer can validate
+the stable package contract and `request.sha256`. The outbound email attachment
+may use a friendlier filename from `attachmentDisplayName`. MRN or patient
+identifiers in that outbound filename are patient-identifiable information and
+should only be used for approved clinical matching workflows.
 
 ## Boundaries
 

@@ -61,6 +61,9 @@ public sealed class PackagingTests
                 RecipientEmail = "alpha@example.ie",
                 Subject = "Prescription",
                 Body = "Please process.",
+                DocumentKind = DocumentKind.Prescription,
+                DocumentName = "Prescription",
+                AttachmentDisplayName = "MRN123456_prescription_20260526_1430.pdf",
                 SelectedAt = timestamp
             });
 
@@ -68,6 +71,9 @@ public sealed class PackagingTests
         Assert.Equal("hash", request.PdfSha256);
         Assert.Equal("Alpha Pharmacy", request.PickerSelection.RecipientName);
         Assert.Equal("alpha@example.ie", request.SelectedRecipientEmail);
+        Assert.Equal(DocumentKind.Prescription, request.DocumentKind);
+        Assert.Equal("Prescription", request.DocumentName);
+        Assert.Equal("MRN123456_prescription_20260526_1430.pdf", request.AttachmentDisplayName);
         Assert.Equal("Alpha Pharmacy", request.SelectedRecipient.Name);
         Assert.Equal("alpha@example.ie", request.SelectedRecipient.Email);
         Assert.Equal("RecipientSelected", request.PickerOutcome);
@@ -88,7 +94,7 @@ public sealed class PackagingTests
             timestamp,
             new WorkstationIdentity { WindowsUser = "GAVIN", DomainUser = "DOMAIN\\GAVIN", UserSid = "S-1", SessionId = 1, WorkstationName = "WS01", WorkstationDomain = "DOMAIN" },
             new PrintJobOrigin { Source = "sample" },
-            new PickerSelection { RecipientName = "Beta", RecipientEmail = "beta@example.ie", Subject = "Subject", Body = "Body", SelectedAt = timestamp });
+            new PickerSelection { RecipientName = "Beta", RecipientEmail = "beta@example.ie", Subject = "Subject", Body = "Body", DocumentKind = DocumentKind.ClinicalDocument, DocumentName = "Clinical document", AttachmentDisplayName = "friendly.pdf", SelectedAt = timestamp });
 
         HandoffPackageWriter.Write(root, request, pdfPath);
 
@@ -103,6 +109,13 @@ public sealed class PackagingTests
         using JsonDocument document = JsonDocument.Parse(File.ReadAllText(Path.Combine(packageDirectory, "request.json")));
         Assert.Equal("pkg-2", document.RootElement.GetProperty("packageId").GetString());
         Assert.Equal("beta@example.ie", document.RootElement.GetProperty("selectedRecipientEmail").GetString());
+        Assert.Equal("ClinicalDocument", document.RootElement.GetProperty("documentKind").GetString());
+        Assert.Equal("Clinical document", document.RootElement.GetProperty("documentName").GetString());
+        Assert.Equal("friendly.pdf", document.RootElement.GetProperty("attachmentDisplayName").GetString());
+        Assert.Equal("ClinicalDocument", document.RootElement.GetProperty("pickerSelection").GetProperty("documentKind").GetString());
+        Assert.Contains("Internal package PDF: prescription.pdf", File.ReadAllText(Path.Combine(packageDirectory, "summary.txt")));
+        Assert.Contains("Outbound attachment filename: friendly.pdf", File.ReadAllText(Path.Combine(packageDirectory, "summary.txt")));
+        Assert.Contains("  prescription.pdf", File.ReadAllText(Path.Combine(packageDirectory, "request.sha256")));
     }
 
     [Fact]

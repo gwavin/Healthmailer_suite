@@ -20,6 +20,7 @@ public sealed class OutlookMailHandoff : IMailHandoff
         object? outlook = null;
         object? mailItem = null;
         object? attachments = null;
+        PreparedAttachment? preparedAttachment = null;
 
         try
         {
@@ -33,7 +34,8 @@ public sealed class OutlookMailHandoff : IMailHandoff
             ResolveRecipients(mailItem);
 
             attachments = GetProperty(mailItem, "Attachments");
-            InvokeMethod(attachments, "Add", package.AttachmentPath);
+            preparedAttachment = AttachmentFilePreparer.Prepare(package);
+            InvokeMethod(attachments, "Add", preparedAttachment.Path);
 
             InvokeMethod(mailItem, "Save");
             InvokeMethod(mailItem, "Send");
@@ -43,6 +45,7 @@ public sealed class OutlookMailHandoff : IMailHandoff
             ReleaseComObject(attachments);
             ReleaseComObject(mailItem);
             ReleaseComObject(outlook);
+            preparedAttachment?.Dispose();
         }
     }
 

@@ -17,6 +17,10 @@ public sealed class RecipientSelectionDialog : Form
     private readonly DataGridView _recipientGrid = new();
     private readonly TextBox _searchBox = new();
     private readonly TextBox _selectedRecipientBox = new();
+    private readonly RadioButton _prescriptionKindButton = new();
+    private readonly RadioButton _clinicalKindButton = new();
+    private readonly TextBox _documentNameBox = new();
+    private readonly TextBox _attachmentFilenameBox = new();
     private readonly TextBox _subjectBox = new();
     private readonly TextBox _bodyBox = new();
     private readonly Action? _previewPrescription;
@@ -25,6 +29,13 @@ public sealed class RecipientSelectionDialog : Form
     private readonly System.Windows.Forms.Timer _autoCloseTimer = new();
     private DateTimeOffset? _autoCloseStartedAtUtc;
     private RecipientRecord? _explicitlySelectedRecipient;
+    private readonly CapturedPrintJobContext _context;
+    private DocumentKind _selectedDocumentKind;
+    private bool _suppressGeneratedFieldChangeTracking;
+    private bool _subjectWasUserEdited;
+    private bool _bodyWasUserEdited;
+    private bool _documentNameWasUserEdited;
+    private bool _attachmentFilenameWasUserEdited;
 
     public PickerSelection? Selection { get; private set; }
 
@@ -35,6 +46,7 @@ public sealed class RecipientSelectionDialog : Form
         string recipientSourceText = "",
         Func<RecipientRefreshResult>? refreshRecipients = null)
     {
+        _context = context;
         _previewPrescription = previewPrescription;
         _refreshRecipients = refreshRecipients;
         _recipients = recipients.OrderBy(recipient => recipient.RecipientName, StringComparer.OrdinalIgnoreCase).ToList();
@@ -132,7 +144,7 @@ public sealed class RecipientSelectionDialog : Form
         TableLayoutPanel detailPanel = new()
         {
             Dock = DockStyle.Fill,
-            RowCount = 5,
+            RowCount = 11,
             ColumnCount = 1,
             Margin = Padding.Empty,
             Padding = Padding.Empty
@@ -141,13 +153,27 @@ public sealed class RecipientSelectionDialog : Form
         detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         detailPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         detailPanel.Controls.Add(selectedPanel);
+
+        detailPanel.Controls.Add(BuildDocumentKindPanel());
+
+        Label documentNameLabel = new() { Text = "Document name", AutoSize = true, Margin = new Padding(0, 10, 0, 4) };
+        detailPanel.Controls.Add(documentNameLabel);
+        _documentNameBox.Dock = DockStyle.Fill;
+        detailPanel.Controls.Add(_documentNameBox);
+
+        detailPanel.Controls.Add(BuildAttachmentFilenamePanel());
 
         Label subjectLabel = new() { Text = "Subject", AutoSize = true, Margin = new Padding(0, 12, 0, 4) };
         detailPanel.Controls.Add(subjectLabel);
         _subjectBox.Dock = DockStyle.Fill;
-        _subjectBox.Text = "Electronically transmitted clinical document";
         detailPanel.Controls.Add(_subjectBox);
 
         Label messageLabel = new() { Text = "Message", AutoSize = true, Margin = new Padding(0, 12, 0, 4) };
@@ -156,11 +182,6 @@ public sealed class RecipientSelectionDialog : Form
         _bodyBox.Dock = DockStyle.Fill;
         _bodyBox.Multiline = true;
         _bodyBox.ScrollBars = ScrollBars.Vertical;
-        _bodyBox.Text =
-            "Hello," + Environment.NewLine + Environment.NewLine +
-            "Please see the attached clinical document." + Environment.NewLine + Environment.NewLine +
-            "Document: " + (string.IsNullOrWhiteSpace(context.DocumentName) ? "Clinical document" : context.DocumentName) + Environment.NewLine + Environment.NewLine +
-            "Kind regards,";
         detailPanel.Controls.Add(_bodyBox);
         mainSplit.Panel2.Controls.Add(detailPanel);
         root.Controls.Add(mainSplit);
@@ -189,6 +210,10 @@ public sealed class RecipientSelectionDialog : Form
         root.Controls.Add(buttons);
 
         _searchBox.TextChanged += delegate { RefreshRecipients(); };
+        _subjectBox.TextChanged += delegate { if (!_suppressGeneratedFieldChangeTracking) _subjectWasUserEdited = true; };
+        _bodyBox.TextChanged += delegate { if (!_suppressGeneratedFieldChangeTracking) _bodyWasUserEdited = true; };
+        _documentNameBox.TextChanged += delegate { if (!_suppressGeneratedFieldChangeTracking) _documentNameWasUserEdited = true; };
+        _attachmentFilenameBox.TextChanged += delegate { if (!_suppressGeneratedFieldChangeTracking) _attachmentFilenameWasUserEdited = true; };
         _recipientGrid.SelectionChanged += delegate { RefreshPrepareState(prepareButton); };
         _recipientGrid.CellClick += delegate { AcceptCurrentRecipientSelection(); RefreshPrepareState(prepareButton); };
         _recipientGrid.KeyUp += delegate(object? sender, KeyEventArgs args)
@@ -216,6 +241,7 @@ public sealed class RecipientSelectionDialog : Form
         Disposed += delegate { _autoCloseTimer.Dispose(); };
 
         RefreshRecipients();
+        InitialiseDocumentDefaults(context);
         UpdateSelectedRecipientField();
         PositionOnPrimaryWorkArea();
         Shown += delegate { SetInitialSplitterDistance(mainSplit); };
@@ -310,6 +336,176 @@ public sealed class RecipientSelectionDialog : Form
         panel.Controls.Add(_recipientSourceLabel, 0, 0);
         panel.Controls.Add(refreshButton, 1, 0);
         return panel;
+    }
+
+    private Control BuildDocumentKindPanel()
+    {
+        TableLayoutPanel panel = new()
+        {
+            Dock = DockStyle.Fill,
+            AutoSize = true,
+            ColumnCount = 4,
+            Margin = new Padding(0, 10, 0, 0),
+            Padding = Padding.Empty
+        };
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+        Label label = new() { Text = "Document type:", AutoSize = true, Margin = new Padding(0, 4, 10, 0) };
+        _prescriptionKindButton.Text = "Prescription / Rx";
+        _prescriptionKindButton.AutoSize = true;
+        _prescriptionKindButton.Margin = new Padding(0, 2, 14, 0);
+        _clinicalKindButton.Text = "Clinical document";
+        _clinicalKindButton.AutoSize = true;
+        _clinicalKindButton.Margin = new Padding(0, 2, 14, 0);
+
+        Button suggestedWordingButton = new()
+        {
+            Text = "Use suggested wording",
+            AutoSize = true,
+            Height = 30,
+            Margin = new Padding(8, 0, 0, 0),
+            UseVisualStyleBackColor = true
+        };
+
+        _prescriptionKindButton.CheckedChanged += delegate
+        {
+            if (_prescriptionKindButton.Checked)
+            {
+                ApplyDocumentKind(DocumentKind.Prescription, forceAllFields: false);
+            }
+        };
+        _clinicalKindButton.CheckedChanged += delegate
+        {
+            if (_clinicalKindButton.Checked)
+            {
+                ApplyDocumentKind(DocumentKind.ClinicalDocument, forceAllFields: false);
+            }
+        };
+        suggestedWordingButton.Click += delegate { ApplyDocumentKind(_selectedDocumentKind, forceAllFields: true); };
+
+        panel.Controls.Add(label, 0, 0);
+        panel.Controls.Add(_prescriptionKindButton, 1, 0);
+        panel.Controls.Add(_clinicalKindButton, 2, 0);
+        panel.Controls.Add(suggestedWordingButton, 3, 0);
+        return panel;
+    }
+
+    private Control BuildAttachmentFilenamePanel()
+    {
+        TableLayoutPanel panel = new()
+        {
+            Dock = DockStyle.Fill,
+            AutoSize = true,
+            ColumnCount = 2,
+            RowCount = 3,
+            Margin = new Padding(0, 10, 0, 0),
+            Padding = Padding.Empty
+        };
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        Label label = new() { Text = "Attachment filename", AutoSize = true, Margin = new Padding(0, 0, 0, 4) };
+        Button suggestedFilenameButton = new()
+        {
+            Text = "Use suggested filename",
+            AutoSize = true,
+            Height = 30,
+            Margin = new Padding(8, 0, 0, 0),
+            UseVisualStyleBackColor = true
+        };
+        suggestedFilenameButton.Click += delegate
+        {
+            SetGeneratedText(_attachmentFilenameBox, DocumentDefaults.Create(_selectedDocumentKind, _context).AttachmentDisplayName);
+            _attachmentFilenameWasUserEdited = false;
+        };
+
+        _attachmentFilenameBox.Dock = DockStyle.Fill;
+        Label note = new()
+        {
+            Text = "This is the filename the recipient will see. The internal package file remains unchanged for validation.",
+            AutoSize = true,
+            ForeColor = System.Drawing.Color.DimGray,
+            Font = new System.Drawing.Font(Font.FontFamily, Font.Size, System.Drawing.FontStyle.Italic),
+            Margin = new Padding(0, 3, 0, 0)
+        };
+
+        panel.Controls.Add(label, 0, 0);
+        panel.Controls.Add(suggestedFilenameButton, 1, 0);
+        panel.Controls.Add(_attachmentFilenameBox, 0, 1);
+        panel.SetColumnSpan(_attachmentFilenameBox, 2);
+        panel.Controls.Add(note, 0, 2);
+        panel.SetColumnSpan(note, 2);
+        return panel;
+    }
+
+    private void InitialiseDocumentDefaults(CapturedPrintJobContext context)
+    {
+        DocumentKind inferred = DocumentDefaults.InferKind(context);
+        _suppressGeneratedFieldChangeTracking = true;
+        try
+        {
+            _prescriptionKindButton.Checked = inferred == DocumentKind.Prescription;
+            _clinicalKindButton.Checked = inferred == DocumentKind.ClinicalDocument;
+            ApplyDocumentKind(inferred, forceAllFields: true);
+        }
+        finally
+        {
+            _suppressGeneratedFieldChangeTracking = false;
+        }
+
+        _subjectWasUserEdited = false;
+        _bodyWasUserEdited = false;
+        _documentNameWasUserEdited = false;
+        _attachmentFilenameWasUserEdited = false;
+    }
+
+    private void ApplyDocumentKind(DocumentKind kind, bool forceAllFields)
+    {
+        _selectedDocumentKind = kind;
+        DocumentMessageDefaults defaults = DocumentDefaults.Create(kind, _context);
+        if (forceAllFields || !_documentNameWasUserEdited)
+        {
+            SetGeneratedText(_documentNameBox, defaults.DocumentName);
+            _documentNameWasUserEdited = false;
+        }
+
+        if (forceAllFields || !_subjectWasUserEdited)
+        {
+            SetGeneratedText(_subjectBox, defaults.Subject);
+            _subjectWasUserEdited = false;
+        }
+
+        if (forceAllFields || !_bodyWasUserEdited)
+        {
+            SetGeneratedText(_bodyBox, defaults.Body);
+            _bodyWasUserEdited = false;
+        }
+
+        if (forceAllFields || !_attachmentFilenameWasUserEdited)
+        {
+            SetGeneratedText(_attachmentFilenameBox, defaults.AttachmentDisplayName);
+            _attachmentFilenameWasUserEdited = false;
+        }
+    }
+
+    private void SetGeneratedText(TextBox box, string value)
+    {
+        bool previous = _suppressGeneratedFieldChangeTracking;
+        _suppressGeneratedFieldChangeTracking = true;
+        try
+        {
+            box.Text = value;
+        }
+        finally
+        {
+            _suppressGeneratedFieldChangeTracking = previous;
+        }
     }
 
     private Control BuildPrintJobPanel(CapturedPrintJobContext context)
@@ -482,6 +678,11 @@ public sealed class RecipientSelectionDialog : Form
             RecipientEmail = recipient.EmailAddress,
             Subject = _subjectBox.Text,
             Body = _bodyBox.Text,
+            DocumentKind = _selectedDocumentKind,
+            DocumentName = string.IsNullOrWhiteSpace(_documentNameBox.Text) ? DocumentDefaults.Create(_selectedDocumentKind, _context).DocumentName : _documentNameBox.Text.Trim(),
+            AttachmentDisplayName = DocumentDefaults.SanitizeAttachmentFileName(
+                _attachmentFilenameBox.Text,
+                DocumentDefaults.Create(_selectedDocumentKind, _context).AttachmentDisplayName),
             SelectedAt = DateTimeOffset.UtcNow
         };
         _autoCloseTimer.Stop();

@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using PrintRxerV3.Metadata;
 
 namespace PrintRxerV3.Handoff;
@@ -9,7 +10,8 @@ public static class HandoffPackageWriter
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() }
     };
 
     public static string Write(string handoffRoot, PackageRequest request, string pdfPath)
@@ -68,6 +70,10 @@ public static class HandoffPackageWriter
         builder.AppendLine("printRxer HealthMailer handoff package");
         builder.AppendLine("Package ID: " + request.PackageId);
         builder.AppendLine("Recipient: " + request.SelectedRecipientName + " <" + request.SelectedRecipientEmail + ">");
+        builder.AppendLine("Document kind: " + request.DocumentKind);
+        builder.AppendLine("Document name: " + request.DocumentName);
+        builder.AppendLine("Internal package PDF: prescription.pdf");
+        builder.AppendLine("Outbound attachment filename: " + request.AttachmentDisplayName);
         builder.AppendLine("Subject: " + request.Subject);
         builder.AppendLine("PDF SHA256: " + request.PdfSha256);
         builder.AppendLine("Audit note: " + request.AuditNote);

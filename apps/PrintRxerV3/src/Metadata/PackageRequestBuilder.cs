@@ -25,6 +25,9 @@ public static class PackageRequestBuilder
         ArgumentNullException.ThrowIfNull(identity);
         ArgumentNullException.ThrowIfNull(printOrigin);
         ArgumentNullException.ThrowIfNull(selection);
+        string documentName = string.IsNullOrWhiteSpace(selection.DocumentName) ? "Clinical document" : selection.DocumentName.Trim();
+        string fallbackAttachment = selection.DocumentKind == DocumentKind.Prescription ? "prescription.pdf" : "clinicalDocument.pdf";
+        string attachmentDisplayName = DocumentDefaults.SanitizeAttachmentFileName(selection.AttachmentDisplayName, fallbackAttachment);
 
         return new PackageRequest
         {
@@ -33,7 +36,11 @@ public static class PackageRequestBuilder
             PreparedAt = createdAt,
             WorkstationIdentity = identity,
             PrintJobOrigin = printOrigin,
-            PickerSelection = selection,
+            PickerSelection = selection with
+            {
+                DocumentName = documentName,
+                AttachmentDisplayName = attachmentDisplayName
+            },
             SelectedRecipient = new SelectedRecipientMetadata
             {
                 Name = selection.RecipientName,
@@ -45,6 +52,9 @@ public static class PackageRequestBuilder
             SelectedRecipientEmail = selection.RecipientEmail,
             Subject = selection.Subject,
             Body = selection.Body,
+            DocumentKind = selection.DocumentKind,
+            DocumentName = documentName,
+            AttachmentDisplayName = attachmentDisplayName,
             PdfSha256 = pdfSha256,
             AuditNote = DefaultAuditNote
         };

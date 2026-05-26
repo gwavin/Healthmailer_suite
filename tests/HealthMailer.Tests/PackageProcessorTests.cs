@@ -88,6 +88,7 @@ public sealed class PackageProcessorTests
         Assert.Single(Directory.GetFiles(chartRoot, "*.pdf"));
         Assert.True(File.Exists(Path.Combine(localRoot, "sent", "pkg-1", "result.json")));
         Assert.Contains("Status: Sent", File.ReadAllText(Path.Combine(localRoot, "sent", "pkg-1", "summary.txt")));
+        Assert.Contains("Outbound attachment filename: MRN999_prescription_20260526_1430.pdf", File.ReadAllText(Path.Combine(localRoot, "sent", "pkg-1", "summary.txt")));
     }
 
     [Fact]
@@ -108,7 +109,9 @@ public sealed class PackageProcessorTests
         string resultJson = File.ReadAllText(Path.Combine(archived, "result.json"));
         Assert.Contains("ValidatedNoSend", resultJson);
         Assert.Contains("\"MailSent\": false", resultJson);
+        Assert.Contains("MRN999_prescription_20260526_1430.pdf", resultJson);
         Assert.Contains("Mail sent: False", File.ReadAllText(Path.Combine(archived, "summary.txt")));
+        Assert.Contains("Internal package PDF: prescription.pdf", File.ReadAllText(Path.Combine(archived, "summary.txt")));
 
         CreatePackage(paths.HandoffRoot, "pkg-dry-run");
         RecordingMailer liveMailer = new();
@@ -188,6 +191,7 @@ public sealed class PackageProcessorTests
         string quarantine = Path.Combine(paths.LocalRoot, "quarantine", "pkg-bad-hash");
         Assert.True(Directory.Exists(quarantine));
         Assert.Contains("ValidationFailed", File.ReadAllText(Path.Combine(quarantine, "result.json")));
+        Assert.Contains("MRN999_prescription_20260526_1430.pdf", File.ReadAllText(Path.Combine(quarantine, "result.json")));
     }
 
     [Fact]
@@ -221,6 +225,7 @@ public sealed class PackageProcessorTests
         string failed = Path.Combine(paths.LocalRoot, "failed", "pkg-mail-fail");
         Assert.True(Directory.Exists(failed));
         Assert.Contains("MailFailed", File.ReadAllText(Path.Combine(failed, "result.json")));
+        Assert.Contains("MRN999_prescription_20260526_1430.pdf", File.ReadAllText(Path.Combine(failed, "result.json")));
     }
 
     [Fact]
@@ -435,6 +440,9 @@ public sealed class PackageProcessorTests
             selectedRecipientName = "Recipient",
             subject = "Prescription",
             body = "Please see attached.",
+            documentKind = "Prescription",
+            documentName = "Prescription",
+            attachmentDisplayName = "MRN999_prescription_20260526_1430.pdf",
             pdfSha256 = corruptRequestHash ? "bad" : hash,
             mrn = "MRN999"
         }));

@@ -11,6 +11,9 @@ public sealed record DeliveryPackage
     public required string AttachmentPath { get; init; }
     public required string PdfSha256 { get; init; }
     public required string CompletedPackageHash { get; init; }
+    public string DocumentKind { get; init; } = "ClinicalDocument";
+    public string DocumentName { get; init; } = "Clinical document";
+    public string AttachmentDisplayName { get; init; } = "clinicalDocument.pdf";
     public string PatientName { get; init; } = string.Empty;
     public string Mrn { get; init; } = string.Empty;
 }

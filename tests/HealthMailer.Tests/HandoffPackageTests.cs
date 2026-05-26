@@ -42,6 +42,9 @@ public sealed class HandoffPackageTests
         Assert.Equal("Prescription for review", result.Package.Subject);
         Assert.Equal("Jane Doe", result.Package.PatientName);
         Assert.Equal("MRN123", result.Package.Mrn);
+        Assert.Equal("Prescription", result.Package.DocumentKind);
+        Assert.Equal("Prescription", result.Package.DocumentName);
+        Assert.Equal("MRN123_prescription_20260526_1430.pdf", result.Package.AttachmentDisplayName);
         Assert.EndsWith("prescription.pdf", result.Package.AttachmentPath);
     }
 
@@ -90,6 +93,9 @@ public sealed class HandoffPackageTests
             selectedRecipientName = "Alpha Pharmacy",
             subject = "Prescription for review",
             body = "Please see attached.",
+            documentKind = "Prescription",
+            documentName = "Prescription",
+            attachmentDisplayName = "MRN123_prescription_20260526_1430.pdf",
             pdfSha256 = hash,
             patientName = "Jane Doe",
             mrn = "MRN123",
@@ -98,7 +104,10 @@ public sealed class HandoffPackageTests
                 recipientName = "Alpha Pharmacy",
                 recipientEmail = "alpha@example.ie",
                 subject = "Prescription for review",
-                body = "Please see attached."
+                body = "Please see attached.",
+                documentKind = "Prescription",
+                documentName = "Prescription",
+                attachmentDisplayName = "MRN123_prescription_20260526_1430.pdf"
             },
             printJobOrigin = new
             {

@@ -6,6 +6,46 @@ namespace HealthMailer.Tests;
 public sealed class MailHandoffTests
 {
     [Fact]
+    public void AttachmentFilePreparer_creates_friendly_temp_copy_and_cleans_up()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "healthmailer-attachment-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        string internalPdf = Path.Combine(root, "prescription.pdf");
+        File.WriteAllText(internalPdf, "%PDF-1.4\n% test\n");
+        DeliveryPackage package = CreatePackage(internalPdf) with { AttachmentDisplayName = "MRN123_prescription_20260526_1430.pdf" };
+
+        using PreparedAttachment prepared = AttachmentFilePreparer.Prepare(package);
+        string preparedDirectory = Path.GetDirectoryName(prepared.Path)!;
+
+        Assert.Equal("MRN123_prescription_20260526_1430.pdf", Path.GetFileName(prepared.Path));
+        Assert.True(File.Exists(prepared.Path));
+        Assert.Equal(internalPdf, package.AttachmentPath);
+
+        prepared.Dispose();
+
+        Assert.False(Directory.Exists(preparedDirectory));
+    }
+
+    [Theory]
+    [InlineData("..\\..\\bad.exe")]
+    [InlineData("C:\\Temp\\bad.pdf")]
+    [InlineData("")]
+    public void AttachmentFilePreparer_sanitises_invalid_display_names_inside_temp_folder(string displayName)
+    {
+        string root = Path.Combine(Path.GetTempPath(), "healthmailer-attachment-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        string internalPdf = Path.Combine(root, "prescription.pdf");
+        File.WriteAllText(internalPdf, "%PDF-1.4\n% test\n");
+        DeliveryPackage package = CreatePackage(internalPdf) with { AttachmentDisplayName = displayName };
+
+        using PreparedAttachment prepared = AttachmentFilePreparer.Prepare(package);
+
+        Assert.EndsWith(".pdf", prepared.Path, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(Path.Combine(Path.GetTempPath(), "HealthMailer"), Path.GetFullPath(prepared.Path), StringComparison.OrdinalIgnoreCase);
+        Assert.True(File.Exists(prepared.Path));
+    }
+
+    [Fact]
     public void ResolveRecipients_throws_when_outlook_resolve_all_returns_false()
     {
         MethodInfo method = typeof(OutlookMailHandoff).GetMethod("ResolveRecipients", BindingFlags.NonPublic | BindingFlags.Static)!;
@@ -32,5 +72,24 @@ public sealed class MailHandoffTests
     public sealed class FakeRecipients(bool resolveResult)
     {
         public bool ResolveAll() => resolveResult;
+    }
+
+    private static DeliveryPackage CreatePackage(string internalPdf)
+    {
+        return new DeliveryPackage
+        {
+            PackageDirectory = Path.GetDirectoryName(internalPdf)!,
+            PackageId = "pkg-123",
+            RecipientEmail = "recipient@healthmail.ie",
+            RecipientName = "Recipient",
+            Subject = "Prescription",
+            Body = "Please see attached.",
+            AttachmentPath = internalPdf,
+            PdfSha256 = "hash",
+            CompletedPackageHash = "completed",
+            DocumentKind = "Prescription",
+            DocumentName = "Prescription",
+            AttachmentDisplayName = "prescription.pdf"
+        };
     }
 }

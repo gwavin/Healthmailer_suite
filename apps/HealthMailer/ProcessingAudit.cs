@@ -26,6 +26,10 @@ public sealed record ProcessingResult
     public string RecipientEmail { get; init; } = string.Empty;
     public string PdfSha256 { get; init; } = string.Empty;
     public string CompletedPackageHash { get; init; } = string.Empty;
+    public string DocumentKind { get; init; } = string.Empty;
+    public string DocumentName { get; init; } = string.Empty;
+    public string InternalPackagePdf { get; init; } = "prescription.pdf";
+    public string AttachmentDisplayName { get; init; } = string.Empty;
     public bool MailSent { get; init; }
     public bool ChartCopied { get; init; }
     public string ChartCopyPath { get; init; } = string.Empty;
@@ -58,6 +62,10 @@ public sealed class ProcessingAuditWriter
             "Status: " + result.Outcome,
             "Package ID: " + result.PackageId,
             "Recipient: " + result.RecipientEmail,
+            "Document kind: " + result.DocumentKind,
+            "Document name: " + result.DocumentName,
+            "Internal package PDF: " + result.InternalPackagePdf,
+            "Outbound attachment filename: " + result.AttachmentDisplayName,
             "Completed UTC: " + result.CompletedAtUtc.ToString("O"),
             "Mail sent: " + result.MailSent,
             "Chart copied: " + result.ChartCopied,
@@ -74,6 +82,10 @@ public sealed class ProcessingAuditWriter
             "<dt>Status</dt><dd>" + H(result.Outcome.ToString()) + "</dd>" +
             "<dt>Package ID</dt><dd>" + H(result.PackageId) + "</dd>" +
             "<dt>Recipient</dt><dd>" + H(result.RecipientEmail) + "</dd>" +
+            "<dt>Document kind</dt><dd>" + H(result.DocumentKind) + "</dd>" +
+            "<dt>Document name</dt><dd>" + H(result.DocumentName) + "</dd>" +
+            "<dt>Internal package PDF</dt><dd>" + H(result.InternalPackagePdf) + "</dd>" +
+            "<dt>Outbound attachment filename</dt><dd>" + H(result.AttachmentDisplayName) + "</dd>" +
             "<dt>Completed UTC</dt><dd>" + H(result.CompletedAtUtc.ToString("O")) + "</dd>" +
             "<dt>Mail sent</dt><dd>" + H(result.MailSent.ToString()) + "</dd>" +
             "<dt>Chart copied</dt><dd>" + H(result.ChartCopied.ToString()) + "</dd>" +

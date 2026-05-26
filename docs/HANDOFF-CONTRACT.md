@@ -27,6 +27,9 @@ Required fields include:
   "readyAt": "2026-05-11T09:00:02Z",
   "selectedRecipientName": "Example Pharmacy",
   "selectedRecipientEmail": "pharmacy@healthmail.ie",
+  "documentKind": "Prescription",
+  "documentName": "Prescription",
+  "attachmentDisplayName": "MRN123_prescription_20260511_0900.pdf",
   "subject": "Prescription",
   "body": "Please see attached.",
   "pdfSha256": "lowercase-hex-sha256",
@@ -58,6 +61,12 @@ Format:
 ```text
 <pdf-sha256>  prescription.pdf
 ```
+
+The internal package PDF filename remains `prescription.pdf` for validation and
+SHA256 matching. The email attachment may use the `attachmentDisplayName` value
+as a friendlier outbound filename. MRN or patient identifiers in outbound
+attachment filenames are patient-identifiable information and should only be
+used for approved clinical matching workflows.
 
 ## Recipient Selection
 
@@ -105,6 +114,10 @@ Example:
   "recipientEmail": "pharmacy@healthmail.ie",
   "pdfSha256": "lowercase-hex-sha256",
   "completedPackageHash": "lowercase-hex-sha256",
+  "documentKind": "Prescription",
+  "documentName": "Prescription",
+  "internalPackagePdf": "prescription.pdf",
+  "attachmentDisplayName": "MRN123_prescription_20260511_0900.pdf",
   "mailSent": true,
   "chartCopied": false,
   "chartCopyPath": ""
