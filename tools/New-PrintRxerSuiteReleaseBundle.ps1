@@ -162,6 +162,7 @@ function Copy-ReleaseDocumentation {
     param([string]$Destination)
 
     Copy-RequiredFile '.\healthmailer_release_doc_cleaned.html' (Join-Path $Destination 'healthmailer_release_doc.html')
+    Copy-RequiredFile '.\printRxer_HealthMailer_User_Guide.html' (Join-Path $Destination 'printRxer_HealthMailer_User_Guide.html')
 
     foreach ($doc in @(
         'RECIPIENTS.md',

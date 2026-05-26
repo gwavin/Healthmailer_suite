@@ -15,6 +15,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("Test-SuiteZipSmoke", script, StringComparison.Ordinal);
         Assert.Contains("--smoke-test", script, StringComparison.Ordinal);
         Assert.Contains("INSTALL-BUNDLE-README.txt", script, StringComparison.Ordinal);
+        Assert.Contains("printRxer_HealthMailer_User_Guide.html", script, StringComparison.Ordinal);
         Assert.Contains("printRxerSetup.exe", script, StringComparison.Ordinal);
         Assert.Contains("HealthMailerSetup.exe", script, StringComparison.Ordinal);
         Assert.Contains("payload\\setup\\printRxerSetup.exe", script, StringComparison.Ordinal);
