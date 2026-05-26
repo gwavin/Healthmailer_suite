@@ -70,6 +70,19 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
         Assert.Contains("native port monitor, driver, and local printer queue named printRxer", source);
     }
 
+    [Fact]
+    public void Component_installers_can_resolve_suite_bundle_root_from_payload_setup()
+    {
+        string repoRoot = RepoRoot();
+        string printRxerPaths = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "InstallerPaths.cs"));
+        string healthMailerPaths = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "InstallerPaths.cs"));
+
+        Assert.Contains("ResolveBundleRoot()", printRxerPaths);
+        Assert.Contains("payload\", \"publish\", \"printRxer", printRxerPaths);
+        Assert.Contains("ResolveBundleRoot()", healthMailerPaths);
+        Assert.Contains("payload\", \"publish\", \"HealthMailer", healthMailerPaths);
+    }
+
     private static string CreateMinimalBundle()
     {
         string root = Path.Combine(Path.GetTempPath(), "printRxer-suite-preflight-" + Guid.NewGuid().ToString("N"));

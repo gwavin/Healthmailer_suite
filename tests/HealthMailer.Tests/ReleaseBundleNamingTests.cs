@@ -115,6 +115,8 @@ public sealed class ReleaseBundleNamingTests
         string repoRoot = FindRepoRoot();
         string printRxer = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "Program.cs"));
         string healthMailer = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "Program.cs"));
+        string printRxerPaths = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "InstallerPaths.cs"));
+        string healthMailerPaths = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "InstallerPaths.cs"));
 
         foreach (string source in new[] { printRxer, healthMailer })
         {
@@ -134,6 +136,8 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("Path.GetTempPath()", printRxer, StringComparison.Ordinal);
         Assert.Contains("HealthMailerPrerequisiteFailed = 5", healthMailer, StringComparison.Ordinal);
         Assert.Contains("--send-mail", healthMailer, StringComparison.Ordinal);
+        Assert.Contains("ResolveBundleRoot()", printRxerPaths, StringComparison.Ordinal);
+        Assert.Contains("ResolveBundleRoot()", healthMailerPaths, StringComparison.Ordinal);
     }
 
     [Fact]
