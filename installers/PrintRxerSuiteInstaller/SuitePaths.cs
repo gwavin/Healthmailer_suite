@@ -6,6 +6,7 @@ internal static class SuitePaths
     public const string HealthMailerProgramDataRoot = @"C:\ProgramData\HealthMailer";
     public const string PrintRxerLogsRoot = @"C:\ProgramData\printRxer\logs";
     public const string HealthMailerLogsRoot = @"C:\ProgramData\HealthMailer\logs";
+    public const string PrintRxerInstallerLogPath = @"C:\ProgramData\printRxer\logs\printRxerInstaller.log";
 
     public static string BundleRoot => AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
     public static string PayloadRoot => Path.Combine(BundleRoot, "payload");

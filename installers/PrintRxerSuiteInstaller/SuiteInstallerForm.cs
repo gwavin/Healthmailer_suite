@@ -160,11 +160,22 @@ internal sealed class SuiteInstallerForm : Form
                 }
             }
 
+            long? logStart = setupKind == SetupKind.PrintRxer && isUninstall
+                ? TryGetFileLength(SuitePaths.PrintRxerInstallerLogPath)
+                : null;
+            using Form? busyDialog = isUninstall ? ShowBusyDialog("printRxer uninstall is running", "Please wait while Windows removes the printRxer watcher, printer queue, driver, port, monitor, and app files.") : null;
+
             ProcessResult setupResult = ProcessRunner.RunForResult(setupPath, arguments, elevate: elevate);
+            busyDialog?.Close();
+
             AppendStatus(Path.GetFileName(setupPath) + " closed with exit code " + setupResult.ExitCode + ".");
             if (!string.IsNullOrWhiteSpace(setupResult.Output))
             {
                 AppendStatus(setupResult.Output);
+            }
+            else if (setupKind == SetupKind.PrintRxer && isUninstall)
+            {
+                AppendNewLogLines(SuitePaths.PrintRxerInstallerLogPath, logStart);
             }
 
             if (setupResult.ExitCode != 0)
@@ -182,6 +193,97 @@ internal sealed class SuiteInstallerForm : Form
                 AppendStatus("printRxer uninstall finished. Standard uninstall preserves C:\\ProgramData\\printRxer evidence by default.");
             }
         });
+    }
+
+    private Form ShowBusyDialog(string title, string message)
+    {
+        Form dialog = new()
+        {
+            Text = title,
+            StartPosition = FormStartPosition.CenterParent,
+            Size = new Size(520, 180),
+            MinimumSize = new Size(520, 180),
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            MaximizeBox = false,
+            MinimizeBox = false,
+            ControlBox = false,
+            ShowInTaskbar = false
+        };
+
+        TableLayoutPanel panel = new()
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            Padding = new Padding(18)
+        };
+        panel.Controls.Add(new Label
+        {
+            Text = title,
+            Font = new Font(SystemFonts.DefaultFont.FontFamily, 11, FontStyle.Bold),
+            AutoSize = true,
+            Dock = DockStyle.Top
+        });
+        panel.Controls.Add(new Label
+        {
+            Text = message,
+            AutoSize = false,
+            Height = 46,
+            Dock = DockStyle.Top
+        });
+        panel.Controls.Add(new ProgressBar
+        {
+            Style = ProgressBarStyle.Marquee,
+            MarqueeAnimationSpeed = 35,
+            Dock = DockStyle.Top,
+            Height = 24
+        });
+
+        dialog.Controls.Add(panel);
+        dialog.Show(this);
+        dialog.Refresh();
+        Application.DoEvents();
+        return dialog;
+    }
+
+    private static long? TryGetFileLength(string path)
+    {
+        try
+        {
+            return File.Exists(path) ? new FileInfo(path).Length : 0;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private void AppendNewLogLines(string path, long? startPosition)
+    {
+        if (startPosition is null || !File.Exists(path))
+        {
+            AppendStatus("No printRxer installer log output was available.");
+            return;
+        }
+
+        try
+        {
+            using FileStream stream = new(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            if (startPosition.Value > stream.Length)
+            {
+                startPosition = 0;
+            }
+
+            stream.Seek(startPosition.Value, SeekOrigin.Begin);
+            using StreamReader reader = new(stream);
+            string text = reader.ReadToEnd().Trim();
+            AppendStatus(string.IsNullOrWhiteSpace(text)
+                ? "No new printRxer installer log lines were written."
+                : "printRxer uninstall log:" + Environment.NewLine + text);
+        }
+        catch (Exception ex)
+        {
+            AppendStatus("Could not read printRxer installer log: " + ex.Message);
+        }
     }
 
     private void RunPrintRxerInstall()

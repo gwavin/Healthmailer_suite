@@ -63,6 +63,9 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("printRxer uninstall will remove the watcher, app files, printer queue, driver, port, and monitor", form, StringComparison.Ordinal);
         Assert.Contains("Suite buttons are disabled while Windows removes printRxer components", form, StringComparison.Ordinal);
         Assert.Contains("This window will wait for uninstall to finish", form, StringComparison.Ordinal);
+        Assert.Contains("ShowBusyDialog(\"printRxer uninstall is running\"", form, StringComparison.Ordinal);
+        Assert.Contains("AppendNewLogLines(SuitePaths.PrintRxerInstallerLogPath", form, StringComparison.Ordinal);
+        Assert.Contains("printRxer uninstall log:", form, StringComparison.Ordinal);
         Assert.Contains("ProcessRunner.RunForResult(setupPath, arguments, elevate: elevate)", form, StringComparison.Ordinal);
         Assert.Contains("ValidatePrintRxerAfterSetup", form, StringComparison.Ordinal);
         Assert.DoesNotContain("ProcessRunner.StartElevated(setupPath, arguments)", form, StringComparison.Ordinal);
