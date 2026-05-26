@@ -151,6 +151,7 @@ internal sealed class SuiteInstallerForm : Form
         {
             string actionName = isUninstall ? "uninstall" : "setup";
             AppendStatus("Starting " + Path.GetFileName(setupPath) + " " + actionName + ".");
+            AppendStatus(ComponentDisplayName(setupKind) + " " + actionName + " is running. Suite buttons are disabled until it completes.");
             if (isUninstall)
             {
                 AppendStatus(ComponentDisplayName(setupKind) + " uninstall is running. Suite buttons are disabled while Windows removes " + ComponentDisplayName(setupKind) + " components.");
@@ -163,10 +164,10 @@ internal sealed class SuiteInstallerForm : Form
             long? logStart = setupKind == SetupKind.PrintRxer && isUninstall
                 ? TryGetFileLength(SuitePaths.PrintRxerInstallerLogPath)
                 : null;
-            using Form? busyDialog = isUninstall ? ShowBusyDialog(UninstallProgressTitle(setupKind), UninstallProgressMessage(setupKind)) : null;
+            using Form busyDialog = ShowBusyDialog(ProgressTitle(setupKind, isUninstall), ProgressMessage(setupKind, isUninstall));
 
-            ProcessResult setupResult = ProcessRunner.RunForResult(setupPath, arguments, elevate: elevate);
-            busyDialog?.Close();
+            ProcessResult setupResult = ProcessRunner.RunForResult(setupPath, arguments, elevate: elevate, whileWaiting: PumpBusyUi);
+            busyDialog.Close();
 
             AppendStatus(Path.GetFileName(setupPath) + " closed with exit code " + setupResult.ExitCode + ".");
             if (!string.IsNullOrWhiteSpace(setupResult.Output))
@@ -205,16 +206,23 @@ internal sealed class SuiteInstallerForm : Form
         return setupKind == SetupKind.HealthMailer ? "HealthMailer" : "printRxer";
     }
 
-    private static string UninstallProgressTitle(SetupKind setupKind)
+    private static string ProgressTitle(SetupKind setupKind, bool uninstall)
     {
-        return ComponentDisplayName(setupKind) + " uninstall is running";
+        return ComponentDisplayName(setupKind) + (uninstall ? " uninstall is running" : " install is running");
     }
 
-    private static string UninstallProgressMessage(SetupKind setupKind)
+    private static string ProgressMessage(SetupKind setupKind, bool uninstall)
     {
-        return setupKind == SetupKind.HealthMailer
+        if (uninstall)
+        {
+            return setupKind == SetupKind.HealthMailer
             ? "Please wait while Windows removes the HealthMailer scheduled task and app files."
             : "Please wait while Windows removes the printRxer watcher, printer queue, driver, port, monitor, and app files.";
+        }
+
+        return setupKind == SetupKind.HealthMailer
+            ? "Please wait while Windows installs HealthMailer for the Outlook/Healthmail sender user."
+            : "Please wait while Windows installs printRxer, including the watcher, printer queue, driver, port, monitor, and app files.";
     }
 
     private Form ShowBusyDialog(string title, string message)
@@ -265,6 +273,11 @@ internal sealed class SuiteInstallerForm : Form
         dialog.Refresh();
         Application.DoEvents();
         return dialog;
+    }
+
+    private static void PumpBusyUi()
+    {
+        Application.DoEvents();
     }
 
     private static long? TryGetFileLength(string path)
@@ -342,7 +355,9 @@ internal sealed class SuiteInstallerForm : Form
         {
             AppendStatus("Installing printRxer printing machine with handoff folder: " + handoffRoot);
             string arguments = "--quiet --handoff-root \"" + EscapeArgument(handoffRoot) + "\"";
-            ProcessResult setupResult = ProcessRunner.RunForResult(SuitePaths.PrintRxerSetupPath, arguments, elevate: true);
+            using Form busyDialog = ShowBusyDialog(ProgressTitle(SetupKind.PrintRxer, uninstall: false), ProgressMessage(SetupKind.PrintRxer, uninstall: false));
+            ProcessResult setupResult = ProcessRunner.RunForResult(SuitePaths.PrintRxerSetupPath, arguments, elevate: true, whileWaiting: PumpBusyUi);
+            busyDialog.Close();
             AppendStatus("printRxerSetup.exe closed with exit code " + setupResult.ExitCode + ".");
             if (!string.IsNullOrWhiteSpace(setupResult.Output))
             {

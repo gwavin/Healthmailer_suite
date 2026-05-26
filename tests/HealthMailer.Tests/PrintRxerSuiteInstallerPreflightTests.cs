@@ -39,12 +39,14 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
             "PrintRxerSuiteInstaller",
             "SuiteInstallerForm.cs"));
 
-        Assert.Contains("RunForResult(setupPath, arguments, elevate: elevate)", source);
+        Assert.Contains("RunForResult(setupPath, arguments, elevate: elevate, whileWaiting: PumpBusyUi)", source);
         Assert.Contains("RunPrintRxerInstall", source);
         Assert.Contains("--quiet --handoff-root", source);
         Assert.Contains("ValidatePrintRxerAfterSetup", source);
         Assert.Contains("--validate", source);
         Assert.Contains("Windows should show a printer named printRxer", source);
+        Assert.Contains("whileWaiting: PumpBusyUi", source);
+        Assert.Contains("ProgressTitle(SetupKind.PrintRxer, uninstall: false)", source);
     }
 
     [Fact]

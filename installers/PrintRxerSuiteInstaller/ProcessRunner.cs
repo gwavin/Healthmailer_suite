@@ -17,7 +17,7 @@ internal static class ProcessRunner
         return result.Output;
     }
 
-    public static ProcessResult RunForResult(string fileName, string arguments = "", bool elevate = false)
+    public static ProcessResult RunForResult(string fileName, string arguments = "", bool elevate = false, Action? whileWaiting = null)
     {
         using Process process = new()
         {
@@ -48,7 +48,10 @@ internal static class ProcessRunner
             process.BeginErrorReadLine();
         }
 
-        process.WaitForExit();
+        while (!process.WaitForExit(100))
+        {
+            whileWaiting?.Invoke();
+        }
 
         string text = output.ToString().Trim();
         return new ProcessResult(process.ExitCode, text);
