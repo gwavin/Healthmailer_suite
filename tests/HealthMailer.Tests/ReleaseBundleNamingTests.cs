@@ -60,6 +60,12 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("RunPrintRxerInstall", form, StringComparison.Ordinal);
         Assert.Contains("--quiet --handoff-root", form, StringComparison.Ordinal);
         Assert.Contains("--uninstall --quiet", form, StringComparison.Ordinal);
+        Assert.Contains("--uninstall --remove-data --quiet", form, StringComparison.Ordinal);
+        Assert.Contains("RunPrintRxerUninstall", form, StringComparison.Ordinal);
+        Assert.Contains("Remove C:\\\\ProgramData\\\\printRxer too?", form, StringComparison.Ordinal);
+        Assert.Contains("MessageBoxDefaultButton.Button2", form, StringComparison.Ordinal);
+        Assert.Contains("printRxer uninstall selected with ProgramData preserved", form, StringComparison.Ordinal);
+        Assert.Contains("printRxer uninstall selected with ProgramData removal", form, StringComparison.Ordinal);
         Assert.Contains("printRxer uninstall will remove the watcher, app files, printer queue, driver, port, and monitor", form, StringComparison.Ordinal);
         Assert.Contains("ComponentDisplayName(setupKind) + \" uninstall is running", form, StringComparison.Ordinal);
         Assert.Contains("Suite buttons are disabled while Windows removes", form, StringComparison.Ordinal);

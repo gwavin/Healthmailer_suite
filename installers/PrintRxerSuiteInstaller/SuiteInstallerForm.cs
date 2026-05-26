@@ -191,7 +191,9 @@ internal sealed class SuiteInstallerForm : Form
 
             if (setupKind == SetupKind.PrintRxer && isUninstall)
             {
-                AppendStatus("printRxer uninstall finished. Standard uninstall preserves C:\\ProgramData\\printRxer evidence by default.");
+                AppendStatus(arguments.Contains("--remove-data", StringComparison.OrdinalIgnoreCase)
+                    ? "printRxer uninstall finished. C:\\ProgramData\\printRxer was requested for removal."
+                    : "printRxer uninstall finished. Standard uninstall preserves C:\\ProgramData\\printRxer evidence by default.");
             }
 
             if (setupKind == SetupKind.HealthMailer && isUninstall)
@@ -669,7 +671,7 @@ internal sealed class SuiteInstallerForm : Form
         Button repairPrintRxer = CreateButton("Repair / reinstall printRxer printing", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer); });
         Button repairCapture = CreateButton("Repair printRxer printer capture", (_, _) => { dialog.Close(); RunElevatedScript(SuitePaths.CaptureInstallScriptPath); });
         Button repairHealthMailer = CreateButton("Repair / reinstall HealthMailer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.HealthMailerSetupPath, SetupKind.HealthMailer); });
-        Button uninstallPrintRxer = CreateButton("Uninstall printRxer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer, "--uninstall --quiet"); });
+        Button uninstallPrintRxer = CreateButton("Uninstall printRxer", (_, _) => { dialog.Close(); RunPrintRxerUninstall(); });
         Button uninstallHealthMailer = CreateButton("Uninstall HealthMailer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.HealthMailerSetupPath, SetupKind.HealthMailer, "--uninstall"); });
 
         foreach (Button button in new[] { repairPrintRxer, repairCapture, repairHealthMailer, uninstallPrintRxer, uninstallHealthMailer })
@@ -682,6 +684,36 @@ internal sealed class SuiteInstallerForm : Form
 
         dialog.Controls.Add(panel);
         dialog.ShowDialog(this);
+    }
+
+    private void RunPrintRxerUninstall()
+    {
+        DialogResult dataChoice = MessageBox.Show(
+            this,
+            "Standard printRxer uninstall preserves local evidence in C:\\ProgramData\\printRxer, including logs, configuration, archives, and support/audit material." +
+            Environment.NewLine + Environment.NewLine +
+            "Choose Yes only for an approved lab reset where local printRxer ProgramData should also be removed." +
+            Environment.NewLine + Environment.NewLine +
+            "Remove C:\\ProgramData\\printRxer too?",
+            "printRxer ProgramData",
+            MessageBoxButtons.YesNoCancel,
+            MessageBoxIcon.Warning,
+            MessageBoxDefaultButton.Button2);
+
+        if (dataChoice == DialogResult.Cancel)
+        {
+            AppendStatus("printRxer uninstall cancelled before ProgramData choice.");
+            return;
+        }
+
+        string arguments = dataChoice == DialogResult.Yes
+            ? "--uninstall --remove-data --quiet"
+            : "--uninstall --quiet";
+
+        AppendStatus(dataChoice == DialogResult.Yes
+            ? "printRxer uninstall selected with ProgramData removal."
+            : "printRxer uninstall selected with ProgramData preserved.");
+        RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer, arguments);
     }
 
     private void RunUserAction(Action action)
