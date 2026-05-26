@@ -153,7 +153,7 @@ internal sealed class SuiteInstallerForm : Form
             AppendStatus("Starting " + Path.GetFileName(setupPath) + " " + actionName + ".");
             if (isUninstall)
             {
-                AppendStatus("Uninstall is running. Suite buttons are disabled while Windows removes printRxer components.");
+                AppendStatus(ComponentDisplayName(setupKind) + " uninstall is running. Suite buttons are disabled while Windows removes " + ComponentDisplayName(setupKind) + " components.");
                 if (elevate)
                 {
                     AppendStatus("Approve the Windows administrator prompt if it appears. This window will wait for uninstall to finish.");
@@ -163,7 +163,7 @@ internal sealed class SuiteInstallerForm : Form
             long? logStart = setupKind == SetupKind.PrintRxer && isUninstall
                 ? TryGetFileLength(SuitePaths.PrintRxerInstallerLogPath)
                 : null;
-            using Form? busyDialog = isUninstall ? ShowBusyDialog("printRxer uninstall is running", "Please wait while Windows removes the printRxer watcher, printer queue, driver, port, monitor, and app files.") : null;
+            using Form? busyDialog = isUninstall ? ShowBusyDialog(UninstallProgressTitle(setupKind), UninstallProgressMessage(setupKind)) : null;
 
             ProcessResult setupResult = ProcessRunner.RunForResult(setupPath, arguments, elevate: elevate);
             busyDialog?.Close();
@@ -192,7 +192,29 @@ internal sealed class SuiteInstallerForm : Form
             {
                 AppendStatus("printRxer uninstall finished. Standard uninstall preserves C:\\ProgramData\\printRxer evidence by default.");
             }
+
+            if (setupKind == SetupKind.HealthMailer && isUninstall)
+            {
+                AppendStatus("HealthMailer uninstall finished. Standard uninstall preserves C:\\ProgramData\\HealthMailer evidence by default.");
+            }
         });
+    }
+
+    private static string ComponentDisplayName(SetupKind setupKind)
+    {
+        return setupKind == SetupKind.HealthMailer ? "HealthMailer" : "printRxer";
+    }
+
+    private static string UninstallProgressTitle(SetupKind setupKind)
+    {
+        return ComponentDisplayName(setupKind) + " uninstall is running";
+    }
+
+    private static string UninstallProgressMessage(SetupKind setupKind)
+    {
+        return setupKind == SetupKind.HealthMailer
+            ? "Please wait while Windows removes the HealthMailer scheduled task and app files."
+            : "Please wait while Windows removes the printRxer watcher, printer queue, driver, port, monitor, and app files.";
     }
 
     private Form ShowBusyDialog(string title, string message)

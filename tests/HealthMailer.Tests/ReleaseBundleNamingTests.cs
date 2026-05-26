@@ -61,9 +61,13 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("--quiet --handoff-root", form, StringComparison.Ordinal);
         Assert.Contains("--uninstall --quiet", form, StringComparison.Ordinal);
         Assert.Contains("printRxer uninstall will remove the watcher, app files, printer queue, driver, port, and monitor", form, StringComparison.Ordinal);
-        Assert.Contains("Suite buttons are disabled while Windows removes printRxer components", form, StringComparison.Ordinal);
+        Assert.Contains("ComponentDisplayName(setupKind) + \" uninstall is running", form, StringComparison.Ordinal);
+        Assert.Contains("Suite buttons are disabled while Windows removes", form, StringComparison.Ordinal);
         Assert.Contains("This window will wait for uninstall to finish", form, StringComparison.Ordinal);
-        Assert.Contains("ShowBusyDialog(\"printRxer uninstall is running\"", form, StringComparison.Ordinal);
+        Assert.Contains("ShowBusyDialog(UninstallProgressTitle(setupKind), UninstallProgressMessage(setupKind))", form, StringComparison.Ordinal);
+        Assert.Contains("setupKind == SetupKind.HealthMailer ? \"HealthMailer\" : \"printRxer\"", form, StringComparison.Ordinal);
+        Assert.Contains("Please wait while Windows removes the HealthMailer scheduled task and app files.", form, StringComparison.Ordinal);
+        Assert.Contains("HealthMailer uninstall finished. Standard uninstall preserves C:\\\\ProgramData\\\\HealthMailer evidence by default.", form, StringComparison.Ordinal);
         Assert.Contains("AppendNewLogLines(SuitePaths.PrintRxerInstallerLogPath", form, StringComparison.Ordinal);
         Assert.Contains("printRxer uninstall log:", form, StringComparison.Ordinal);
         Assert.Contains("ProcessRunner.RunForResult(setupPath, arguments, elevate: elevate)", form, StringComparison.Ordinal);
