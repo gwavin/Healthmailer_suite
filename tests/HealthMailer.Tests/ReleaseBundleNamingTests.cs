@@ -58,7 +58,8 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("bool isUninstall = arguments.Contains(\"--uninstall\"", form, StringComparison.Ordinal);
         Assert.Contains("bool elevate = setupKind == SetupKind.PrintRxer && !isUninstall", form, StringComparison.Ordinal);
         Assert.Contains("printRxer uninstall will check whether printRxer is installed", form, StringComparison.Ordinal);
-        Assert.Contains("ProcessRunner.Start(setupPath, arguments, elevate: elevate)", form, StringComparison.Ordinal);
+        Assert.Contains("ProcessRunner.RunForResult(setupPath, arguments, elevate: elevate)", form, StringComparison.Ordinal);
+        Assert.Contains("ValidatePrintRxerAfterSetup", form, StringComparison.Ordinal);
         Assert.DoesNotContain("ProcessRunner.StartElevated(setupPath, arguments)", form, StringComparison.Ordinal);
         Assert.Contains("No printRxer or HealthMailer log folder exists yet", form, StringComparison.Ordinal);
         Assert.DoesNotContain("Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)", form, StringComparison.Ordinal);

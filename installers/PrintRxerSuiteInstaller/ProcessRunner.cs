@@ -7,6 +7,18 @@ internal static class ProcessRunner
 {
     public static string Run(string fileName, string arguments = "", bool requireSuccess = true, bool elevate = false)
     {
+        ProcessResult result = RunForResult(fileName, arguments, elevate);
+        if (requireSuccess && result.ExitCode != 0)
+        {
+            string detail = string.IsNullOrWhiteSpace(result.Output) ? "No further detail was reported." : result.Output;
+            throw new InvalidOperationException($"{Path.GetFileName(fileName)} returned exit code {result.ExitCode}.\n\n{detail}");
+        }
+
+        return result.Output;
+    }
+
+    public static ProcessResult RunForResult(string fileName, string arguments = "", bool elevate = false)
+    {
         using Process process = new()
         {
             StartInfo = new ProcessStartInfo
@@ -39,13 +51,7 @@ internal static class ProcessRunner
         process.WaitForExit();
 
         string text = output.ToString().Trim();
-        if (requireSuccess && process.ExitCode != 0)
-        {
-            string detail = string.IsNullOrWhiteSpace(text) ? "No further detail was reported." : text;
-            throw new InvalidOperationException($"{Path.GetFileName(fileName)} returned exit code {process.ExitCode}.\n\n{detail}");
-        }
-
-        return text;
+        return new ProcessResult(process.ExitCode, text);
     }
 
     public static string PowerShellFile(string scriptPath, string arguments = "", bool requireSuccess = true, bool elevate = false)
@@ -70,3 +76,5 @@ internal static class ProcessRunner
         process.Start();
     }
 }
+
+internal sealed record ProcessResult(int ExitCode, string Output);

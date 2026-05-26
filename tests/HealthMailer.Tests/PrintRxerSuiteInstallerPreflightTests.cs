@@ -30,6 +30,21 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
         Assert.Contains(results, result => result.RelativePath == @"payload\publish\HealthMailer\HealthMailer.exe" && !result.Exists);
     }
 
+    [Fact]
+    public void Suite_installer_waits_for_printrxer_setup_and_validates_printer_capture()
+    {
+        string source = File.ReadAllText(Path.Combine(
+            RepoRoot(),
+            "installers",
+            "PrintRxerSuiteInstaller",
+            "SuiteInstallerForm.cs"));
+
+        Assert.Contains("RunForResult(setupPath, arguments, elevate: elevate)", source);
+        Assert.Contains("ValidatePrintRxerAfterSetup", source);
+        Assert.Contains("--validate", source);
+        Assert.Contains("Windows should show a printer named printRxer", source);
+    }
+
     private static string CreateMinimalBundle()
     {
         string root = Path.Combine(Path.GetTempPath(), "printRxer-suite-preflight-" + Guid.NewGuid().ToString("N"));
@@ -54,5 +69,16 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
         }
 
         return root;
+    }
+
+    private static string RepoRoot()
+    {
+        string directory = AppContext.BaseDirectory;
+        while (!File.Exists(Path.Combine(directory, "PrintRxerSuite.slnx")))
+        {
+            directory = Directory.GetParent(directory)?.FullName ?? throw new DirectoryNotFoundException("Repository root not found.");
+        }
+
+        return directory;
     }
 }

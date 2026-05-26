@@ -150,9 +150,42 @@ internal sealed class SuiteInstallerForm : Form
         RunUserAction(() =>
         {
             AppendStatus("Starting " + Path.GetFileName(setupPath) + ".");
-            ProcessRunner.Start(setupPath, arguments, elevate: elevate);
-            AppendStatus(Path.GetFileName(setupPath) + " was started. Complete that setup window to continue.");
+            ProcessResult setupResult = ProcessRunner.RunForResult(setupPath, arguments, elevate: elevate);
+            AppendStatus(Path.GetFileName(setupPath) + " closed with exit code " + setupResult.ExitCode + ".");
+            if (!string.IsNullOrWhiteSpace(setupResult.Output))
+            {
+                AppendStatus(setupResult.Output);
+            }
+
+            if (setupResult.ExitCode != 0)
+            {
+                throw new InvalidOperationException(Path.GetFileName(setupPath) + " returned exit code " + setupResult.ExitCode + ".");
+            }
+
+            if (setupKind == SetupKind.PrintRxer && !isUninstall)
+            {
+                ValidatePrintRxerAfterSetup();
+            }
         });
+    }
+
+    private void ValidatePrintRxerAfterSetup()
+    {
+        AppendStatus("Validating printRxer printer capture.");
+        ProcessResult validation = ProcessRunner.RunForResult(SuitePaths.PrintRxerSetupPath, "--validate");
+        if (!string.IsNullOrWhiteSpace(validation.Output))
+        {
+            AppendStatus(validation.Output);
+        }
+
+        if (validation.ExitCode != 0)
+        {
+            throw new InvalidOperationException(
+                "printRxer setup closed, but validation did not find a complete installation. " +
+                "Use Advanced / repair > Repair printRxer printer capture, or review C:\\ProgramData\\printRxer\\logs.");
+        }
+
+        AppendStatus("printRxer validation succeeded; Windows should show a printer named printRxer.");
     }
 
     private void RunElevatedScript(string scriptPath)
