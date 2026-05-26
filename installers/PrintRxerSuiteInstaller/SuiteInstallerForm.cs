@@ -149,7 +149,17 @@ internal sealed class SuiteInstallerForm : Form
 
         RunUserAction(() =>
         {
-            AppendStatus("Starting " + Path.GetFileName(setupPath) + ".");
+            string actionName = isUninstall ? "uninstall" : "setup";
+            AppendStatus("Starting " + Path.GetFileName(setupPath) + " " + actionName + ".");
+            if (isUninstall)
+            {
+                AppendStatus("Uninstall is running. Suite buttons are disabled while Windows removes printRxer components.");
+                if (elevate)
+                {
+                    AppendStatus("Approve the Windows administrator prompt if it appears. This window will wait for uninstall to finish.");
+                }
+            }
+
             ProcessResult setupResult = ProcessRunner.RunForResult(setupPath, arguments, elevate: elevate);
             AppendStatus(Path.GetFileName(setupPath) + " closed with exit code " + setupResult.ExitCode + ".");
             if (!string.IsNullOrWhiteSpace(setupResult.Output))
@@ -165,6 +175,11 @@ internal sealed class SuiteInstallerForm : Form
             if (setupKind == SetupKind.PrintRxer && !isUninstall)
             {
                 ValidatePrintRxerAfterSetup();
+            }
+
+            if (setupKind == SetupKind.PrintRxer && isUninstall)
+            {
+                AppendStatus("printRxer uninstall finished. Standard uninstall preserves C:\\ProgramData\\printRxer evidence by default.");
             }
         });
     }
@@ -553,6 +568,16 @@ internal sealed class SuiteInstallerForm : Form
         foreach (Button button in _buttons)
         {
             button.Enabled = !busy;
+            if (busy)
+            {
+                button.Tag ??= button.Text;
+                button.Text = button.Text == "Close" ? "Working..." : button.Text;
+            }
+            else if (button.Tag is string originalText)
+            {
+                button.Text = originalText;
+                button.Tag = null;
+            }
         }
 
         Cursor = busy ? Cursors.WaitCursor : Cursors.Default;

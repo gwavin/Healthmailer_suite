@@ -61,6 +61,8 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("--quiet --handoff-root", form, StringComparison.Ordinal);
         Assert.Contains("--uninstall --quiet", form, StringComparison.Ordinal);
         Assert.Contains("printRxer uninstall will remove the watcher, app files, printer queue, driver, port, and monitor", form, StringComparison.Ordinal);
+        Assert.Contains("Suite buttons are disabled while Windows removes printRxer components", form, StringComparison.Ordinal);
+        Assert.Contains("This window will wait for uninstall to finish", form, StringComparison.Ordinal);
         Assert.Contains("ProcessRunner.RunForResult(setupPath, arguments, elevate: elevate)", form, StringComparison.Ordinal);
         Assert.Contains("ValidatePrintRxerAfterSetup", form, StringComparison.Ordinal);
         Assert.DoesNotContain("ProcessRunner.StartElevated(setupPath, arguments)", form, StringComparison.Ordinal);
@@ -118,9 +120,15 @@ public sealed class ReleaseBundleNamingTests
         Assert.DoesNotContain("Get-Process -Name 'printRxer*'", uninstaller, StringComparison.Ordinal);
         Assert.DoesNotContain("Get-Process -Name \"printRxer*\"", uninstaller, StringComparison.Ordinal);
         Assert.Contains("Get-Process -Name 'printRxer'", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("Initial component state", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("Final component state", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("Removing scheduled task", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("Printer cleanup step finished", uninstaller, StringComparison.Ordinal);
         Assert.Contains("--uninstall --quiet", uninstallForm, StringComparison.Ordinal);
         Assert.Contains("--uninstall --remove-data --quiet", uninstallForm, StringComparison.Ordinal);
         Assert.Contains("complete the already-confirmed uninstall", uninstallForm, StringComparison.Ordinal);
+        Assert.Contains("Uninstall is running. Buttons are disabled", uninstallForm, StringComparison.Ordinal);
+        Assert.Contains("Uninstalling...", uninstallForm, StringComparison.Ordinal);
     }
 
     [Fact]

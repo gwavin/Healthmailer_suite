@@ -16,11 +16,16 @@ internal static class PrintRxerUninstaller
 
     public static void Uninstall(bool removeData, Action<string> log)
     {
+        log("Starting printRxer uninstall.");
+        log("Initial component state: " + ComponentStateSummary());
+
         log("Stopping and removing printRxer watcher task.");
         TryStep(() => RemoveWatcher(log), "Watcher cleanup", log);
+        log("Watcher cleanup step finished.");
 
         log("Removing printRxer capture printer.");
         TryStep(() => RemoveCapturePrinter(log), "Printer cleanup", log);
+        log("Printer cleanup step finished.");
 
         if (removeData)
         {
@@ -37,6 +42,10 @@ internal static class PrintRxerUninstaller
         {
             TryStep(() => DeleteDirectoryBestEffort(InstallerPaths.ProgramFilesRoot, log), "Application file cleanup", log);
         }
+        else
+        {
+            log("Installed application folder was already absent: " + InstallerPaths.ProgramFilesRoot);
+        }
 
         if (removeData && Directory.Exists(InstallerPaths.ProgramDataRoot))
         {
@@ -44,6 +53,16 @@ internal static class PrintRxerUninstaller
             TryStep(() => RemoveWatcher(log), "Late watcher cleanup", log);
             TryStep(() => DeleteDirectoryBestEffort(InstallerPaths.ProgramDataRoot, log), "Final ProgramData cleanup", log);
         }
+
+        log("Final component state: " + ComponentStateSummary());
+    }
+
+    private static string ComponentStateSummary()
+    {
+        return "appFiles=" + Directory.Exists(InstallerPaths.ProgramFilesRoot) +
+            ", programData=" + Directory.Exists(InstallerPaths.ProgramDataRoot) +
+            ", scheduledTask=" + TaskExists() +
+            ", printerStack=" + PrinterStackExists();
     }
 
     private static void TryStep(Action action, string name, Action<string> log)
@@ -90,6 +109,7 @@ if (Test-Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer P
     {
         if (!Directory.Exists(path))
         {
+            log("Folder was already absent: " + path);
             return;
         }
 
@@ -97,15 +117,19 @@ if (Test-Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer P
         {
             try
             {
+                log("Deleting folder: " + path);
                 Directory.Delete(path, recursive: true);
+                log("Deleted folder: " + path);
                 return;
             }
             catch (IOException) when (attempt < 2)
             {
+                log("Folder is still in use; retrying: " + path);
                 Thread.Sleep(500);
             }
             catch (UnauthorizedAccessException) when (attempt < 2)
             {
+                log("Folder access is not yet released; retrying: " + path);
                 Thread.Sleep(500);
             }
         }
@@ -131,13 +155,29 @@ if (Test-Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer P
         string command = @"
 $taskNames = @('printRxer', 'PrintRxerV3', 'PrintRxer Agent')
 foreach ($taskName in $taskNames) {
-    Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue | ForEach-Object {
+    $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+    if ($task) {
+        Write-Output ('Removing scheduled task: ' + $taskName)
         Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
         Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
+    } else {
+        Write-Output ('Scheduled task not present: ' + $taskName)
     }
 }
-Get-Process -Name 'printRxer' -ErrorAction SilentlyContinue | Stop-Process -Force
-Get-Process -Name 'PrintRxer.Agent' -ErrorAction SilentlyContinue | Stop-Process -Force
+$processes = Get-Process -Name 'printRxer' -ErrorAction SilentlyContinue
+if ($processes) {
+    Write-Output 'Stopping running printRxer process.'
+    $processes | Stop-Process -Force
+} else {
+    Write-Output 'No running printRxer process found.'
+}
+$agentProcesses = Get-Process -Name 'PrintRxer.Agent' -ErrorAction SilentlyContinue
+if ($agentProcesses) {
+    Write-Output 'Stopping running PrintRxer.Agent process.'
+    $agentProcesses | Stop-Process -Force
+} else {
+    Write-Output 'No running PrintRxer.Agent process found.'
+}
 ";
         string output = ProcessRunner.PowerShell(command, requireSuccess: false);
         LogOutput(output, log);
@@ -157,14 +197,19 @@ Get-Process -Name 'PrintRxer.Agent' -ErrorAction SilentlyContinue | Stop-Process
         string fallback = @"
 $printer = Get-Printer -Name 'printRxer' -ErrorAction SilentlyContinue
 if ($printer) {
+    Write-Output 'Removing printRxer printer queue.'
     Get-PrintJob -PrinterName 'printRxer' -ErrorAction SilentlyContinue | Remove-PrintJob -ErrorAction SilentlyContinue
     Remove-Printer -Name 'printRxer' -ErrorAction SilentlyContinue
+} else {
+    Write-Output 'printRxer printer queue not present.'
 }
 $port = Get-PrinterPort -Name 'printrx:' -ErrorAction SilentlyContinue
-if ($port) { Remove-PrinterPort -Name 'printrx:' -ErrorAction SilentlyContinue }
+if ($port) { Write-Output 'Removing printrx: printer port.'; Remove-PrinterPort -Name 'printrx:' -ErrorAction SilentlyContinue } else { Write-Output 'printrx: printer port not present.' }
 $driver = Get-PrinterDriver -Name 'PrintRxer XPS Driver' -ErrorAction SilentlyContinue
-if ($driver) { Remove-PrinterDriver -Name 'PrintRxer XPS Driver' -ErrorAction SilentlyContinue }
+if ($driver) { Write-Output 'Removing PrintRxer XPS Driver.'; Remove-PrinterDriver -Name 'PrintRxer XPS Driver' -ErrorAction SilentlyContinue } else { Write-Output 'PrintRxer XPS Driver not present.' }
+Write-Output 'Removing PrintRxer Port Monitor registry entry if present.'
 Remove-Item -LiteralPath 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer Port Monitor' -Recurse -Force -ErrorAction SilentlyContinue
+Write-Output 'Removing PrintRxer Port Monitor DLL if present.'
 Remove-Item -LiteralPath (Join-Path $env:WINDIR 'System32\PrintRxerPortMonitor.dll') -Force -ErrorAction SilentlyContinue
 ";
         string fallbackOutput = ProcessRunner.PowerShell(fallback, requireSuccess: false);

@@ -126,6 +126,7 @@ internal sealed class UninstallForm : Form
 
         SetBusy(true);
         _statusText.Clear();
+        AppendStatus("Uninstall is running. Buttons are disabled until this step completes.");
 
         try
         {
@@ -241,6 +242,7 @@ internal sealed class UninstallForm : Form
         _uninstallButton.Enabled = !busy;
         _removeData.Enabled = !busy;
         _closeButton.Enabled = !busy;
+        _uninstallButton.Text = busy ? "Uninstalling..." : "Uninstall";
         Cursor = busy ? Cursors.WaitCursor : Cursors.Default;
         Application.DoEvents();
     }
