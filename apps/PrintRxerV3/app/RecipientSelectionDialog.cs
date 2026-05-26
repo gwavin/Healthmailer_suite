@@ -110,8 +110,8 @@ public sealed class RecipientSelectionDialog : Form
             Orientation = Orientation.Vertical,
             SplitterWidth = 5,
             FixedPanel = FixedPanel.None,
-            Panel1MinSize = 360,
-            Panel2MinSize = 360,
+            Panel1MinSize = 120,
+            Panel2MinSize = 120,
             BackColor = System.Drawing.Color.FromArgb(245, 248, 252),
             Margin = new Padding(0, 0, 0, 0),
             TabStop = false
@@ -183,11 +183,10 @@ public sealed class RecipientSelectionDialog : Form
 
     private void SetInitialSplitterDistance(SplitContainer split)
     {
-        split.Panel1MinSize = Math.Min(360, Math.Max(25, split.Width / 4));
-        split.Panel2MinSize = Math.Min(360, Math.Max(25, split.Width / 4));
-        int preferredLeft = Math.Max(split.Panel1MinSize, (int)Math.Floor(split.Width * 0.58));
-        int maximumLeft = Math.Max(split.Panel1MinSize, split.Width - split.Panel2MinSize);
-        split.SplitterDistance = Math.Min(preferredLeft, maximumLeft);
+        RecipientPickerSplitterLayout layout = RecipientPickerLayout.CalculateMainSplitter(split.Width, split.SplitterWidth);
+        split.Panel1MinSize = layout.Panel1MinSize;
+        split.Panel2MinSize = layout.Panel2MinSize;
+        split.SplitterDistance = layout.SplitterDistance;
     }
 
     private static Button CreateFooterButton(string text, int width)
@@ -942,5 +941,23 @@ public static class RecipientPickerTimeout
     public static bool ShouldAutoClose(DateTimeOffset shownAtUtc, DateTimeOffset nowUtc, bool selectionCompleted)
     {
         return !selectionCompleted && nowUtc - shownAtUtc >= Timeout;
+    }
+}
+
+public sealed record RecipientPickerSplitterLayout(int Panel1MinSize, int Panel2MinSize, int SplitterDistance);
+
+public static class RecipientPickerLayout
+{
+    public static RecipientPickerSplitterLayout CalculateMainSplitter(int width, int splitterWidth)
+    {
+        int safeWidth = Math.Max(width, 1);
+        int requestedMinimum = Math.Min(360, Math.Max(120, safeWidth / 4));
+        int maximumSharedMinimum = Math.Max(0, (safeWidth - splitterWidth - 20) / 2);
+        int safeMinimum = Math.Min(requestedMinimum, maximumSharedMinimum);
+        int preferredLeft = Math.Max(safeMinimum, (int)Math.Floor(safeWidth * 0.58));
+        int maximumLeft = Math.Max(safeMinimum, safeWidth - safeMinimum);
+        int splitterDistance = Math.Min(preferredLeft, maximumLeft);
+        splitterDistance = Math.Max(safeMinimum, Math.Min(splitterDistance, safeWidth - safeMinimum));
+        return new RecipientPickerSplitterLayout(safeMinimum, safeMinimum, splitterDistance);
     }
 }
