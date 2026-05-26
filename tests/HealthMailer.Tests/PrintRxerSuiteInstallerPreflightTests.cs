@@ -47,6 +47,26 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
         Assert.Contains("Windows should show a printer named printRxer", source);
     }
 
+    [Fact]
+    public void Suite_installer_printrxer_handoff_prompt_uses_healthmailer_style_layout()
+    {
+        string source = File.ReadAllText(Path.Combine(
+            RepoRoot(),
+            "installers",
+            "PrintRxerSuiteInstaller",
+            "SuiteInstallerForm.cs"));
+
+        Assert.Contains("Use the default local handoff folder", source);
+        Assert.Contains("Use a shared or custom handoff folder", source);
+        Assert.Contains("CreateDialogButton(\"Install\", DialogResult.OK)", source);
+        Assert.Contains("CreateDialogButton(\"Cancel\", DialogResult.Cancel)", source);
+        Assert.Contains("dialog.AcceptButton = ok", source);
+        Assert.Contains("dialog.CancelButton = cancel", source);
+        Assert.Contains("Width = 120", source);
+        Assert.Contains("Height = 44", source);
+        Assert.Contains("native port monitor, driver, and local printer queue named printRxer", source);
+    }
+
     private static string CreateMinimalBundle()
     {
         string root = Path.Combine(Path.GetTempPath(), "printRxer-suite-preflight-" + Guid.NewGuid().ToString("N"));

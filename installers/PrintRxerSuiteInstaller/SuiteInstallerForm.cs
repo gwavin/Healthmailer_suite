@@ -223,10 +223,10 @@ internal sealed class SuiteInstallerForm : Form
     {
         using Form dialog = new()
         {
-            Text = "printRxer handoff folder",
+            Text = "Install printRxer printing machine",
             StartPosition = FormStartPosition.CenterParent,
-            MinimumSize = new Size(640, 260),
-            Size = new Size(700, 280),
+            MinimumSize = new Size(820, 520),
+            Size = new Size(860, 560),
             FormBorderStyle = FormBorderStyle.FixedDialog,
             MaximizeBox = false,
             MinimizeBox = false
@@ -236,27 +236,46 @@ internal sealed class SuiteInstallerForm : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 5,
             Padding = new Padding(20)
         };
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+        RadioButton defaultRadio = new()
+        {
+            Text = "Use the default local handoff folder",
+            Checked = true,
+            AutoSize = true,
+            Dock = DockStyle.Top
+        };
+
+        RadioButton customRadio = new()
+        {
+            Text = "Use a shared or custom handoff folder",
+            AutoSize = true,
+            Dock = DockStyle.Top
+        };
+
+        TextBox defaultPath = new()
+        {
+            Text = @"C:\ProgramData\printRxer\handoff",
+            ReadOnly = true,
+            Dock = DockStyle.Fill
+        };
 
         TextBox handoffBox = new()
         {
             Text = @"C:\ProgramData\printRxer\handoff",
+            Enabled = false,
             Dock = DockStyle.Fill
         };
 
-        Button browse = CreateButton("Browse...", (_, _) =>
+        Button browse = CreateDialogButton("Browse...", DialogResult.None);
+        browse.Enabled = false;
+        browse.Click += (_, _) =>
         {
             using FolderBrowserDialog picker = new()
             {
-                Description = "Select the HealthMailer handoff folder. You may paste a UNC path directly into the text box.",
+                Description = "Select the HealthMailer handoff folder. You may also paste a UNC path directly into the text box.",
                 SelectedPath = Directory.Exists(handoffBox.Text) ? handoffBox.Text : @"C:\ProgramData\printRxer\handoff",
                 ShowNewFolderButton = true
             };
@@ -265,35 +284,92 @@ internal sealed class SuiteInstallerForm : Form
             {
                 handoffBox.Text = picker.SelectedPath;
             }
-        });
-        browse.Width = 110;
-        browse.Height = 30;
+        };
 
-        TableLayoutPanel pathRow = new() { Dock = DockStyle.Fill, ColumnCount = 2, AutoSize = true };
+        defaultRadio.CheckedChanged += (_, _) =>
+        {
+            bool custom = customRadio.Checked;
+            handoffBox.Enabled = custom;
+            browse.Enabled = custom;
+        };
+        customRadio.CheckedChanged += (_, _) =>
+        {
+            bool custom = customRadio.Checked;
+            handoffBox.Enabled = custom;
+            browse.Enabled = custom;
+        };
+
+        TableLayoutPanel pathRow = new() { Dock = DockStyle.Top, ColumnCount = 2, AutoSize = true };
         pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
         pathRow.Controls.Add(handoffBox, 0, 0);
         pathRow.Controls.Add(browse, 1, 0);
 
-        Button ok = CreateButton("Install", (_, _) => dialog.DialogResult = DialogResult.OK);
-        Button cancel = CreateButton("Cancel", (_, _) => dialog.DialogResult = DialogResult.Cancel);
+        Button ok = CreateDialogButton("Install", DialogResult.OK);
+        Button cancel = CreateDialogButton("Cancel", DialogResult.Cancel);
         FlowLayoutPanel buttons = new()
         {
             AutoSize = true,
-            Dock = DockStyle.Right,
+            Dock = DockStyle.Bottom,
             FlowDirection = FlowDirection.RightToLeft
         };
         buttons.Controls.Add(cancel);
         buttons.Controls.Add(ok);
 
-        panel.Controls.Add(new Label { Text = "Choose the folder where printRxer will place HealthMailer handoff packages.", AutoSize = true, Dock = DockStyle.Fill });
-        panel.Controls.Add(new Label { Text = "Use the default local folder for same-machine testing, or paste a shared UNC path for two-machine deployment.", AutoSize = false, Height = 42, Dock = DockStyle.Fill });
+        panel.Controls.Add(new Label
+        {
+            Text = "Install printRxer",
+            Font = new Font(SystemFonts.DefaultFont.FontFamily, 14, FontStyle.Bold),
+            AutoSize = true,
+            Dock = DockStyle.Top
+        });
+        panel.Controls.Add(CreateWrappedDialogLabel("Choose the folder where printRxer will place HealthMailer handoff packages.", 42));
+        panel.Controls.Add(new Panel { Height = 10, Dock = DockStyle.Top });
+        panel.Controls.Add(defaultRadio);
+        panel.Controls.Add(CreateWrappedDialogLabel("Recommended for same-machine testing. printRxer will create handoff packages here:", 34));
+        panel.Controls.Add(defaultPath);
+        panel.Controls.Add(new Panel { Height = 14, Dock = DockStyle.Top });
+        panel.Controls.Add(customRadio);
+        panel.Controls.Add(CreateWrappedDialogLabel("Use this for two-machine deployment, for example \\\\server\\HealthMailerDrop$\\incoming. This must match the folder configured in HealthMailer.", 50));
         panel.Controls.Add(pathRow);
-        panel.Controls.Add(new Panel());
+        panel.Controls.Add(new Panel { Height = 14, Dock = DockStyle.Top });
+        panel.Controls.Add(CreateWrappedDialogLabel("Windows will ask for administrator approval while setup installs the app files, watcher task, native port monitor, driver, and local printer queue named printRxer.", 60));
+        panel.Controls.Add(new Panel { Dock = DockStyle.Fill });
         panel.Controls.Add(buttons);
         dialog.Controls.Add(panel);
+        dialog.AcceptButton = ok;
+        dialog.CancelButton = cancel;
 
-        return dialog.ShowDialog(this) == DialogResult.OK ? handoffBox.Text.Trim() : string.Empty;
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+        {
+            return string.Empty;
+        }
+
+        return defaultRadio.Checked ? @"C:\ProgramData\printRxer\handoff" : handoffBox.Text.Trim();
+    }
+
+    private static Button CreateDialogButton(string text, DialogResult dialogResult)
+    {
+        return new Button
+        {
+            Text = text,
+            DialogResult = dialogResult,
+            Width = 120,
+            Height = 44,
+            Margin = new Padding(8, 0, 0, 0)
+        };
+    }
+
+    private static Label CreateWrappedDialogLabel(string text, int height)
+    {
+        return new Label
+        {
+            Text = text,
+            AutoSize = false,
+            Dock = DockStyle.Top,
+            Height = height,
+            MaximumSize = new Size(800, 0)
+        };
     }
 
     private void ValidatePrintRxerAfterSetup()
