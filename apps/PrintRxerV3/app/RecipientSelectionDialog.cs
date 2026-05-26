@@ -59,9 +59,7 @@ public sealed class RecipientSelectionDialog : Form
 
         TryApplyIcon();
 
-        TableLayoutPanel root = new() { Dock = DockStyle.Fill, Padding = new Padding(16), RowCount = 6, ColumnCount = 1 };
-        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        TableLayoutPanel root = new() { Dock = DockStyle.Fill, Padding = new Padding(16), RowCount = 4, ColumnCount = 1 };
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -79,7 +77,7 @@ public sealed class RecipientSelectionDialog : Form
         };
         header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        PictureBox logo = new() { Width = 128, Height = 128, SizeMode = PictureBoxSizeMode.Zoom, Margin = new Padding(0, 0, 14, 0) };
+        PictureBox logo = new() { Width = 80, Height = 80, SizeMode = PictureBoxSizeMode.Zoom, Margin = new Padding(0, 0, 14, 0) };
         string brandImagePath = GetBrandImagePath();
         if (File.Exists(brandImagePath))
         {
@@ -88,13 +86,13 @@ public sealed class RecipientSelectionDialog : Form
 
         Label heading = new()
         {
-            Text = "Select the pharmacy or clinician who should receive this document." + Environment.NewLine +
+            Text = "Select the recipient and review the document before preparing it for scheduled sending." + Environment.NewLine +
                 "1. Search and select the correct pharmacy or clinician." + Environment.NewLine +
-                "2. Review the recipient, subject, and message below." + Environment.NewLine +
-                "3. Select Prepare for scheduled sending to create the HealthMailer handoff package." + Environment.NewLine +
+                "2. Review the document details, filename, subject, and message." + Environment.NewLine +
+                "3. Select Prepare for scheduled sending." + Environment.NewLine +
                 "For privacy, this window closes automatically after 03:00.",
             AutoSize = true,
-            Font = new System.Drawing.Font(Font.FontFamily, 11, System.Drawing.FontStyle.Regular),
+            Font = new System.Drawing.Font(Font.FontFamily, 10, System.Drawing.FontStyle.Regular),
             Dock = DockStyle.Fill,
             TextAlign = System.Drawing.ContentAlignment.MiddleLeft
         };
@@ -104,113 +102,22 @@ public sealed class RecipientSelectionDialog : Form
 
         root.Controls.Add(BuildPrintJobPanel(context));
 
-        root.Controls.Add(BuildRecipientSourcePanel(string.IsNullOrWhiteSpace(recipientSourceText) ? "recipient list" : recipientSourceText));
-
-        _searchBox.PlaceholderText = "Search recipients";
-        _searchBox.Dock = DockStyle.Fill;
-        _searchBox.Margin = new Padding(0, 0, 0, 8);
-        root.Controls.Add(_searchBox);
-
         ConfigureRecipientGrid();
 
         SplitContainer mainSplit = new()
         {
             Dock = DockStyle.Fill,
-            Orientation = Orientation.Horizontal,
+            Orientation = Orientation.Vertical,
             SplitterWidth = 5,
             FixedPanel = FixedPanel.None,
-            Panel1MinSize = 25,
-            Panel2MinSize = 25,
+            Panel1MinSize = 360,
+            Panel2MinSize = 360,
             BackColor = System.Drawing.Color.FromArgb(245, 248, 252),
-            Margin = new Padding(0, 0, 0, 0)
+            Margin = new Padding(0, 0, 0, 0),
+            TabStop = false
         };
-        mainSplit.Panel1.Controls.Add(_recipientGrid);
-
-        TableLayoutPanel selectedPanel = new() { Dock = DockStyle.Fill, AutoSize = true, RowCount = 3, ColumnCount = 1, Margin = new Padding(0, 10, 0, 4) };
-        selectedPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        selectedPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        selectedPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        Label selectedLabel = new() { Text = "Selected Recipient (read-only):", AutoSize = true, Font = new System.Drawing.Font(Font.FontFamily, Font.Size, System.Drawing.FontStyle.Bold) };
-        _selectedRecipientBox.Dock = DockStyle.Fill;
-        _selectedRecipientBox.ReadOnly = true;
-        _selectedRecipientBox.TabStop = false;
-        _selectedRecipientBox.BackColor = System.Drawing.Color.FromArgb(238, 241, 245);
-        _selectedRecipientBox.Text = "No recipient selected yet.";
-        Label selectedHelp = new() { Text = "Use the list above to change the recipient.", AutoSize = true, Font = new System.Drawing.Font(Font.FontFamily, Font.Size, System.Drawing.FontStyle.Italic), ForeColor = System.Drawing.Color.DimGray };
-        selectedPanel.Controls.Add(selectedLabel);
-        selectedPanel.Controls.Add(_selectedRecipientBox);
-        selectedPanel.Controls.Add(selectedHelp);
-
-        SplitContainer detailSplit = new()
-        {
-            Dock = DockStyle.Fill,
-            Orientation = Orientation.Horizontal,
-            SplitterWidth = 5,
-            FixedPanel = FixedPanel.None,
-            Panel1MinSize = 180,
-            Panel2MinSize = 140,
-            BackColor = System.Drawing.Color.FromArgb(245, 248, 252),
-            Margin = Padding.Empty
-        };
-
-        TableLayoutPanel detailPanel = new()
-        {
-            Dock = DockStyle.Fill,
-            AutoScroll = true,
-            RowCount = 9,
-            ColumnCount = 1,
-            Margin = Padding.Empty,
-            Padding = Padding.Empty
-        };
-        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        detailPanel.Controls.Add(selectedPanel);
-
-        detailPanel.Controls.Add(BuildDocumentKindPanel());
-
-        Label documentNameLabel = new() { Text = "Document name", AutoSize = true, Margin = new Padding(0, 10, 0, 4) };
-        detailPanel.Controls.Add(documentNameLabel);
-        _documentNameBox.Dock = DockStyle.Fill;
-        detailPanel.Controls.Add(_documentNameBox);
-
-        detailPanel.Controls.Add(BuildAttachmentFilenamePanel());
-
-        Label subjectLabel = new() { Text = "Subject", AutoSize = true, Margin = new Padding(0, 12, 0, 4) };
-        detailPanel.Controls.Add(subjectLabel);
-        _subjectBox.Dock = DockStyle.Fill;
-        detailPanel.Controls.Add(_subjectBox);
-
-        TableLayoutPanel messagePanel = new()
-        {
-            Dock = DockStyle.Fill,
-            RowCount = 2,
-            ColumnCount = 1,
-            Margin = Padding.Empty,
-            Padding = Padding.Empty
-        };
-        messagePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        messagePanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        Label messageLabel = new() { Text = "Message", AutoSize = true, Margin = new Padding(0, 12, 0, 4) };
-        messagePanel.Controls.Add(messageLabel);
-
-        _bodyBox.Dock = DockStyle.Fill;
-        _bodyBox.Multiline = true;
-        _bodyBox.ScrollBars = ScrollBars.Vertical;
-        _bodyBox.AcceptsReturn = true;
-        _bodyBox.AcceptsTab = true;
-        _bodyBox.MinimumSize = new System.Drawing.Size(0, 120);
-        messagePanel.Controls.Add(_bodyBox);
-        detailSplit.Panel1.Controls.Add(detailPanel);
-        detailSplit.Panel2.Controls.Add(messagePanel);
-        mainSplit.Panel2.Controls.Add(detailSplit);
+        mainSplit.Panel1.Controls.Add(BuildRecipientColumn(string.IsNullOrWhiteSpace(recipientSourceText) ? "recipient list" : recipientSourceText));
+        mainSplit.Panel2.Controls.Add(BuildReviewColumn());
         root.Controls.Add(mainSplit);
 
         TableLayoutPanel buttons = new()
@@ -227,7 +134,7 @@ public sealed class RecipientSelectionDialog : Form
         buttons.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         buttons.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
         Button cancelButton = CreateFooterButton("Cancel", 100);
-        Button previewButton = CreateFooterButton("Preview prescription", 160);
+        Button previewButton = CreateFooterButton("Preview document", 160);
         Button prepareButton = CreateFooterButton("Prepare for scheduled sending", 220);
         previewButton.Enabled = _previewPrescription is not null;
         prepareButton.Enabled = false;
@@ -272,26 +179,15 @@ public sealed class RecipientSelectionDialog : Form
         UpdateSelectedRecipientField();
         PositionOnPrimaryWorkArea();
         Shown += delegate { SetInitialSplitterDistance(mainSplit); };
-        Shown += delegate { SetInitialDetailSplitterDistance(detailSplit); };
     }
 
     private void SetInitialSplitterDistance(SplitContainer split)
     {
-        split.Panel1MinSize = Math.Min(180, Math.Max(25, split.Height / 4));
-        split.Panel2MinSize = Math.Min(220, Math.Max(25, split.Height / 4));
-        int preferredTop = _recipientGrid.ColumnHeadersHeight + (int)(_recipientGrid.RowTemplate.Height * 3.5) + 6;
-        preferredTop = Math.Max(split.Panel1MinSize, preferredTop);
-        int maximumTop = Math.Max(split.Panel1MinSize, split.Height - split.Panel2MinSize);
-        split.SplitterDistance = Math.Min(preferredTop, maximumTop);
-    }
-
-    private static void SetInitialDetailSplitterDistance(SplitContainer split)
-    {
-        split.Panel1MinSize = Math.Min(180, Math.Max(25, split.Height / 4));
-        split.Panel2MinSize = Math.Min(140, Math.Max(25, split.Height / 4));
-        int preferredTop = Math.Max(split.Panel1MinSize, (int)Math.Floor(split.Height * 0.55));
-        int maximumTop = Math.Max(split.Panel1MinSize, split.Height - split.Panel2MinSize);
-        split.SplitterDistance = Math.Min(preferredTop, maximumTop);
+        split.Panel1MinSize = Math.Min(360, Math.Max(25, split.Width / 4));
+        split.Panel2MinSize = Math.Min(360, Math.Max(25, split.Width / 4));
+        int preferredLeft = Math.Max(split.Panel1MinSize, (int)Math.Floor(split.Width * 0.58));
+        int maximumLeft = Math.Max(split.Panel1MinSize, split.Width - split.Panel2MinSize);
+        split.SplitterDistance = Math.Min(preferredLeft, maximumLeft);
     }
 
     private static Button CreateFooterButton(string text, int width)
@@ -340,6 +236,119 @@ public sealed class RecipientSelectionDialog : Form
         _recipientGrid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Aliases", DataPropertyName = nameof(RecipientGridItem.AliasesText), AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
     }
 
+    private Control BuildRecipientColumn(string sourceText)
+    {
+        TableLayoutPanel panel = BuildSectionPanel("Recipient", rowCount: 4);
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+        panel.Controls.Add(BuildSectionTitle("Recipient"), 0, 0);
+        panel.Controls.Add(BuildRecipientSourcePanel(sourceText), 0, 1);
+
+        _searchBox.PlaceholderText = "Search recipients";
+        _searchBox.Dock = DockStyle.Fill;
+        _searchBox.Margin = new Padding(0, 4, 0, 8);
+        panel.Controls.Add(_searchBox, 0, 2);
+        panel.Controls.Add(_recipientGrid, 0, 3);
+        return panel;
+    }
+
+    private Control BuildReviewColumn()
+    {
+        TableLayoutPanel panel = BuildSectionPanel("Review and prepare", rowCount: 12);
+        for (int index = 0; index < 11; index++)
+        {
+            panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        }
+
+        panel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        panel.Controls.Add(BuildSectionTitle("Review and prepare"), 0, 0);
+        panel.Controls.Add(BuildSelectedRecipientPanel(), 0, 1);
+        panel.Controls.Add(BuildDocumentKindPanel(), 0, 2);
+
+        panel.Controls.Add(FieldLabel("Document name", topMargin: 8), 0, 3);
+        _documentNameBox.Dock = DockStyle.Fill;
+        panel.Controls.Add(_documentNameBox, 0, 4);
+
+        panel.Controls.Add(BuildAttachmentFilenamePanel(), 0, 5);
+
+        panel.Controls.Add(FieldLabel("Subject", topMargin: 10), 0, 6);
+        _subjectBox.Dock = DockStyle.Fill;
+        panel.Controls.Add(_subjectBox, 0, 7);
+
+        panel.Controls.Add(FieldLabel("Message", topMargin: 10), 0, 8);
+        _bodyBox.Dock = DockStyle.Fill;
+        _bodyBox.Multiline = true;
+        _bodyBox.ScrollBars = ScrollBars.Vertical;
+        _bodyBox.AcceptsReturn = true;
+        _bodyBox.AcceptsTab = true;
+        _bodyBox.MinimumSize = new System.Drawing.Size(0, 180);
+        panel.Controls.Add(_bodyBox, 0, 9);
+        panel.SetRowSpan(_bodyBox, 3);
+        return panel;
+    }
+
+    private TableLayoutPanel BuildSectionPanel(string accessibleName, int rowCount)
+    {
+        TableLayoutPanel panel = new()
+        {
+            AccessibleName = accessibleName,
+            Dock = DockStyle.Fill,
+            RowCount = rowCount,
+            ColumnCount = 1,
+            Margin = new Padding(0),
+            Padding = new Padding(10),
+            BackColor = System.Drawing.Color.FromArgb(250, 250, 250)
+        };
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        return panel;
+    }
+
+    private Label BuildSectionTitle(string text)
+    {
+        return new Label
+        {
+            Text = text,
+            AutoSize = true,
+            Margin = new Padding(0, 0, 0, 8),
+            Font = new System.Drawing.Font(Font.FontFamily, Font.Size + 1, System.Drawing.FontStyle.Bold),
+            ForeColor = System.Drawing.Color.FromArgb(26, 32, 44)
+        };
+    }
+
+    private Control BuildSelectedRecipientPanel()
+    {
+        TableLayoutPanel selectedPanel = new() { Dock = DockStyle.Fill, AutoSize = true, RowCount = 3, ColumnCount = 1, Margin = new Padding(0, 0, 0, 6) };
+        selectedPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        selectedPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        selectedPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        Label selectedLabel = FieldLabel("Selected recipient (read-only)", topMargin: 0);
+        _selectedRecipientBox.Dock = DockStyle.Fill;
+        _selectedRecipientBox.ReadOnly = true;
+        _selectedRecipientBox.TabStop = false;
+        _selectedRecipientBox.BackColor = System.Drawing.Color.FromArgb(238, 241, 245);
+        _selectedRecipientBox.Text = "No recipient selected yet.";
+        Label selectedHelp = new() { Text = "Use the list to change the recipient.", AutoSize = true, Font = new System.Drawing.Font(Font.FontFamily, Font.Size, System.Drawing.FontStyle.Italic), ForeColor = System.Drawing.Color.DimGray, Margin = new Padding(0, 3, 0, 0) };
+        selectedPanel.Controls.Add(selectedLabel);
+        selectedPanel.Controls.Add(_selectedRecipientBox);
+        selectedPanel.Controls.Add(selectedHelp);
+        return selectedPanel;
+    }
+
+    private Label FieldLabel(string text, int topMargin)
+    {
+        return new Label
+        {
+            Text = text,
+            AutoSize = true,
+            Margin = new Padding(0, topMargin, 0, 3),
+            Font = new System.Drawing.Font(Font.FontFamily, Font.Size, System.Drawing.FontStyle.Bold),
+            ForeColor = System.Drawing.Color.FromArgb(45, 55, 72)
+        };
+    }
+
     private Control BuildRecipientSourcePanel(string sourceText)
     {
         TableLayoutPanel panel = new()
@@ -347,7 +356,7 @@ public sealed class RecipientSelectionDialog : Form
             Dock = DockStyle.Fill,
             AutoSize = true,
             ColumnCount = 2,
-            Margin = new Padding(0, 0, 0, 8),
+            Margin = new Padding(0, 0, 0, 4),
             Padding = Padding.Empty
         };
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -363,7 +372,7 @@ public sealed class RecipientSelectionDialog : Form
         {
             Text = "Refresh recipients",
             AutoSize = true,
-            Height = 32,
+            Height = 28,
             Margin = new Padding(8, 0, 0, 0),
             UseVisualStyleBackColor = true,
             Enabled = _refreshRecipients is not null
@@ -382,7 +391,7 @@ public sealed class RecipientSelectionDialog : Form
             Dock = DockStyle.Fill,
             AutoSize = true,
             ColumnCount = 4,
-            Margin = new Padding(0, 10, 0, 0),
+            Margin = new Padding(0, 8, 0, 0),
             Padding = Padding.Empty
         };
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -390,7 +399,7 @@ public sealed class RecipientSelectionDialog : Form
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-        Label label = new() { Text = "Document type:", AutoSize = true, Margin = new Padding(0, 4, 10, 0) };
+        Label label = new() { Text = "Document type:", AutoSize = true, Margin = new Padding(0, 4, 10, 0), Font = new System.Drawing.Font(Font.FontFamily, Font.Size, System.Drawing.FontStyle.Bold) };
         _prescriptionKindButton.Text = "Prescription / Rx";
         _prescriptionKindButton.AutoSize = true;
         _prescriptionKindButton.Margin = new Padding(0, 2, 14, 0);
@@ -438,7 +447,7 @@ public sealed class RecipientSelectionDialog : Form
             AutoSize = true,
             ColumnCount = 2,
             RowCount = 3,
-            Margin = new Padding(0, 10, 0, 0),
+            Margin = new Padding(0, 8, 0, 0),
             Padding = Padding.Empty
         };
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -447,7 +456,7 @@ public sealed class RecipientSelectionDialog : Form
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-        Label label = new() { Text = "Attachment filename", AutoSize = true, Margin = new Padding(0, 0, 0, 4) };
+        Label label = FieldLabel("Attachment filename", topMargin: 0);
         Button suggestedFilenameButton = new()
         {
             Text = "Use suggested filename",
@@ -551,33 +560,31 @@ public sealed class RecipientSelectionDialog : Form
         {
             Dock = DockStyle.Fill,
             AutoSize = true,
-            ColumnCount = 4,
+            ColumnCount = 10,
             Margin = new Padding(0, 0, 0, 10),
-            Padding = new Padding(12),
+            Padding = new Padding(10),
             BackColor = System.Drawing.Color.FromArgb(250, 250, 250)
         };
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        for (int index = 0; index < 5; index++)
+        {
+            panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20));
+        }
 
         PrintJobIdentity identity = PrintJobIdentity.FromContext(context);
-        AddMetadataRow(panel, 0, "Prescribed by", identity.PrescribedBy, "Patient", identity.PatientHint);
-        AddMetadataRow(panel, 1, "MRN / chart", identity.MrnHint, "Printed", identity.CapturedAt);
-        AddMetadataRow(panel, 2, "Job / user", identity.JobAndUser, string.Empty, string.Empty);
+        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        AddMetadataPair(panel, 0, "Prescribed by", identity.PrescribedBy);
+        AddMetadataPair(panel, 2, "Patient", identity.PatientHint);
+        AddMetadataPair(panel, 4, "MRN / chart", identity.MrnHint);
+        AddMetadataPair(panel, 6, "Printed", identity.CapturedAt);
+        AddMetadataPair(panel, 8, "Job / user", identity.JobAndUser);
         return panel;
     }
 
-    private void AddMetadataRow(TableLayoutPanel panel, int row, string leftLabel, string leftValue, string rightLabel, string rightValue)
+    private void AddMetadataPair(TableLayoutPanel panel, int column, string label, string value)
     {
-        panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        panel.Controls.Add(MetadataLabel(leftLabel), 0, row);
-        panel.Controls.Add(MetadataValue(leftValue), 1, row);
-        if (!string.IsNullOrWhiteSpace(rightLabel))
-        {
-            panel.Controls.Add(MetadataLabel(rightLabel), 2, row);
-            panel.Controls.Add(MetadataValue(rightValue), 3, row);
-        }
+        panel.Controls.Add(MetadataLabel(label), column, 0);
+        panel.Controls.Add(MetadataValue(value), column + 1, 0);
     }
 
     private Label MetadataLabel(string text)
@@ -586,7 +593,7 @@ public sealed class RecipientSelectionDialog : Form
         {
             Text = text + ":",
             AutoSize = true,
-            Margin = new Padding(0, 3, 8, 3),
+            Margin = new Padding(0, 2, 6, 2),
             Font = new System.Drawing.Font(Font.FontFamily, Font.Size, System.Drawing.FontStyle.Bold),
             ForeColor = System.Drawing.Color.FromArgb(45, 55, 72)
         };
@@ -598,8 +605,8 @@ public sealed class RecipientSelectionDialog : Form
         {
             Text = string.IsNullOrWhiteSpace(text) ? "Not available" : text,
             AutoSize = true,
-            MaximumSize = new System.Drawing.Size(360, 0),
-            Margin = new Padding(0, 3, 18, 3),
+            MaximumSize = new System.Drawing.Size(180, 0),
+            Margin = new Padding(0, 2, 14, 2),
             ForeColor = System.Drawing.Color.FromArgb(26, 32, 44)
         };
     }
