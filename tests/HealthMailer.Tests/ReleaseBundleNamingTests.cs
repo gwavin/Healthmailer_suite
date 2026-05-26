@@ -62,6 +62,10 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("--uninstall --quiet", form, StringComparison.Ordinal);
         Assert.Contains("--uninstall --remove-data --quiet", form, StringComparison.Ordinal);
         Assert.Contains("RunPrintRxerUninstall", form, StringComparison.Ordinal);
+        Assert.Contains("GetPrintRxerInstallState", form, StringComparison.Ordinal);
+        Assert.Contains("printRxer is not installed on this machine. Nothing needs to be removed.", form, StringComparison.Ordinal);
+        Assert.Contains("printRxer is not installed; approved ProgramData removal selected.", form, StringComparison.Ordinal);
+        Assert.Contains("printRxer ProgramData was preserved.", form, StringComparison.Ordinal);
         Assert.Contains("Remove C:\\\\ProgramData\\\\printRxer too?", form, StringComparison.Ordinal);
         Assert.Contains("MessageBoxDefaultButton.Button2", form, StringComparison.Ordinal);
         Assert.Contains("printRxer uninstall selected with ProgramData preserved", form, StringComparison.Ordinal);

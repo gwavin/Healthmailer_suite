@@ -688,6 +688,41 @@ internal sealed class SuiteInstallerForm : Form
 
     private void RunPrintRxerUninstall()
     {
+        PrintRxerInstallState state = GetPrintRxerInstallState();
+        if (!state.IsInstalled)
+        {
+            AppendStatus("printRxer is not currently installed on this machine.");
+            if (!state.HasProgramData)
+            {
+                AppendStatus("Nothing needs to be removed.");
+                MessageBox.Show(this, "printRxer is not installed on this machine. Nothing needs to be removed.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            AppendStatus("Preserved local ProgramData exists at C:\\ProgramData\\printRxer.");
+            DialogResult resetChoice = MessageBox.Show(
+                this,
+                "printRxer is not installed on this machine, so there are no application, task, or printer-capture components to uninstall." +
+                Environment.NewLine + Environment.NewLine +
+                "Preserved local ProgramData still exists at C:\\ProgramData\\printRxer." +
+                Environment.NewLine + Environment.NewLine +
+                "Choose Yes only for an approved lab reset where local printRxer ProgramData should be removed.",
+                "printRxer is not installed",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Information,
+                MessageBoxDefaultButton.Button2);
+
+            if (resetChoice != DialogResult.Yes)
+            {
+                AppendStatus("printRxer ProgramData was preserved.");
+                return;
+            }
+
+            AppendStatus("printRxer is not installed; approved ProgramData removal selected.");
+            RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer, "--uninstall --remove-data --quiet");
+            return;
+        }
+
         DialogResult dataChoice = MessageBox.Show(
             this,
             "Standard printRxer uninstall preserves local evidence in C:\\ProgramData\\printRxer, including logs, configuration, archives, and support/audit material." +
@@ -714,6 +749,31 @@ internal sealed class SuiteInstallerForm : Form
             ? "printRxer uninstall selected with ProgramData removal."
             : "printRxer uninstall selected with ProgramData preserved.");
         RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer, arguments);
+    }
+
+    private static PrintRxerInstallState GetPrintRxerInstallState()
+    {
+        bool installed = Directory.Exists(SuitePaths.PrintRxerProgramFilesRoot);
+        bool hasProgramData = Directory.Exists(SuitePaths.PrintRxerProgramDataRoot);
+
+        string state = ProcessRunner.PowerShell(@"
+if (Get-ScheduledTask -TaskName 'printRxer' -ErrorAction SilentlyContinue) { 'task' }
+if (Get-ScheduledTask -TaskName 'PrintRxerV3' -ErrorAction SilentlyContinue) { 'task' }
+if (Get-ScheduledTask -TaskName 'PrintRxer Agent' -ErrorAction SilentlyContinue) { 'task' }
+if (Get-Printer -Name 'printRxer' -ErrorAction SilentlyContinue) { 'printer' }
+if (Get-PrinterPort -Name 'printrx:' -ErrorAction SilentlyContinue) { 'port' }
+if (Get-PrinterDriver -Name 'PrintRxer XPS Driver' -ErrorAction SilentlyContinue) { 'driver' }
+if (Test-Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer Port Monitor') { 'monitor' }
+", requireSuccess: false);
+
+        installed = installed ||
+            state.Contains("task", StringComparison.OrdinalIgnoreCase) ||
+            state.Contains("printer", StringComparison.OrdinalIgnoreCase) ||
+            state.Contains("port", StringComparison.OrdinalIgnoreCase) ||
+            state.Contains("driver", StringComparison.OrdinalIgnoreCase) ||
+            state.Contains("monitor", StringComparison.OrdinalIgnoreCase);
+
+        return new PrintRxerInstallState(installed, hasProgramData);
     }
 
     private void RunUserAction(Action action)
@@ -773,4 +833,6 @@ internal sealed class SuiteInstallerForm : Form
         PrintRxer,
         HealthMailer
     }
+
+    private sealed record PrintRxerInstallState(bool IsInstalled, bool HasProgramData);
 }

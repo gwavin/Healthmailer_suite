@@ -62,6 +62,12 @@ internal static class ProcessRunner
         return Run("powershell.exe", "-NoProfile -ExecutionPolicy Bypass -File \"" + scriptPath + "\" " + arguments, requireSuccess, elevate);
     }
 
+    public static string PowerShell(string command, bool requireSuccess = true)
+    {
+        string escaped = command.Replace("\"", "\\\"", StringComparison.Ordinal);
+        return Run("powershell.exe", "-NoProfile -ExecutionPolicy Bypass -Command \"" + escaped + "\"", requireSuccess);
+    }
+
     public static void Start(string fileName, string arguments = "", bool elevate = false)
     {
         using Process process = new()

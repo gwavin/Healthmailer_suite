@@ -3,6 +3,7 @@ namespace PrintRxerSuiteInstaller;
 internal static class SuitePaths
 {
     public const string PrintRxerProgramDataRoot = @"C:\ProgramData\printRxer";
+    public const string PrintRxerProgramFilesRoot = @"C:\Program Files\printRxer";
     public const string HealthMailerProgramDataRoot = @"C:\ProgramData\HealthMailer";
     public const string PrintRxerLogsRoot = @"C:\ProgramData\printRxer\logs";
     public const string HealthMailerLogsRoot = @"C:\ProgramData\HealthMailer\logs";
