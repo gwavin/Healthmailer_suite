@@ -166,7 +166,7 @@ internal sealed class UninstallForm : Form
     {
         DialogResult approval = MessageBox.Show(
             this,
-            "Removing printRxer printer capture requires administrator approval. Windows will ask for permission, then reopen the printRxer uninstaller.",
+            "Removing printRxer printer capture requires administrator approval. Windows will ask for permission, then complete the already-confirmed uninstall.",
             Text,
             MessageBoxButtons.OKCancel,
             MessageBoxIcon.Information);
@@ -180,7 +180,7 @@ internal sealed class UninstallForm : Form
         try
         {
             string exePath = Environment.ProcessPath ?? Application.ExecutablePath;
-            string arguments = _removeData.Checked ? "--uninstall --remove-data" : "--uninstall";
+            string arguments = _removeData.Checked ? "--uninstall --remove-data --quiet" : "--uninstall --quiet";
             Process.Start(new ProcessStartInfo
             {
                 FileName = exePath,
@@ -188,7 +188,7 @@ internal sealed class UninstallForm : Form
                 UseShellExecute = true,
                 Verb = "runas"
             });
-            AppendStatus("Elevated printRxer uninstaller was started.");
+            AppendStatus("Elevated printRxer uninstaller was started and will complete the already-confirmed uninstall.");
             return true;
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)

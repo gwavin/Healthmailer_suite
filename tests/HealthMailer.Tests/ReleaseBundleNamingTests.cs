@@ -56,10 +56,11 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("HealthMailer setup will run as the current Windows user", form, StringComparison.Ordinal);
         Assert.Contains("printRxer setup includes printer capture", form, StringComparison.Ordinal);
         Assert.Contains("bool isUninstall = arguments.Contains(\"--uninstall\"", form, StringComparison.Ordinal);
-        Assert.Contains("bool elevate = setupKind == SetupKind.PrintRxer && !isUninstall", form, StringComparison.Ordinal);
+        Assert.Contains("bool elevate = setupKind == SetupKind.PrintRxer", form, StringComparison.Ordinal);
         Assert.Contains("RunPrintRxerInstall", form, StringComparison.Ordinal);
         Assert.Contains("--quiet --handoff-root", form, StringComparison.Ordinal);
-        Assert.Contains("printRxer uninstall will check whether printRxer is installed", form, StringComparison.Ordinal);
+        Assert.Contains("--uninstall --quiet", form, StringComparison.Ordinal);
+        Assert.Contains("printRxer uninstall will remove the watcher, app files, printer queue, driver, port, and monitor", form, StringComparison.Ordinal);
         Assert.Contains("ProcessRunner.RunForResult(setupPath, arguments, elevate: elevate)", form, StringComparison.Ordinal);
         Assert.Contains("ValidatePrintRxerAfterSetup", form, StringComparison.Ordinal);
         Assert.DoesNotContain("ProcessRunner.StartElevated(setupPath, arguments)", form, StringComparison.Ordinal);
@@ -112,10 +113,14 @@ public sealed class ReleaseBundleNamingTests
     {
         string repoRoot = FindRepoRoot();
         string uninstaller = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "PrintRxerUninstaller.cs"));
+        string uninstallForm = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "UninstallForm.cs"));
 
         Assert.DoesNotContain("Get-Process -Name 'printRxer*'", uninstaller, StringComparison.Ordinal);
         Assert.DoesNotContain("Get-Process -Name \"printRxer*\"", uninstaller, StringComparison.Ordinal);
         Assert.Contains("Get-Process -Name 'printRxer'", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("--uninstall --quiet", uninstallForm, StringComparison.Ordinal);
+        Assert.Contains("--uninstall --remove-data --quiet", uninstallForm, StringComparison.Ordinal);
+        Assert.Contains("complete the already-confirmed uninstall", uninstallForm, StringComparison.Ordinal);
     }
 
     [Fact]

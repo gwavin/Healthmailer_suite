@@ -131,12 +131,12 @@ internal sealed class SuiteInstallerForm : Form
         }
 
         bool isUninstall = arguments.Contains("--uninstall", StringComparison.OrdinalIgnoreCase);
-        bool elevate = setupKind == SetupKind.PrintRxer && !isUninstall;
+        bool elevate = setupKind == SetupKind.PrintRxer;
 
         string message = setupKind switch
         {
             SetupKind.HealthMailer => "HealthMailer setup will run as the current Windows user. Use the Outlook/Healthmail sender account so the scheduled task and Outlook COM automation use the correct profile.",
-            SetupKind.PrintRxer when isUninstall => "printRxer uninstall will check whether printRxer is installed. Standard uninstall preserves local data, logs, and archives by default.",
+            SetupKind.PrintRxer when isUninstall => "printRxer uninstall will remove the watcher, app files, printer queue, driver, port, and monitor in one administrator-approved step. Standard uninstall preserves local data, logs, and archives by default.",
             _ => "printRxer setup includes printer capture. Windows will ask for administrator approval while it installs the app files, port monitor, driver, and local printer queue. After install, run validation to confirm the scheduled task principal."
         };
 
@@ -515,7 +515,7 @@ internal sealed class SuiteInstallerForm : Form
         Button repairPrintRxer = CreateButton("Repair / reinstall printRxer printing", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer); });
         Button repairCapture = CreateButton("Repair printRxer printer capture", (_, _) => { dialog.Close(); RunElevatedScript(SuitePaths.CaptureInstallScriptPath); });
         Button repairHealthMailer = CreateButton("Repair / reinstall HealthMailer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.HealthMailerSetupPath, SetupKind.HealthMailer); });
-        Button uninstallPrintRxer = CreateButton("Uninstall printRxer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer, "--uninstall"); });
+        Button uninstallPrintRxer = CreateButton("Uninstall printRxer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer, "--uninstall --quiet"); });
         Button uninstallHealthMailer = CreateButton("Uninstall HealthMailer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.HealthMailerSetupPath, SetupKind.HealthMailer, "--uninstall"); });
 
         foreach (Button button in new[] { repairPrintRxer, repairCapture, repairHealthMailer, uninstallPrintRxer, uninstallHealthMailer })
