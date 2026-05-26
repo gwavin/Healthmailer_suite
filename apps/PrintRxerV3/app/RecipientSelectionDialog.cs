@@ -141,10 +141,23 @@ public sealed class RecipientSelectionDialog : Form
         selectedPanel.Controls.Add(_selectedRecipientBox);
         selectedPanel.Controls.Add(selectedHelp);
 
+        SplitContainer detailSplit = new()
+        {
+            Dock = DockStyle.Fill,
+            Orientation = Orientation.Horizontal,
+            SplitterWidth = 5,
+            FixedPanel = FixedPanel.None,
+            Panel1MinSize = 180,
+            Panel2MinSize = 140,
+            BackColor = System.Drawing.Color.FromArgb(245, 248, 252),
+            Margin = Padding.Empty
+        };
+
         TableLayoutPanel detailPanel = new()
         {
             Dock = DockStyle.Fill,
-            RowCount = 11,
+            AutoScroll = true,
+            RowCount = 9,
             ColumnCount = 1,
             Margin = Padding.Empty,
             Padding = Padding.Empty
@@ -159,7 +172,6 @@ public sealed class RecipientSelectionDialog : Form
         detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         detailPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        detailPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         detailPanel.Controls.Add(selectedPanel);
 
         detailPanel.Controls.Add(BuildDocumentKindPanel());
@@ -176,14 +188,29 @@ public sealed class RecipientSelectionDialog : Form
         _subjectBox.Dock = DockStyle.Fill;
         detailPanel.Controls.Add(_subjectBox);
 
+        TableLayoutPanel messagePanel = new()
+        {
+            Dock = DockStyle.Fill,
+            RowCount = 2,
+            ColumnCount = 1,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        messagePanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        messagePanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         Label messageLabel = new() { Text = "Message", AutoSize = true, Margin = new Padding(0, 12, 0, 4) };
-        detailPanel.Controls.Add(messageLabel);
+        messagePanel.Controls.Add(messageLabel);
 
         _bodyBox.Dock = DockStyle.Fill;
         _bodyBox.Multiline = true;
         _bodyBox.ScrollBars = ScrollBars.Vertical;
-        detailPanel.Controls.Add(_bodyBox);
-        mainSplit.Panel2.Controls.Add(detailPanel);
+        _bodyBox.AcceptsReturn = true;
+        _bodyBox.AcceptsTab = true;
+        _bodyBox.MinimumSize = new System.Drawing.Size(0, 120);
+        messagePanel.Controls.Add(_bodyBox);
+        detailSplit.Panel1.Controls.Add(detailPanel);
+        detailSplit.Panel2.Controls.Add(messagePanel);
+        mainSplit.Panel2.Controls.Add(detailSplit);
         root.Controls.Add(mainSplit);
 
         TableLayoutPanel buttons = new()
@@ -245,6 +272,7 @@ public sealed class RecipientSelectionDialog : Form
         UpdateSelectedRecipientField();
         PositionOnPrimaryWorkArea();
         Shown += delegate { SetInitialSplitterDistance(mainSplit); };
+        Shown += delegate { SetInitialDetailSplitterDistance(detailSplit); };
     }
 
     private void SetInitialSplitterDistance(SplitContainer split)
@@ -253,6 +281,15 @@ public sealed class RecipientSelectionDialog : Form
         split.Panel2MinSize = Math.Min(220, Math.Max(25, split.Height / 4));
         int preferredTop = _recipientGrid.ColumnHeadersHeight + (int)(_recipientGrid.RowTemplate.Height * 3.5) + 6;
         preferredTop = Math.Max(split.Panel1MinSize, preferredTop);
+        int maximumTop = Math.Max(split.Panel1MinSize, split.Height - split.Panel2MinSize);
+        split.SplitterDistance = Math.Min(preferredTop, maximumTop);
+    }
+
+    private static void SetInitialDetailSplitterDistance(SplitContainer split)
+    {
+        split.Panel1MinSize = Math.Min(180, Math.Max(25, split.Height / 4));
+        split.Panel2MinSize = Math.Min(140, Math.Max(25, split.Height / 4));
+        int preferredTop = Math.Max(split.Panel1MinSize, (int)Math.Floor(split.Height * 0.55));
         int maximumTop = Math.Max(split.Panel1MinSize, split.Height - split.Panel2MinSize);
         split.SplitterDistance = Math.Min(preferredTop, maximumTop);
     }
