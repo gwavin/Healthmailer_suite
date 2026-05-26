@@ -39,7 +39,8 @@ public sealed class DocumentDefaultsTests
 
         Assert.Equal("Prescription", defaults.DocumentName);
         Assert.Equal("Prescription", defaults.Subject);
-        Assert.Contains("Please see the attached prescription.", defaults.Body);
+        Assert.Contains("Please find the attached prescription for your review.", defaults.Body);
+        Assert.DoesNotContain("Document:", defaults.Body);
         Assert.Equal("MRN123456_prescription_" + captured.ToLocalTime().ToString("yyyyMMdd_HHmm") + ".pdf", defaults.AttachmentDisplayName);
     }
 
@@ -74,7 +75,8 @@ public sealed class DocumentDefaultsTests
 
         Assert.Equal("Clinical document", defaults.DocumentName);
         Assert.Equal("Clinical document", defaults.Subject);
-        Assert.Contains("Please see the attached clinical document.", defaults.Body);
+        Assert.Contains("Please find the attached clinical document for your review.", defaults.Body);
+        Assert.DoesNotContain("Document:", defaults.Body);
         Assert.Equal("clinicalDocument_" + captured.ToLocalTime().ToString("yyyyMMdd_HHmm") + ".pdf", defaults.AttachmentDisplayName);
     }
 

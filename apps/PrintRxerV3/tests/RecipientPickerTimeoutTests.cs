@@ -44,6 +44,8 @@ public sealed class RecipientPickerTimeoutTests
 
         Assert.DoesNotContain("TextBox _documentNameBox", source, StringComparison.Ordinal);
         Assert.DoesNotContain("Document name", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Use suggested wording", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Use suggested filename", source, StringComparison.Ordinal);
         Assert.Contains("DocumentName = DocumentDefaults.Create(_selectedDocumentKind, _context).DocumentName", source, StringComparison.Ordinal);
     }
 

@@ -382,11 +382,10 @@ public sealed class RecipientSelectionDialog : Form
         {
             Dock = DockStyle.Fill,
             AutoSize = true,
-            ColumnCount = 4,
+            ColumnCount = 3,
             Margin = new Padding(0, 8, 0, 0),
             Padding = Padding.Empty
         };
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -399,35 +398,24 @@ public sealed class RecipientSelectionDialog : Form
         _clinicalKindButton.AutoSize = true;
         _clinicalKindButton.Margin = new Padding(0, 2, 14, 0);
 
-        Button suggestedWordingButton = new()
-        {
-            Text = "Use suggested wording",
-            AutoSize = true,
-            Height = 30,
-            Margin = new Padding(8, 0, 0, 0),
-            UseVisualStyleBackColor = true
-        };
-
         _prescriptionKindButton.CheckedChanged += delegate
         {
             if (_prescriptionKindButton.Checked)
             {
-                ApplyDocumentKind(DocumentKind.Prescription, forceAllFields: false);
+                ApplyDocumentKind(DocumentKind.Prescription, forceAllFields: true);
             }
         };
         _clinicalKindButton.CheckedChanged += delegate
         {
             if (_clinicalKindButton.Checked)
             {
-                ApplyDocumentKind(DocumentKind.ClinicalDocument, forceAllFields: false);
+                ApplyDocumentKind(DocumentKind.ClinicalDocument, forceAllFields: true);
             }
         };
-        suggestedWordingButton.Click += delegate { ApplyDocumentKind(_selectedDocumentKind, forceAllFields: true); };
 
         panel.Controls.Add(label, 0, 0);
         panel.Controls.Add(_prescriptionKindButton, 1, 0);
         panel.Controls.Add(_clinicalKindButton, 2, 0);
-        panel.Controls.Add(suggestedWordingButton, 3, 0);
         return panel;
     }
 
@@ -437,31 +425,17 @@ public sealed class RecipientSelectionDialog : Form
         {
             Dock = DockStyle.Fill,
             AutoSize = true,
-            ColumnCount = 2,
+            ColumnCount = 1,
             RowCount = 3,
             Margin = new Padding(0, 8, 0, 0),
             Padding = Padding.Empty
         };
         panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         Label label = FieldLabel("Attachment filename", topMargin: 0);
-        Button suggestedFilenameButton = new()
-        {
-            Text = "Use suggested filename",
-            AutoSize = true,
-            Height = 30,
-            Margin = new Padding(8, 0, 0, 0),
-            UseVisualStyleBackColor = true
-        };
-        suggestedFilenameButton.Click += delegate
-        {
-            SetGeneratedText(_attachmentFilenameBox, DocumentDefaults.Create(_selectedDocumentKind, _context).AttachmentDisplayName);
-            _attachmentFilenameWasUserEdited = false;
-        };
 
         _attachmentFilenameBox.Dock = DockStyle.Fill;
         Label note = new()
@@ -474,11 +448,8 @@ public sealed class RecipientSelectionDialog : Form
         };
 
         panel.Controls.Add(label, 0, 0);
-        panel.Controls.Add(suggestedFilenameButton, 1, 0);
         panel.Controls.Add(_attachmentFilenameBox, 0, 1);
-        panel.SetColumnSpan(_attachmentFilenameBox, 2);
         panel.Controls.Add(note, 0, 2);
-        panel.SetColumnSpan(note, 2);
         return panel;
     }
 

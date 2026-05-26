@@ -44,10 +44,9 @@ public static class DocumentDefaults
         string subject = documentName;
         string body = "Hello," + Environment.NewLine + Environment.NewLine +
             (kind == DocumentKind.Prescription
-                ? "Please see the attached prescription."
-                : "Please see the attached clinical document.") +
+                ? "Please find the attached prescription for your review."
+                : "Please find the attached clinical document for your review.") +
             Environment.NewLine + Environment.NewLine +
-            "Document: " + documentName + Environment.NewLine + Environment.NewLine +
             "Kind regards,";
 
         return new DocumentMessageDefaults
