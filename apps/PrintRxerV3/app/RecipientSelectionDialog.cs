@@ -19,7 +19,6 @@ public sealed class RecipientSelectionDialog : Form
     private readonly TextBox _selectedRecipientBox = new();
     private readonly RadioButton _prescriptionKindButton = new();
     private readonly RadioButton _clinicalKindButton = new();
-    private readonly TextBox _documentNameBox = new();
     private readonly TextBox _attachmentFilenameBox = new();
     private readonly TextBox _subjectBox = new();
     private readonly TextBox _bodyBox = new();
@@ -34,7 +33,6 @@ public sealed class RecipientSelectionDialog : Form
     private bool _suppressGeneratedFieldChangeTracking;
     private bool _subjectWasUserEdited;
     private bool _bodyWasUserEdited;
-    private bool _documentNameWasUserEdited;
     private bool _attachmentFilenameWasUserEdited;
 
     public PickerSelection? Selection { get; private set; }
@@ -146,7 +144,6 @@ public sealed class RecipientSelectionDialog : Form
         _searchBox.TextChanged += delegate { RefreshRecipients(); };
         _subjectBox.TextChanged += delegate { if (!_suppressGeneratedFieldChangeTracking) _subjectWasUserEdited = true; };
         _bodyBox.TextChanged += delegate { if (!_suppressGeneratedFieldChangeTracking) _bodyWasUserEdited = true; };
-        _documentNameBox.TextChanged += delegate { if (!_suppressGeneratedFieldChangeTracking) _documentNameWasUserEdited = true; };
         _attachmentFilenameBox.TextChanged += delegate { if (!_suppressGeneratedFieldChangeTracking) _attachmentFilenameWasUserEdited = true; };
         _recipientGrid.SelectionChanged += delegate { RefreshPrepareState(prepareButton); };
         _recipientGrid.CellClick += delegate { AcceptCurrentRecipientSelection(); RefreshPrepareState(prepareButton); };
@@ -256,8 +253,8 @@ public sealed class RecipientSelectionDialog : Form
 
     private Control BuildReviewColumn()
     {
-        TableLayoutPanel panel = BuildSectionPanel("Review and prepare", rowCount: 12);
-        for (int index = 0; index < 11; index++)
+        TableLayoutPanel panel = BuildSectionPanel("Review and prepare", rowCount: 10);
+        for (int index = 0; index < 9; index++)
         {
             panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         }
@@ -267,24 +264,20 @@ public sealed class RecipientSelectionDialog : Form
         panel.Controls.Add(BuildSelectedRecipientPanel(), 0, 1);
         panel.Controls.Add(BuildDocumentKindPanel(), 0, 2);
 
-        panel.Controls.Add(FieldLabel("Document name", topMargin: 8), 0, 3);
-        _documentNameBox.Dock = DockStyle.Fill;
-        panel.Controls.Add(_documentNameBox, 0, 4);
+        panel.Controls.Add(BuildAttachmentFilenamePanel(), 0, 3);
 
-        panel.Controls.Add(BuildAttachmentFilenamePanel(), 0, 5);
-
-        panel.Controls.Add(FieldLabel("Subject", topMargin: 10), 0, 6);
+        panel.Controls.Add(FieldLabel("Subject", topMargin: 10), 0, 4);
         _subjectBox.Dock = DockStyle.Fill;
-        panel.Controls.Add(_subjectBox, 0, 7);
+        panel.Controls.Add(_subjectBox, 0, 5);
 
-        panel.Controls.Add(FieldLabel("Message", topMargin: 10), 0, 8);
+        panel.Controls.Add(FieldLabel("Message", topMargin: 10), 0, 6);
         _bodyBox.Dock = DockStyle.Fill;
         _bodyBox.Multiline = true;
         _bodyBox.ScrollBars = ScrollBars.Vertical;
         _bodyBox.AcceptsReturn = true;
         _bodyBox.AcceptsTab = true;
-        _bodyBox.MinimumSize = new System.Drawing.Size(0, 180);
-        panel.Controls.Add(_bodyBox, 0, 9);
+        _bodyBox.MinimumSize = new System.Drawing.Size(0, 120);
+        panel.Controls.Add(_bodyBox, 0, 7);
         panel.SetRowSpan(_bodyBox, 3);
         return panel;
     }
@@ -506,7 +499,6 @@ public sealed class RecipientSelectionDialog : Form
 
         _subjectWasUserEdited = false;
         _bodyWasUserEdited = false;
-        _documentNameWasUserEdited = false;
         _attachmentFilenameWasUserEdited = false;
     }
 
@@ -514,12 +506,6 @@ public sealed class RecipientSelectionDialog : Form
     {
         _selectedDocumentKind = kind;
         DocumentMessageDefaults defaults = DocumentDefaults.Create(kind, _context);
-        if (forceAllFields || !_documentNameWasUserEdited)
-        {
-            SetGeneratedText(_documentNameBox, defaults.DocumentName);
-            _documentNameWasUserEdited = false;
-        }
-
         if (forceAllFields || !_subjectWasUserEdited)
         {
             SetGeneratedText(_subjectBox, defaults.Subject);
@@ -722,7 +708,7 @@ public sealed class RecipientSelectionDialog : Form
             Subject = _subjectBox.Text,
             Body = _bodyBox.Text,
             DocumentKind = _selectedDocumentKind,
-            DocumentName = string.IsNullOrWhiteSpace(_documentNameBox.Text) ? DocumentDefaults.Create(_selectedDocumentKind, _context).DocumentName : _documentNameBox.Text.Trim(),
+            DocumentName = DocumentDefaults.Create(_selectedDocumentKind, _context).DocumentName,
             AttachmentDisplayName = DocumentDefaults.SanitizeAttachmentFileName(
                 _attachmentFilenameBox.Text,
                 DocumentDefaults.Create(_selectedDocumentKind, _context).AttachmentDisplayName),

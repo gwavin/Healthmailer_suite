@@ -35,4 +35,31 @@ public sealed class RecipientPickerTimeoutTests
         Assert.True(layout.SplitterDistance >= layout.Panel1MinSize);
         Assert.True(layout.SplitterDistance <= Math.Max(width, 1) - layout.Panel2MinSize);
     }
+
+    [Fact]
+    public void Recipient_picker_no_longer_exposes_redundant_document_name_field()
+    {
+        string repoRoot = FindRepoRoot();
+        string source = File.ReadAllText(Path.Combine(repoRoot, "apps", "PrintRxerV3", "app", "RecipientSelectionDialog.cs"));
+
+        Assert.DoesNotContain("TextBox _documentNameBox", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("Document name", source, StringComparison.Ordinal);
+        Assert.Contains("DocumentName = DocumentDefaults.Create(_selectedDocumentKind, _context).DocumentName", source, StringComparison.Ordinal);
+    }
+
+    private static string FindRepoRoot()
+    {
+        DirectoryInfo? directory = new(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "PrintRxerSuite.slnx")))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new InvalidOperationException("Could not find repository root.");
+    }
 }
