@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>printRxer / HealthMailer User Guide</title>
+  <style>
+    :root {
+      --ink: #1f2937; --muted: #4b5563; --border: #d7dde6;
+      --soft: #f5f7fa; --softer: #fbfcfe; --accent: #2f6f8f;
+      --accent-2: #6b8e23; --warning-bg: #fff7ed; --warning-border: #fed7aa;
+      --success-bg: #f0fdf4; --success-border: #bbf7d0;
+      --note-bg: #eef6ff; --note-border: #bfdbfe;
+    }
+    body { margin: 0; background: #eef1f5; color: var(--ink); font-family: Calibri, Arial, sans-serif; font-size: 15px; line-height: 1.45; }
+    .page { max-width: 1060px; margin: 28px auto; background: white; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(15,23,42,.10); }
+    header { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; padding: 26px 32px; background: linear-gradient(135deg,#f7fafc,#eef5f7); border-bottom: 1px solid var(--border); }
+    .logo { width: 76px; height: 76px; border-radius: 14px; background: #fff; border: 1px solid var(--border); display: grid; place-items: center; color: var(--accent-2); font-weight: 700; text-align: center; font-size: 13px; line-height: 1.1; padding: 6px; }
+    h1 { margin: 0 0 6px 0; font-size: 26px; color: #132238; }
+    .subtitle { color: var(--muted); margin: 0; max-width: 820px; }
+    main { padding: 28px 32px 34px 32px; }
+    h2 { font-size: 20px; margin: 28px 0 10px 0; padding-bottom: 6px; border-bottom: 1px solid var(--border); color: #132238; }
+    h3 { font-size: 16px; margin: 18px 0 8px 0; color: #233044; }
+    p { margin: 8px 0 12px 0; }
+    ul, ol { margin-top: 8px; padding-left: 24px; }
+    li { margin: 5px 0; }
+    .meta { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 16px; }
+    .meta div { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: #fff; }
+    .meta strong { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 3px; }
+    .box { border: 1px solid var(--border); background: var(--softer); border-radius: 12px; padding: 14px 16px; margin: 14px 0; }
+    .note { border-color: var(--note-border); background: var(--note-bg); }
+    .warning { border-color: var(--warning-border); background: var(--warning-bg); }
+    .success { border-color: var(--success-border); background: var(--success-bg); }
+    .workflow { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin: 16px 0; }
+    .step { border: 1px solid var(--border); border-radius: 14px; padding: 14px; background: var(--soft); }
+    .step .num { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: white; display: inline-grid; place-items: center; font-weight: 700; margin-bottom: 8px; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0 18px 0; font-size: 14px; }
+    th, td { border: 1px solid var(--border); padding: 9px 10px; vertical-align: top; }
+    th { background: #eef2f7; text-align: left; color: #223047; }
+    code { background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 5px; padding: 1px 5px; font-family: Consolas, "Courier New", monospace; font-size: 13px; }
+    .screen { border: 1px solid var(--border); border-radius: 12px; background: #f8fafc; padding: 12px 14px; margin: 12px 0; }
+    .screen-title { font-weight: 700; color: #1f2937; margin-bottom: 6px; }
+    .footer { margin-top: 34px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); padding-top: 14px; }
+    @media (max-width: 800px) { .page { margin: 0; border-left: 0; border-right: 0; } header { grid-template-columns: 1fr; } .meta, .workflow { grid-template-columns: 1fr; } main, header { padding-left: 18px; padding-right: 18px; } }
+    @media print { body { background: white; } .page { box-shadow: none; border: none; margin: 0; } header { border: 1px solid var(--border); } .box, .step { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="logo">printRxer<br>HealthMailer</div>
+      <div>
+        <h1>printRxer / HealthMailer User Guide</h1>
+        <p class="subtitle">A quick guide for staff using printRxer to prepare a prescription or clinical document for scheduled sending through HealthMailer.</p>
+        <div class="meta">
+          <div><strong>Audience</strong>End users</div>
+          <div><strong>Purpose</strong>Select recipient, review document, prepare sending</div>
+          <div><strong>Status</strong>Controlled pilot / approved local use</div>
+        </div>
+      </div>
+    </header>
+    <main>
+      <div class="box note"><strong>Important:</strong> printRxer does not send the email itself. It prepares a checked handoff package. HealthMailer then sends the document through the approved local Outlook / Healthmail sender setup.</div>
+
+      <h2>1. What this tool is for</h2>
+      <p>printRxer is used when a prescription or clinical document needs to be sent securely to an approved pharmacy or clinician recipient. The tool lets you search for the correct recipient, review the document details, choose whether the item is a prescription or clinical document, and prepare it for scheduled sending.</p>
+      <p>The aim is to make the final check explicit: you can see the selected recipient, the attachment filename, the subject, and the message before the package is prepared.</p>
+
+      <h2>2. Before you start</h2>
+      <ul>
+        <li>Check that you are working on the correct patient/document in the clinical system.</li>
+        <li>Print or send the document to the local <code>printRxer</code> printer when instructed by your local workflow.</li>
+        <li>Wait for the recipient picker window to open.</li>
+        <li>Do not use the tool if the picker shows unexpected patient/document details. Cancel and start again.</li>
+      </ul>
+      <div class="box warning"><strong>Patient-identifiable information:</strong> documents, attachment filenames, and audit evidence may contain patient identifiers such as MRN. Use the tool only for approved clinical communication workflows and follow local information governance procedures.</div>
+
+      <h2>3. Basic workflow</h2>
+      <div class="workflow">
+        <div class="step"><div class="num">1</div><h3>Search and select</h3><p>Search for the correct pharmacy or clinician. Select the intended recipient from the list.</p></div>
+        <div class="step"><div class="num">2</div><h3>Review details</h3><p>Review document type, document name, attachment filename, subject, and message.</p></div>
+        <div class="step"><div class="num">3</div><h3>Prepare package</h3><p>Select <strong>Prepare for scheduled sending</strong>. HealthMailer will handle the approved sending path.</p></div>
+      </div>
+
+      <h2>4. The recipient picker screen</h2>
+      <h3>Recipient search</h3>
+      <p>Use the search box to find the intended pharmacy or clinician. The recipient list may show names, email addresses, aliases, services, or other search terms. Select the correct row before preparing the document.</p>
+      <div class="box warning"><strong>Safety check:</strong> the package cannot be prepared until a recipient has been explicitly selected. Do not rely on the first visible result unless you have selected and checked it.</div>
+
+      <h3>Print job context</h3>
+      <p>The picker may show contextual information such as patient, MRN/chart, prescriber, print time, job number, or Windows user. These are provided to help you check that the document is the one you intended to send.</p>
+      <table>
+        <thead><tr><th>Field</th><th>What to check</th></tr></thead>
+        <tbody>
+          <tr><td>Patient</td><td>Check that the displayed patient hint, if available, matches the intended document.</td></tr>
+          <tr><td>MRN / chart</td><td>Check the identifier if shown. If unavailable, rely on the source document preview and local workflow checks.</td></tr>
+          <tr><td>Printed</td><td>Check that the time is consistent with the document you just printed/prepared.</td></tr>
+          <tr><td>Job / user</td><td>Useful for support/audit if something unexpected occurs.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>5. Document type, name, and filename</h2>
+      <p>The picker lets you choose whether the outgoing item is a <strong>Prescription / Rx</strong> or a <strong>Clinical document</strong>. This choice helps populate the suggested subject, message, and attachment filename.</p>
+      <table>
+        <thead><tr><th>Document type</th><th>Typical attachment filename</th><th>Typical message wording</th></tr></thead>
+        <tbody>
+          <tr><td>Prescription / Rx</td><td><code>MRN123456_prescription_20260526_1430.pdf</code></td><td>Please see the attached prescription.</td></tr>
+          <tr><td>Clinical document</td><td><code>clinicalDocument_20260526_1430.pdf</code></td><td>Please see the attached clinical document.</td></tr>
+        </tbody>
+      </table>
+      <div class="box note"><strong>Attachment filename:</strong> this is the filename the recipient will see in the email. The internal package file remains unchanged for validation.</div>
+      <p>You may edit the attachment filename before preparing the package. Keep it clear, short, and appropriate. Do not add extra patient identifiers unless required by the approved workflow.</p>
+
+      <h2>6. Subject and message</h2>
+      <p>Review the subject and message before preparing the package. The suggested wording is intentionally brief and neutral.</p>
+      <div class="screen"><div class="screen-title">Prescription example</div><p><strong>Subject:</strong> Prescription</p><p>Hello,<br><br>Please see the attached prescription.<br><br>Document: Prescription<br><br>Kind regards,</p></div>
+      <div class="screen"><div class="screen-title">Clinical document example</div><p><strong>Subject:</strong> Clinical document</p><p>Hello,<br><br>Please see the attached clinical document.<br><br>Document: Clinical document<br><br>Kind regards,</p></div>
+
+      <h2>7. Previewing the document</h2>
+      <p>Use <strong>Preview document</strong> if you need to check the attached PDF before preparing it. If the preview does not open, cancel and contact local support if the problem persists.</p>
+
+      <h2>8. Preparing for scheduled sending</h2>
+      <p>When you are satisfied that the recipient, document type, filename, subject, and message are correct, select:</p>
+      <div class="box success"><strong>Prepare for scheduled sending</strong></div>
+      <p>This creates the HealthMailer handoff package. The picker then closes. Depending on the local setup, HealthMailer will process the package through the approved sending workstation/user profile.</p>
+
+      <h2>9. Privacy timeout and cancellation</h2>
+      <p>The picker closes automatically after 3 minutes for privacy. If it closes before you finish, start again from the original workflow.</p>
+      <p>Selecting <strong>Cancel</strong> closes the picker without preparing a package.</p>
+
+      <h2>10. When to stop and ask for help</h2>
+      <ul>
+        <li>The patient or MRN shown does not match the intended document.</li>
+        <li>The recipient list does not contain the expected recipient.</li>
+        <li>The recipient email address looks wrong.</li>
+        <li>The attachment filename, subject, or message cannot be corrected.</li>
+        <li>The preview opens the wrong document.</li>
+        <li>The tool shows an error, closes unexpectedly, or repeatedly fails to prepare the package.</li>
+      </ul>
+
+      <h2>11. Quick do / do not</h2>
+      <table>
+        <thead><tr><th>Do</th><th>Do not</th></tr></thead>
+        <tbody>
+          <tr><td>Check the recipient carefully before preparing the package.</td><td>Do not send to a recipient just because they are the first search result.</td></tr>
+          <tr><td>Use Preview document if you are uncertain.</td><td>Do not proceed if the document appears to be for the wrong patient.</td></tr>
+          <tr><td>Use the suggested filename unless you have a reason to edit it.</td><td>Do not add unnecessary patient identifiers to filenames or messages.</td></tr>
+          <tr><td>Cancel and restart if anything looks wrong.</td><td>Do not attempt to manually alter handoff package files.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="footer">
+        <p>This guide is for end users of an approved local printRxer / HealthMailer workflow. Local policy, information governance, clinical safety procedures, and IT instructions take precedence.</p>
+        <p>Suggested document owner: local implementation/support team. Version/date: insert before release.</p>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
