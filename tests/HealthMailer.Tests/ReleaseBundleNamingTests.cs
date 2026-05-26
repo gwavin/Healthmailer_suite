@@ -17,12 +17,16 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("INSTALL-BUNDLE-README.txt", script, StringComparison.Ordinal);
         Assert.Contains("printRxerSetup.exe", script, StringComparison.Ordinal);
         Assert.Contains("HealthMailerSetup.exe", script, StringComparison.Ordinal);
+        Assert.Contains("payload\\setup\\printRxerSetup.exe", script, StringComparison.Ordinal);
+        Assert.Contains("payload\\setup\\HealthMailerSetup.exe", script, StringComparison.Ordinal);
+        Assert.Contains("The suite installer is the intended front door for IT handoff", script, StringComparison.Ordinal);
         Assert.Contains("New-PrintRxerSupportBundle.ps1", script, StringComparison.Ordinal);
         Assert.Contains("Assert-SelfContainedExecutable", script, StringComparison.Ordinal);
         Assert.Contains("must not require a separate .NET Desktop Runtime install", script, StringComparison.Ordinal);
         Assert.Contains("Target machines should not need a separate .NET Desktop Runtime installation", script, StringComparison.Ordinal);
         Assert.Contains("printRxerSetup.exe", script, StringComparison.Ordinal);
         Assert.Contains("payload\\publish\\printRxer", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("The component installers are included at the ZIP root", script, StringComparison.Ordinal);
         Assert.DoesNotContain("PrintRxerV3Setup.exe", script, StringComparison.Ordinal);
         Assert.DoesNotContain("PrintRxerV3 install bundle", script, StringComparison.Ordinal);
     }
@@ -45,6 +49,7 @@ public sealed class ReleaseBundleNamingTests
         string form = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerSuiteInstaller", "SuiteInstallerForm.cs"));
 
         Assert.Contains("Install printRxer printing machine", form, StringComparison.Ordinal);
+        Assert.Contains("component setup EXEs are internal under payload\\\\setup", form, StringComparison.Ordinal);
         Assert.Contains("Install HealthMailer sending machine", form, StringComparison.Ordinal);
         Assert.Contains("Same-machine pilot: install both", form, StringComparison.Ordinal);
         Assert.Contains("Validate installation", form, StringComparison.Ordinal);

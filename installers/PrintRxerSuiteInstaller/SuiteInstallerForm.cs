@@ -88,7 +88,7 @@ internal sealed class SuiteInstallerForm : Form
         root.Controls.Add(_statusText);
 
         Controls.Add(root);
-        AppendStatus("Ready. Run component installs from the release ZIP root.");
+        AppendStatus("Ready. Use this suite installer as the front door; component setup EXEs are internal under payload\\setup.");
     }
 
     private void RunSameMachinePilot()

@@ -317,8 +317,8 @@ try {
 
     Write-Step "Creating suite bundle."
     Copy-RequiredFile (Join-Path $suiteInstallerPublish 'PrintRxerSuiteInstaller.exe') (Join-Path $suiteRoot 'PrintRxerSuiteInstaller.exe')
-    Copy-RequiredFile (Join-Path $installerPublish 'printRxerInstaller.exe') (Join-Path $suiteRoot 'printRxerSetup.exe')
-    Copy-RequiredFile (Join-Path $healthMailerInstallerPublish 'HealthMailerInstaller.exe') (Join-Path $suiteRoot 'HealthMailerSetup.exe')
+    Copy-RequiredFile (Join-Path $installerPublish 'printRxerInstaller.exe') (Join-Path $suiteRoot 'payload\setup\printRxerSetup.exe')
+    Copy-RequiredFile (Join-Path $healthMailerInstallerPublish 'HealthMailerInstaller.exe') (Join-Path $suiteRoot 'payload\setup\HealthMailerSetup.exe')
     Copy-RequiredDirectory $printRxerPublish (Join-Path $suiteRoot 'payload\publish\printRxer')
     Copy-RequiredDirectory $healthMailerPublish (Join-Path $suiteRoot 'payload\publish\HealthMailer')
     Copy-RequiredDirectory '.\assets' (Join-Path $suiteRoot 'payload\assets')
@@ -350,7 +350,7 @@ Do not run PowerShell scripts directly unless instructed by support.
 
 The GUI can install a printRxer printing machine, install a HealthMailer sending machine, install both for a same-machine pilot, validate the installation, open logs, create a support bundle, and start Advanced / repair actions.
 Printer capture is included in the normal printRxer printing-machine install. Printer-only actions are for repair/support.
-The component installers are included at the ZIP root because they use the root payload folder.
+The suite installer is the intended front door for IT handoff. Component setup EXEs are kept under payload\setup for the suite to run internally and for approved automation/support use.
 
 Support smoke test:
   PrintRxerSuiteInstaller.exe --smoke-test
@@ -362,20 +362,20 @@ Enterprise deployment examples:
 
   printRxer printing machine:
     Run in an administrator-capable context because printRxer installs the port monitor, XPS driver, and local printRxer queue.
-  printRxerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming"
-  printRxerSetup.exe --validate
+  payload\setup\printRxerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming"
+  payload\setup\printRxerSetup.exe --validate
 
   HealthMailer sending machine:
     Run as the intended Outlook/Healthmail sender user. Do not assume a system-context install will work with Outlook COM.
-  HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true
-  HealthMailerSetup.exe --validate
+  payload\setup\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true
+  payload\setup\HealthMailerSetup.exe --validate
 
   Same-machine pilot:
     Use the same handoff folder for both commands. HealthMailer still needs to be configured for the Outlook/Healthmail sender user.
 
   Uninstall:
-  printRxerSetup.exe --uninstall --quiet
-  HealthMailerSetup.exe --uninstall --quiet
+  payload\setup\printRxerSetup.exe --uninstall --quiet
+  payload\setup\HealthMailerSetup.exe --uninstall --quiet
 
 IT owns deployment tooling. Target machines do not need the SDK, WDK, Visual Studio, or C++ build tools.
 The supplied EXEs are self-contained for Windows x64. Target machines should not need a separate .NET Desktop Runtime installation.

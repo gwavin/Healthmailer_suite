@@ -14,7 +14,7 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
 
         Assert.All(results, result => Assert.True(result.Exists, result.RelativePath));
         Assert.Contains(results, result => result.RelativePath == "INSTALL-BUNDLE-README.txt");
-        Assert.Contains(results, result => result.RelativePath == "printRxerSetup.exe");
+        Assert.Contains(results, result => result.RelativePath == @"payload\setup\printRxerSetup.exe");
         Assert.Contains(results, result => result.RelativePath == @"payload\tools\New-PrintRxerSupportBundle.ps1");
     }
 
@@ -41,6 +41,7 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
 
         Assert.Contains("RunForResult(setupPath, arguments, elevate: elevate, whileWaiting: PumpBusyUi)", source);
         Assert.Contains("RunPrintRxerInstall", source);
+        Assert.Contains("SetupRoot", File.ReadAllText(Path.Combine(RepoRoot(), "installers", "PrintRxerSuiteInstaller", "SuitePaths.cs")));
         Assert.Contains("--quiet --handoff-root", source);
         Assert.Contains("ValidatePrintRxerAfterSetup", source);
         Assert.Contains("--validate", source);
@@ -76,8 +77,8 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
         {
             "INSTALL-BUNDLE-README.txt",
             "SHA256SUMS.txt",
-            "printRxerSetup.exe",
-            "HealthMailerSetup.exe",
+            @"payload\setup\printRxerSetup.exe",
+            @"payload\setup\HealthMailerSetup.exe",
             @"payload\tools\Test-PrintRxerSuiteHealth.ps1",
             @"payload\tools\New-PrintRxerSupportBundle.ps1",
             @"payload\tools\Install-PrintRxerCapturePrinter.ps1",

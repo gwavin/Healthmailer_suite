@@ -10,8 +10,8 @@ internal static class BundlePreflight
         {
             "INSTALL-BUNDLE-README.txt",
             "SHA256SUMS.txt",
-            "printRxerSetup.exe",
-            "HealthMailerSetup.exe",
+            @"payload\setup\printRxerSetup.exe",
+            @"payload\setup\HealthMailerSetup.exe",
             @"payload\tools\Test-PrintRxerSuiteHealth.ps1",
             @"payload\tools\New-PrintRxerSupportBundle.ps1",
             @"payload\tools\Install-PrintRxerCapturePrinter.ps1",
