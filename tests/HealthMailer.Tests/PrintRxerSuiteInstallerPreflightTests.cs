@@ -85,6 +85,7 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
         Assert.Contains("Verb = shouldElevate ? \"runas\" : string.Empty", runner);
         Assert.Contains("RedirectStandardOutput = !shouldElevate", runner);
         Assert.Contains("WindowsBuiltInRole.Administrator", runner);
+        Assert.Contains("public static bool IsAdministrator()", runner);
     }
 
     [Fact]
@@ -105,6 +106,8 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
         Assert.Contains("Width = 120", source);
         Assert.Contains("Height = 44", source);
         Assert.Contains("native port monitor, driver, and local printer queue named printRxer", source);
+        Assert.Contains("Suite installer is already running with administrator rights; starting printRxer setup directly.", source);
+        Assert.Contains("Suite installer is not elevated; requesting Windows administrator approval for printRxer setup.", source);
     }
 
     [Fact]

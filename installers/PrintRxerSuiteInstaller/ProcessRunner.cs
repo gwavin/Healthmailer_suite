@@ -99,7 +99,7 @@ internal static class ProcessRunner
         process.Start();
     }
 
-    private static bool IsAdministrator()
+    public static bool IsAdministrator()
     {
         using WindowsIdentity identity = WindowsIdentity.GetCurrent();
         WindowsPrincipal principal = new(identity);

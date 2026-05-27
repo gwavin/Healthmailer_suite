@@ -363,6 +363,9 @@ internal sealed class SuiteInstallerForm : Form
         RunUserAction(() =>
         {
             AppendStatus("Installing printRxer printing machine with handoff folder: " + handoffRoot);
+            AppendStatus(ProcessRunner.IsAdministrator()
+                ? "Suite installer is already running with administrator rights; starting printRxer setup directly."
+                : "Suite installer is not elevated; requesting Windows administrator approval for printRxer setup.");
             string arguments = "--quiet --handoff-root \"" + EscapeArgument(handoffRoot) + "\"";
             using Form busyDialog = ShowBusyDialog(ProgressTitle(SetupKind.PrintRxer, uninstall: false), ProgressMessage(SetupKind.PrintRxer, uninstall: false));
             ProcessResult setupResult = ProcessRunner.RunForResult(SuitePaths.PrintRxerSetupPath, arguments, elevate: true, whileWaiting: PumpBusyUi);
