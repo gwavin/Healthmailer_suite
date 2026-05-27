@@ -220,6 +220,24 @@ public sealed class ReleaseBundleNamingTests
     }
 
     [Fact]
+    public void HealthMailer_installer_stops_existing_watcher_before_copying_files()
+    {
+        string repoRoot = FindRepoRoot();
+        string installer = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "HealthMailerInstallerEngine.cs"));
+
+        int stopIndex = installer.IndexOf("Stopping existing HealthMailer watcher/process before updating application files.", StringComparison.Ordinal);
+        int copyIndex = installer.IndexOf("Installing HealthMailer application files.", StringComparison.Ordinal);
+
+        Assert.True(stopIndex >= 0, "The HealthMailer installer should stop any existing watcher before updating app files.");
+        Assert.True(copyIndex > stopIndex, "The HealthMailer installer must stop the existing watcher before copying over HealthMailer.exe.");
+        Assert.Contains("Disable-ScheduledTask -TaskName 'HealthMailer'", installer, StringComparison.Ordinal);
+        Assert.Contains("Stop-ScheduledTask -TaskName 'HealthMailer'", installer, StringComparison.Ordinal);
+        Assert.Contains("Get-Process -Name 'HealthMailer'", installer, StringComparison.Ordinal);
+        Assert.Contains("HealthMailer process did not stop before install.", installer, StringComparison.Ordinal);
+        Assert.DoesNotContain("Get-Process -Name 'HealthMailer*'", installer, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Source_and_docs_do_not_use_legacy_underscored_printRxer_name()
     {
         string repoRoot = FindRepoRoot();

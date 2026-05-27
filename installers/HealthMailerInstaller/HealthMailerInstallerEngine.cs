@@ -25,6 +25,9 @@ internal static class HealthMailerInstallerEngine
             Directory.CreateDirectory(options.HandoffRoot);
         }
 
+        log("Stopping existing HealthMailer watcher/process before updating application files.");
+        StopExistingWatcher(log);
+
         log("Installing HealthMailer application files.");
         CopyDirectory(InstallerPaths.PayloadPublishRoot, InstallerPaths.ProgramFilesRoot);
 
@@ -79,6 +82,43 @@ Register-ScheduledTask -TaskName '" + InstallerPaths.TaskName + @"' -Action $act
 Start-ScheduledTask -TaskName '" + InstallerPaths.TaskName + @"'
 ";
         ProcessRunner.PowerShell(command);
+    }
+
+    private static void StopExistingWatcher(Action<string> log)
+    {
+        string command = @"
+$task = Get-ScheduledTask -TaskName 'HealthMailer' -ErrorAction SilentlyContinue
+if ($task) {
+    Write-Output 'Disabling scheduled task before install: HealthMailer'
+    Disable-ScheduledTask -TaskName 'HealthMailer' -ErrorAction SilentlyContinue | Out-Null
+    Write-Output 'Stopping scheduled task before install: HealthMailer'
+    Stop-ScheduledTask -TaskName 'HealthMailer' -ErrorAction SilentlyContinue
+} else {
+    Write-Output 'Scheduled task not present before install: HealthMailer'
+}
+$processes = Get-Process -Name 'HealthMailer' -ErrorAction SilentlyContinue
+if ($processes) {
+    Write-Output 'Stopping running HealthMailer process before install.'
+    $processes | Stop-Process -Force
+} else {
+    Write-Output 'No running HealthMailer process found before install.'
+}
+$deadline = (Get-Date).AddSeconds(10)
+while ((Get-Process -Name 'HealthMailer' -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
+    Start-Sleep -Milliseconds 250
+}
+if (Get-Process -Name 'HealthMailer' -ErrorAction SilentlyContinue) {
+    throw 'HealthMailer process did not stop before install.'
+}
+";
+        string output = ProcessRunner.PowerShell(command);
+        if (!string.IsNullOrWhiteSpace(output))
+        {
+            foreach (string line in output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries))
+            {
+                log(line);
+            }
+        }
     }
 
     private static string EscapeSingleQuoted(string value) => value.Replace("'", "''", StringComparison.Ordinal);
