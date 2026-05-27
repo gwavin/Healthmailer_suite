@@ -33,6 +33,13 @@ internal static class Program
 
         try
         {
+            string? argumentError = ValidateArguments(args);
+            if (argumentError is not null)
+            {
+                log(argumentError);
+                return MissingRequiredArgument;
+            }
+
             if (help)
             {
                 WriteHelp();
@@ -246,6 +253,28 @@ Exit codes:
 
     private static bool HasFlag(string[] args, string name) => args.Any(arg => string.Equals(arg, name, StringComparison.OrdinalIgnoreCase));
 
+    private static string? ValidateArguments(string[] args)
+    {
+        string[] primaryModes = ["--uninstall", "--validate", "--smoke-test", "--help"];
+        int suppliedModes = args.Count(arg => primaryModes.Any(mode => string.Equals(arg, mode, StringComparison.OrdinalIgnoreCase)));
+        if (suppliedModes > 1)
+        {
+            return "Only one primary mode may be supplied.";
+        }
+
+        if (HasOptionWithoutValue(args, "--handoff-root"))
+        {
+            return "--handoff-root requires a value.";
+        }
+
+        if (HasOptionWithoutValue(args, "--send-mail"))
+        {
+            return "--send-mail requires true or false.";
+        }
+
+        return null;
+    }
+
     private static string? GetOption(string[] args, string name)
     {
         for (int i = 0; i < args.Length - 1; i++)
@@ -257,6 +286,21 @@ Exit codes:
         }
 
         return null;
+    }
+
+    private static bool HasOptionWithoutValue(string[] args, string name)
+    {
+        for (int i = 0; i < args.Length; i++)
+        {
+            if (!string.Equals(args[i], name, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return i == args.Length - 1 || args[i + 1].StartsWith("-", StringComparison.Ordinal);
+        }
+
+        return false;
     }
 
     private static bool TryGetBoolOption(string[] args, string name, out bool value, out string? error)

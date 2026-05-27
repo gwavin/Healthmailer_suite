@@ -229,6 +229,28 @@ public sealed class PackageProcessorTests
     }
 
     [Fact]
+    public void ProcessAvailablePackages_mail_failure_sanitises_package_evidence_but_logs_technical_detail()
+    {
+        TestPaths paths = CreatePaths(chartEnabled: true);
+        CreatePackage(paths.HandoffRoot, "pkg-mail-sensitive-fail");
+        string sensitive = @"dispatcher failed at C:\Users\gavin\secret\server\share";
+        RecordingMailer mailer = new() { Failure = new InvalidOperationException(sensitive) };
+        List<string> logs = [];
+
+        int processed = new PackageProcessor(CreateConfig(paths), mailer, logs.Add).ProcessAvailablePackages();
+
+        Assert.Equal(1, processed);
+        string failed = Path.Combine(paths.LocalRoot, "failed", "pkg-mail-sensitive-fail");
+        string resultJson = File.ReadAllText(Path.Combine(failed, "result.json"));
+        string summary = File.ReadAllText(Path.Combine(failed, "summary.txt"));
+        Assert.Contains("Internal mail dispatcher error. See local HealthMailer logs for technical details.", resultJson);
+        Assert.Contains("Internal mail dispatcher error. See local HealthMailer logs for technical details.", summary);
+        Assert.DoesNotContain(sensitive, resultJson, StringComparison.Ordinal);
+        Assert.DoesNotContain(sensitive, summary, StringComparison.Ordinal);
+        Assert.Contains(logs, line => line.Contains(sensitive, StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void ProcessAvailablePackages_chart_copy_failure_after_mail_is_recorded_distinctly()
     {
         TestPaths paths = CreatePaths(chartEnabled: true);
@@ -244,6 +266,29 @@ public sealed class PackageProcessorTests
         Assert.True(Directory.Exists(failed));
         Assert.Contains("ChartCopyFailed", File.ReadAllText(Path.Combine(failed, "result.json")));
         Assert.Contains("\"MailSent\": true", File.ReadAllText(Path.Combine(failed, "result.json")));
+    }
+
+    [Fact]
+    public void ProcessAvailablePackages_chart_copy_failure_sanitises_package_evidence_but_logs_technical_detail()
+    {
+        TestPaths paths = CreatePaths(chartEnabled: true);
+        CreatePackage(paths.HandoffRoot, "pkg-chart-sensitive-fail");
+        RecordingMailer mailer = new();
+        string sensitive = @"chart failed at \\server\secret\path";
+        ThrowingChartCopy chartCopy = new(sensitive);
+        List<string> logs = [];
+
+        int processed = new PackageProcessor(CreateConfig(paths), mailer, chartCopy, logs.Add).ProcessAvailablePackages();
+
+        Assert.Equal(1, processed);
+        string failed = Path.Combine(paths.LocalRoot, "failed", "pkg-chart-sensitive-fail");
+        string resultJson = File.ReadAllText(Path.Combine(failed, "result.json"));
+        string summary = File.ReadAllText(Path.Combine(failed, "summary.txt"));
+        Assert.Contains("Chart copy failed after mail processing. See local HealthMailer logs for technical details.", resultJson);
+        Assert.Contains("Chart copy failed after mail processing. See local HealthMailer logs for technical details.", summary);
+        Assert.DoesNotContain(sensitive, resultJson, StringComparison.Ordinal);
+        Assert.DoesNotContain(sensitive, summary, StringComparison.Ordinal);
+        Assert.Contains(logs, line => line.Contains(sensitive, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -524,9 +569,16 @@ public sealed class PackageProcessorTests
 
     private sealed class ThrowingChartCopy : IChartCopyWriter
     {
+        private readonly string _message;
+
+        public ThrowingChartCopy(string message = "chart folder unavailable")
+        {
+            _message = message;
+        }
+
         public string CopyToChartFolder(DeliveryPackage package, ChartCopyOptions options)
         {
-            throw new IOException("chart folder unavailable");
+            throw new IOException(_message);
         }
     }
 }

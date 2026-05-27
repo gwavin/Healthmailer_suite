@@ -249,6 +249,8 @@ $taskNames = @('printRxer', 'PrintRxerV3', 'PrintRxer Agent')
 foreach ($taskName in $taskNames) {
     $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
     if ($task) {
+        Write-Output ('Disabling scheduled task before install: ' + $taskName)
+        Disable-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue | Out-Null
         Write-Output ('Stopping scheduled task before install: ' + $taskName)
         Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
     } else {
@@ -269,8 +271,24 @@ if ($agentProcesses) {
 } else {
     Write-Output 'No running PrintRxer.Agent process found before install.'
 }
+function WaitForStoppedProcesses {
+    param([string[]] $Names)
+    foreach ($name in $Names) {
+        $deadline = (Get-Date).AddSeconds(10)
+        while ((Get-Process -Name $name -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
+            Start-Sleep -Milliseconds 250
+        }
+        if (Get-Process -Name $name -ErrorAction SilentlyContinue) {
+            if ($name -eq 'printRxer') {
+                throw 'printRxer process did not stop before install.'
+            }
+            throw 'PrintRxer.Agent process did not stop before install.'
+        }
+    }
+}
+WaitForStoppedProcesses @('printRxer', 'PrintRxer.Agent')
 ";
-        string output = ProcessRunner.PowerShell(command, requireSuccess: false);
+        string output = ProcessRunner.PowerShell(command);
         if (!string.IsNullOrWhiteSpace(output))
         {
             foreach (string line in output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries))

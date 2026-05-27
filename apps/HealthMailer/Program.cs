@@ -15,9 +15,22 @@ public static class Program
     {
         try
         {
+            string? argumentError = ValidateArguments(args);
+            if (argumentError is not null)
+            {
+                Console.Error.WriteLine(argumentError);
+                return 2;
+            }
+
             if (args.Any(arg => arg.Equals("--install", StringComparison.OrdinalIgnoreCase)))
             {
                 return RunInstallWizard();
+            }
+
+            if (args.Any(arg => arg.Equals("--help", StringComparison.OrdinalIgnoreCase) || arg.Equals("/?", StringComparison.OrdinalIgnoreCase)))
+            {
+                WriteHelp();
+                return 0;
             }
 
             if (args.Any(arg => arg.Equals("--validate", StringComparison.OrdinalIgnoreCase)))
@@ -51,6 +64,32 @@ public static class Program
             Console.Error.WriteLine(ex);
             return 1;
         }
+    }
+
+    public static string? ValidateArguments(string[] args)
+    {
+        string[] primaryModes =
+        [
+            "--install",
+            "--validate",
+            "--process-once",
+            "--status",
+            "--watch",
+            "--help"
+        ];
+
+        int suppliedModes = args.Count(arg => primaryModes.Any(mode => string.Equals(arg, mode, StringComparison.OrdinalIgnoreCase)));
+        if (suppliedModes > 1)
+        {
+            return "Only one primary mode may be supplied.";
+        }
+
+        if (HasOptionWithoutValue(args, "--config"))
+        {
+            return "--config requires a value.";
+        }
+
+        return null;
     }
 
     private static async Task<int> RunWatcherAsync(HealthMailerConfig config)
@@ -338,6 +377,36 @@ public static class Program
         }
 
         return null;
+    }
+
+    private static void WriteHelp()
+    {
+        Console.WriteLine("""
+HealthMailer.exe
+
+Usage:
+  HealthMailer.exe --watch [--config <path>]
+  HealthMailer.exe --process-once [--config <path>]
+  HealthMailer.exe --status [--config <path>] [--json]
+  HealthMailer.exe --validate [--config <path>]
+  HealthMailer.exe --install
+  HealthMailer.exe --help
+""");
+    }
+
+    private static bool HasOptionWithoutValue(string[] args, string name)
+    {
+        for (int index = 0; index < args.Length; index++)
+        {
+            if (!args[index].Equals(name, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return index == args.Length - 1 || args[index + 1].StartsWith("-", StringComparison.Ordinal);
+        }
+
+        return false;
     }
 
     private static void Log(string message)

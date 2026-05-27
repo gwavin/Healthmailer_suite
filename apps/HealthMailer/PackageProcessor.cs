@@ -142,10 +142,10 @@ public sealed class PackageProcessor
             }
             catch (Exception ex)
             {
-                ProcessingResult chartFailed = CreateResult(package, PackageOutcome.ChartCopyFailed, ex.Message, mailSent: true, chartCopied: false);
+                ProcessingResult chartFailed = CreateResult(package, PackageOutcome.ChartCopyFailed, SafePackageMessage(PackageOutcome.ChartCopyFailed), mailSent: true, chartCopied: false);
                 _ledger.Append(chartFailed);
                 WriteAndArchive(packageDirectory, chartFailed, _config.FailedRoot, claim);
-                _log($"Chart copy failed after mail for package {package.PackageId}: {ex.Message}");
+                _log($"Chart copy failed after mail for package {package.PackageId}: {ex}");
                 return true;
             }
 
@@ -159,15 +159,15 @@ public sealed class PackageProcessor
         {
             PackageLoadResult loadResult = HandoffPackageLoader.TryLoad(packageDirectory);
             ProcessingResult failed = loadResult.Package is null
-                ? CreateResult(name, PackageOutcome.Failed, ex.Message)
-                : CreateResult(loadResult.Package, PackageOutcome.MailFailed, ex.Message, mailSent: false, chartCopied: false);
+                ? CreateResult(name, PackageOutcome.Failed, SafePackageMessage(PackageOutcome.Failed))
+                : CreateResult(loadResult.Package, PackageOutcome.MailFailed, SafePackageMessage(PackageOutcome.MailFailed), mailSent: false, chartCopied: false);
             if (loadResult.Package is not null)
             {
                 _ledger.Append(failed);
             }
 
             WriteAndArchive(packageDirectory, failed, _config.FailedRoot, claim);
-            _log($"Package failed for {name}: {ex.Message}");
+            _log($"Package failed for {name}: {ex}");
             return true;
         }
         finally
@@ -181,9 +181,8 @@ public sealed class PackageProcessor
         string lockPath = Path.Combine(packageDirectory, ".healthmailer.lock");
         try
         {
-            bool existed = File.Exists(lockPath);
             FileStream lockStream = new(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-            if (existed)
+            if (lockStream.Length > 0)
             {
                 DateTimeOffset lockTime = ReadLockTime(lockPath, lockStream);
                 if (DateTimeOffset.UtcNow - lockTime < TimeSpan.FromMinutes(_config.StaleLockMinutes))
@@ -204,6 +203,16 @@ public sealed class PackageProcessor
         {
             return null;
         }
+    }
+
+    private static string SafePackageMessage(PackageOutcome outcome)
+    {
+        return outcome switch
+        {
+            PackageOutcome.MailFailed => "Internal mail dispatcher error. See local HealthMailer logs for technical details.",
+            PackageOutcome.ChartCopyFailed => "Chart copy failed after mail processing. See local HealthMailer logs for technical details.",
+            _ => "Internal package processing error. See local HealthMailer logs for technical details."
+        };
     }
 
     private static DateTimeOffset ReadLockTime(string lockPath, FileStream lockStream)

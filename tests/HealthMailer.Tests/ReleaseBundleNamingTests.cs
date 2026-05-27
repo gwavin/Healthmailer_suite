@@ -130,6 +130,9 @@ public sealed class ReleaseBundleNamingTests
             Assert.Contains("InsufficientPermissions = 3", source, StringComparison.Ordinal);
             Assert.Contains("ValidationFailed = 7", source, StringComparison.Ordinal);
             Assert.Contains("WriteInstallLog", source, StringComparison.Ordinal);
+            Assert.Contains("ValidateArguments(args)", source, StringComparison.Ordinal);
+            Assert.Contains("Only one primary mode may be supplied.", source, StringComparison.Ordinal);
+            Assert.Contains("--handoff-root requires a value.", source, StringComparison.Ordinal);
         }
 
         Assert.Contains("PrinterCaptureFailed = 6", printRxer, StringComparison.Ordinal);
@@ -137,6 +140,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("Path.GetTempPath()", printRxer, StringComparison.Ordinal);
         Assert.Contains("HealthMailerPrerequisiteFailed = 5", healthMailer, StringComparison.Ordinal);
         Assert.Contains("--send-mail", healthMailer, StringComparison.Ordinal);
+        Assert.Contains("--send-mail requires true or false.", healthMailer, StringComparison.Ordinal);
         Assert.Contains("ResolveBundleRoot()", printRxerPaths, StringComparison.Ordinal);
         Assert.Contains("ResolveBundleRoot()", healthMailerPaths, StringComparison.Ordinal);
     }
@@ -173,10 +177,27 @@ public sealed class ReleaseBundleNamingTests
 
         Assert.True(stopIndex >= 0, "The printRxer installer should stop any existing watcher before updating app files.");
         Assert.True(copyIndex > stopIndex, "The printRxer installer must stop the existing watcher before copying over printRxer.exe.");
+        Assert.Contains("Disable-ScheduledTask -TaskName $taskName", installer, StringComparison.Ordinal);
+        Assert.Contains("WaitForStoppedProcesses", installer, StringComparison.Ordinal);
+        Assert.Contains("printRxer process did not stop before install.", installer, StringComparison.Ordinal);
         Assert.DoesNotContain("Get-Process -Name 'printRxer*'", installer, StringComparison.Ordinal);
         Assert.DoesNotContain("Get-Process -Name \"printRxer*\"", installer, StringComparison.Ordinal);
         Assert.Contains("Get-Process -Name 'printRxer'", installer, StringComparison.Ordinal);
         Assert.Contains("Get-Process -Name 'PrintRxer.Agent'", installer, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void HealthMailer_package_lock_acquisition_does_not_depend_on_file_exists_precheck()
+    {
+        string repoRoot = FindRepoRoot();
+        string processor = File.ReadAllText(Path.Combine(repoRoot, "apps", "HealthMailer", "PackageProcessor.cs"));
+        int claimIndex = processor.IndexOf("private PackageClaim? TryClaimPackage", StringComparison.Ordinal);
+        int nextMethodIndex = processor.IndexOf("private static DateTimeOffset ReadLockTime", StringComparison.Ordinal);
+        string claimBody = processor.Substring(claimIndex, nextMethodIndex - claimIndex);
+
+        Assert.Contains("FileMode.OpenOrCreate", claimBody, StringComparison.Ordinal);
+        Assert.Contains("FileShare.None", claimBody, StringComparison.Ordinal);
+        Assert.DoesNotContain("File.Exists(lockPath)", claimBody, StringComparison.Ordinal);
     }
 
     [Fact]
