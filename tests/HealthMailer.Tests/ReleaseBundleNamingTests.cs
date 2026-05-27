@@ -163,6 +163,23 @@ public sealed class ReleaseBundleNamingTests
     }
 
     [Fact]
+    public void PrintRxer_installer_stops_existing_watcher_before_copying_files()
+    {
+        string repoRoot = FindRepoRoot();
+        string installer = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "PrintRxerInstaller.cs"));
+
+        int stopIndex = installer.IndexOf("Stopping existing printRxer watcher/process before updating application files.", StringComparison.Ordinal);
+        int copyIndex = installer.IndexOf("Installing printRxer application files.", StringComparison.Ordinal);
+
+        Assert.True(stopIndex >= 0, "The printRxer installer should stop any existing watcher before updating app files.");
+        Assert.True(copyIndex > stopIndex, "The printRxer installer must stop the existing watcher before copying over printRxer.exe.");
+        Assert.DoesNotContain("Get-Process -Name 'printRxer*'", installer, StringComparison.Ordinal);
+        Assert.DoesNotContain("Get-Process -Name \"printRxer*\"", installer, StringComparison.Ordinal);
+        Assert.Contains("Get-Process -Name 'printRxer'", installer, StringComparison.Ordinal);
+        Assert.Contains("Get-Process -Name 'PrintRxer.Agent'", installer, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void HealthMailer_uninstaller_separates_active_install_from_preserved_data()
     {
         string repoRoot = FindRepoRoot();

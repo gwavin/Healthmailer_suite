@@ -17,6 +17,9 @@ internal static class PrintRxerInstaller
         log("Creating local folders.");
         CreateDirectories();
 
+        log("Stopping existing printRxer watcher/process before updating application files.");
+        StopExistingWatcher(log);
+
         log("Installing printRxer application files.");
         CopyDirectory(InstallerPaths.PayloadPublishRoot, InstallerPaths.ProgramFilesRoot);
 
@@ -237,6 +240,44 @@ Register-ScheduledTask -TaskName '" + InstallerPaths.TaskName + @"' -Action $act
 Start-ScheduledTask -TaskName '" + InstallerPaths.TaskName + @"'
 ";
         ProcessRunner.PowerShell(command);
+    }
+
+    private static void StopExistingWatcher(Action<string> log)
+    {
+        string command = @"
+$taskNames = @('printRxer', 'PrintRxerV3', 'PrintRxer Agent')
+foreach ($taskName in $taskNames) {
+    $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+    if ($task) {
+        Write-Output ('Stopping scheduled task before install: ' + $taskName)
+        Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+    } else {
+        Write-Output ('Scheduled task not present before install: ' + $taskName)
+    }
+}
+$processes = Get-Process -Name 'printRxer' -ErrorAction SilentlyContinue
+if ($processes) {
+    Write-Output 'Stopping running printRxer process before install.'
+    $processes | Stop-Process -Force
+} else {
+    Write-Output 'No running printRxer process found before install.'
+}
+$agentProcesses = Get-Process -Name 'PrintRxer.Agent' -ErrorAction SilentlyContinue
+if ($agentProcesses) {
+    Write-Output 'Stopping running PrintRxer.Agent process before install.'
+    $agentProcesses | Stop-Process -Force
+} else {
+    Write-Output 'No running PrintRxer.Agent process found before install.'
+}
+";
+        string output = ProcessRunner.PowerShell(command, requireSuccess: false);
+        if (!string.IsNullOrWhiteSpace(output))
+        {
+            foreach (string line in output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries))
+            {
+                log(line);
+            }
+        }
     }
 
     private static void InstallCapturePrinter()
