@@ -66,7 +66,9 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
 
         Assert.Contains("Win32Exception", runner);
         Assert.Contains("ERROR_CANCELLED", runner);
-        Assert.Contains("Windows administrator approval was cancelled.", runner);
+        Assert.Contains("Windows did not grant administrator approval for this setup step.", runner);
+        Assert.Contains("If no UAC prompt appeared", runner);
+        Assert.Contains("Run as administrator", runner);
         Assert.Contains("setupResult.Cancelled", form);
         Assert.Contains("printRxer install was cancelled before Windows made changes.", form);
     }

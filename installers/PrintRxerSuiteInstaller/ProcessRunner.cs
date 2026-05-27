@@ -50,7 +50,10 @@ internal static class ProcessRunner
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == ERROR_CANCELLED)
         {
-            return ProcessResult.CancelledByUser("Windows administrator approval was cancelled.");
+            return ProcessResult.CancelledByUser(
+                "Windows did not grant administrator approval for this setup step." +
+                Environment.NewLine + Environment.NewLine +
+                "If no UAC prompt appeared, Windows policy or the current session may be blocking elevation prompts. Right-click PrintRxerSuiteInstaller.exe and choose Run as administrator, or ask IT to run the installer with administrator rights.");
         }
 
         if (!shouldElevate)
