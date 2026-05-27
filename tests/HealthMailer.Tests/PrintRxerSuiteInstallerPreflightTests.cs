@@ -72,6 +72,22 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
     }
 
     [Fact]
+    public void Suite_installer_does_not_request_second_uac_prompt_when_already_elevated()
+    {
+        string runner = File.ReadAllText(Path.Combine(
+            RepoRoot(),
+            "installers",
+            "PrintRxerSuiteInstaller",
+            "ProcessRunner.cs"));
+
+        Assert.Contains("bool shouldElevate = elevate && !IsAdministrator()", runner);
+        Assert.Contains("UseShellExecute = shouldElevate", runner);
+        Assert.Contains("Verb = shouldElevate ? \"runas\" : string.Empty", runner);
+        Assert.Contains("RedirectStandardOutput = !shouldElevate", runner);
+        Assert.Contains("WindowsBuiltInRole.Administrator", runner);
+    }
+
+    [Fact]
     public void Suite_installer_printrxer_handoff_prompt_uses_healthmailer_style_layout()
     {
         string source = File.ReadAllText(Path.Combine(
