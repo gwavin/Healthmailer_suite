@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.ComponentModel;
 using System.Text;
 
 namespace PrintRxerSuiteInstaller;
@@ -41,7 +42,15 @@ internal static class ProcessRunner
             process.ErrorDataReceived += (_, e) => { if (e.Data is not null) output.AppendLine(e.Data); };
         }
 
-        process.Start();
+        try
+        {
+            process.Start();
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == ERROR_CANCELLED)
+        {
+            return ProcessResult.CancelledByUser("Windows administrator approval was cancelled.");
+        }
+
         if (!elevate)
         {
             process.BeginOutputReadLine();
@@ -56,6 +65,8 @@ internal static class ProcessRunner
         string text = output.ToString().Trim();
         return new ProcessResult(process.ExitCode, text);
     }
+
+    private const int ERROR_CANCELLED = 1223;
 
     public static string PowerShellFile(string scriptPath, string arguments = "", bool requireSuccess = true, bool elevate = false)
     {
@@ -86,4 +97,7 @@ internal static class ProcessRunner
     }
 }
 
-internal sealed record ProcessResult(int ExitCode, string Output);
+internal sealed record ProcessResult(int ExitCode, string Output, bool Cancelled = false)
+{
+    public static ProcessResult CancelledByUser(string message) => new(1223, message, Cancelled: true);
+}

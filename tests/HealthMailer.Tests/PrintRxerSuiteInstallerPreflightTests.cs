@@ -51,6 +51,27 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
     }
 
     [Fact]
+    public void Suite_installer_reports_uac_cancellation_as_user_cancelled_not_crash()
+    {
+        string runner = File.ReadAllText(Path.Combine(
+            RepoRoot(),
+            "installers",
+            "PrintRxerSuiteInstaller",
+            "ProcessRunner.cs"));
+        string form = File.ReadAllText(Path.Combine(
+            RepoRoot(),
+            "installers",
+            "PrintRxerSuiteInstaller",
+            "SuiteInstallerForm.cs"));
+
+        Assert.Contains("Win32Exception", runner);
+        Assert.Contains("ERROR_CANCELLED", runner);
+        Assert.Contains("Windows administrator approval was cancelled.", runner);
+        Assert.Contains("setupResult.Cancelled", form);
+        Assert.Contains("printRxer install was cancelled before Windows made changes.", form);
+    }
+
+    [Fact]
     public void Suite_installer_printrxer_handoff_prompt_uses_healthmailer_style_layout()
     {
         string source = File.ReadAllText(Path.Combine(

@@ -169,6 +169,13 @@ internal sealed class SuiteInstallerForm : Form
             ProcessResult setupResult = ProcessRunner.RunForResult(setupPath, arguments, elevate: elevate, whileWaiting: PumpBusyUi);
             busyDialog.Close();
 
+            if (setupResult.Cancelled)
+            {
+                AppendStatus(ComponentDisplayName(setupKind) + " " + actionName + " was cancelled before Windows made changes.");
+                MessageBox.Show(this, setupResult.Output, Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             AppendStatus(Path.GetFileName(setupPath) + " closed with exit code " + setupResult.ExitCode + ".");
             if (!string.IsNullOrWhiteSpace(setupResult.Output))
             {
@@ -360,6 +367,13 @@ internal sealed class SuiteInstallerForm : Form
             using Form busyDialog = ShowBusyDialog(ProgressTitle(SetupKind.PrintRxer, uninstall: false), ProgressMessage(SetupKind.PrintRxer, uninstall: false));
             ProcessResult setupResult = ProcessRunner.RunForResult(SuitePaths.PrintRxerSetupPath, arguments, elevate: true, whileWaiting: PumpBusyUi);
             busyDialog.Close();
+            if (setupResult.Cancelled)
+            {
+                AppendStatus("printRxer install was cancelled before Windows made changes.");
+                MessageBox.Show(this, setupResult.Output, Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             AppendStatus("printRxerSetup.exe closed with exit code " + setupResult.ExitCode + ".");
             if (!string.IsNullOrWhiteSpace(setupResult.Output))
             {
