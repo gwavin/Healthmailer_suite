@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -80,9 +80,9 @@
   <h3>SHA-256 Checksums</h3>
   <p>Verify the integrity of downloaded zip files before distribution:</p>
   <ul>
-    <li><strong>printRxerSuite-437ef7e.zip:</strong> <code>f3185a122284e21c1c97a49f47f57f56286578d2a6da8c91d51fe708f28459ff</code></li>
-    <li><strong>printRxer-437ef7e.zip:</strong> <code>4f574386a52527c870ff78315ac0136de38d791976483187705ddc52b603f8e1</code></li>
-    <li><strong>HealthMailer-437ef7e.zip:</strong> <code>df786888240d18ce525cdba8bbfe18b52289664641fcca23158a5befaffd3995</code></li>
+    <li><strong>printRxerSuite-v5.zip:</strong> <code>9b01ac0fc8ec3279be5d46a6d60caacf5fec2eeb3407993678c0b460b3eac3fe</code></li>
+    <li><strong>printRxer-v5.zip:</strong> <code>7ed686d4ffdd338d7ae0991c63683a7bc4659d554366c5c3ee5fd18e24d5bcc0</code></li>
+    <li><strong>HealthMailer-v5.zip:</strong> <code>d9aa3b50d98b72b27da1ffb7c1d95c954a7862615d7004604925a16852fefa5a</code></li>
   </ul>
 
   <h2>Deployment Roles</h2>
@@ -95,7 +95,8 @@
   <p class="note">
     printRxer is installed once per workstation. Its watcher task is configured to start at logon
     for interactive Windows users, with a limited run level and parallel instances, so shared
-    workstations do not depend on the IT/admin account that performed installation.
+    workstations do not depend on the IT/admin account that performed installation. The installer
+    also starts the watcher for the current session; future sessions start at logon.
   </p>
 
   <p>
@@ -120,9 +121,9 @@
     <tbody>
       <tr>
         <td style="padding: 10px; border: 1px solid #d9e2ec;"><strong>Standard Users (Clinicians)</strong></td>
-        <td style="padding: 10px; border: 1px solid #d9e2ec;">Write / Create Files</td>
-        <td style="padding: 10px; border: 1px solid #d9e2ec;">Change</td>
-        <td style="padding: 10px; border: 1px solid #d9e2ec;">Allows local printRxer instance to upload the generated PDF and JSON metadata.</td>
+        <td style="padding: 10px; border: 1px solid #d9e2ec;">Create/write package folders and files; avoid broad delete/modify rights over other users' packages where the file server supports this.</td>
+        <td style="padding: 10px; border: 1px solid #d9e2ec;">Constrained Change / write access</td>
+        <td style="padding: 10px; border: 1px solid #d9e2ec;">Allows local printRxer instances to upload generated PDFs and JSON metadata without giving ordinary users unnecessary control over other packages.</td>
       </tr>
       <tr style="background-color: #f7f9fb;">
         <td style="padding: 10px; border: 1px solid #d9e2ec;"><strong>HealthMailer Process Account</strong></td>
@@ -229,6 +230,12 @@ $p.ExitCode</code></pre>
     and governance checks are approved.
   </p>
 
+  <p class="note">
+    HealthMailer rejects recipient addresses outside the approved domain allow-list unless explicitly
+    configured otherwise. The default allowed domains are <code>healthmail.ie</code>, <code>hse.ie</code>,
+    <code>nmh.ie</code>, and <code>rotunda.ie</code>.
+  </p>
+
   <p><strong>Same-machine pilot:</strong></p>
   <pre><code>$handoffRoot = "C:\ProgramData\printRxer\handoff"
 
@@ -279,7 +286,10 @@ $p.ExitCode</code></pre>
     If standard troubleshooting is required, IT can compile a complete diagnostics zip archive containing registry details, local configurations, and logs.
   </p>
   <p>Run the diagnostics utility script from an elevated PowerShell prompt:</p>
-  <pre><code>&amp; "C:\ProgramData\printRxer\payload\tools\New-PrintRxerSupportBundle.ps1"</code></pre>
+  <pre><code>&amp; ".\payload\tools\New-PrintRxerSupportBundle.ps1"</code></pre>
+  <p>
+    Run this from the extracted release bundle folder.
+  </p>
   <p>
     Alternatively, open the suite launcher GUI, select <strong>Advanced / repair</strong>, and click <strong>Create support bundle</strong>.
   </p>
@@ -318,7 +328,6 @@ C:\ProgramData\HealthMailer\logs\HealthMailerInstaller.log</code></pre>
     <li>SHA256 validation prevents mismatched PDF and metadata sends.</li>
     <li>The duplicate ledger prevents repeat sends.</li>
     <li>Failed and quarantined packages are retained for review.</li>
-    <li>Mail send happens before optional chart/ViewPoint copy.</li>
     <li>printRxer creates packages only; HealthMailer owns delivery through local Outlook.</li>
   </ul>
 
