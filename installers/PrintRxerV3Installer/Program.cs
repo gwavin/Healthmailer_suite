@@ -169,7 +169,7 @@ internal static class Program
         }
 
         if (!taskState.Contains("present", StringComparison.OrdinalIgnoreCase)) { failures.Add("printRxer scheduled task is not installed."); }
-        if (!taskState.Contains("principalGroupId=BUILTIN\\Users", StringComparison.OrdinalIgnoreCase)) { failures.Add("printRxer scheduled task is not configured for all interactive users."); }
+        if (!HasAllUsersGroupPrincipal(taskState)) { failures.Add("printRxer scheduled task is not configured for all interactive users."); }
         if (HasNamedTaskUser(taskState)) { failures.Add("printRxer scheduled task is bound to a named Windows user."); }
         if (!taskState.Contains("runLevel=Limited", StringComparison.OrdinalIgnoreCase)) { failures.Add("printRxer scheduled task is not configured for limited user run level."); }
         if (!taskState.Contains("multipleInstances=Parallel", StringComparison.OrdinalIgnoreCase)) { failures.Add("printRxer scheduled task is not configured to allow one watcher per interactive user."); }
@@ -244,6 +244,23 @@ if ($task) {
             {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    private static bool HasAllUsersGroupPrincipal(string taskState)
+    {
+        foreach (string line in taskState.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (!line.StartsWith("principalGroupId=", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string groupId = line["principalGroupId=".Length..].Trim();
+            return string.Equals(groupId, @"BUILTIN\Users", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(groupId, "Users", StringComparison.OrdinalIgnoreCase);
         }
 
         return false;

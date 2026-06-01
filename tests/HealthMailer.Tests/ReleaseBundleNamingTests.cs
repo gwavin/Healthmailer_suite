@@ -224,7 +224,8 @@ public sealed class ReleaseBundleNamingTests
         string repoRoot = FindRepoRoot();
         string program = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "Program.cs"));
 
-        Assert.Contains("principalGroupId=BUILTIN\\\\Users", program, StringComparison.Ordinal);
+        Assert.Contains(@"BUILTIN\Users", program, StringComparison.Ordinal);
+        Assert.Contains("string.Equals(groupId, \"Users\"", program, StringComparison.Ordinal);
         Assert.Contains("runLevel=Limited", program, StringComparison.Ordinal);
         Assert.Contains("multipleInstances=Parallel", program, StringComparison.Ordinal);
         Assert.Contains("trigger=AtLogOn", program, StringComparison.Ordinal);
