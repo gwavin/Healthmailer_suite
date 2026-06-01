@@ -84,6 +84,12 @@
     <li><strong>Same-machine pilot:</strong> a pilot configuration where both roles use the same local handoff folder.</li>
   </ul>
 
+  <p class="note">
+    printRxer is installed once per workstation. Its watcher task is configured to start at logon
+    for interactive Windows users, with a limited run level and parallel instances, so shared
+    workstations do not depend on the IT/admin account that performed installation.
+  </p>
+
   <p>
     The same handoff folder must be configured for both components. For two-machine deployments,
     use a UNC path rather than a mapped drive. Access should be restricted to the required

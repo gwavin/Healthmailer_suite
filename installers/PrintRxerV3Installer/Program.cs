@@ -162,13 +162,18 @@ internal static class Program
             }
         }
 
-        string taskState = GetScheduledTaskPrincipal(InstallerPaths.TaskName);
+        string taskState = GetScheduledTaskState(InstallerPaths.TaskName);
         if (!string.IsNullOrWhiteSpace(taskState))
         {
-            log("Scheduled task principal for " + InstallerPaths.TaskName + ": " + taskState);
+            log("Scheduled task state for " + InstallerPaths.TaskName + ": " + taskState);
         }
 
         if (!taskState.Contains("present", StringComparison.OrdinalIgnoreCase)) { failures.Add("printRxer scheduled task is not installed."); }
+        if (!taskState.Contains("principalGroupId=BUILTIN\\Users", StringComparison.OrdinalIgnoreCase)) { failures.Add("printRxer scheduled task is not configured for all interactive users."); }
+        if (HasNamedTaskUser(taskState)) { failures.Add("printRxer scheduled task is bound to a named Windows user."); }
+        if (!taskState.Contains("runLevel=Limited", StringComparison.OrdinalIgnoreCase)) { failures.Add("printRxer scheduled task is not configured for limited user run level."); }
+        if (!taskState.Contains("multipleInstances=Parallel", StringComparison.OrdinalIgnoreCase)) { failures.Add("printRxer scheduled task is not configured to allow one watcher per interactive user."); }
+        if (!taskState.Contains("trigger=AtLogOn", StringComparison.OrdinalIgnoreCase)) { failures.Add("printRxer scheduled task is missing the all-users logon trigger."); }
 
         string printerState = ProcessRunner.PowerShell(@"
 if (Get-Printer -Name 'printRxer' -ErrorAction SilentlyContinue) { 'printer' }
@@ -200,15 +205,48 @@ if (Get-PrinterDriver -Name 'PrintRxer XPS Driver' -ErrorAction SilentlyContinue
         return principal.IsInRole(WindowsBuiltInRole.Administrator);
     }
 
-    private static string GetScheduledTaskPrincipal(string taskName)
+    private static string GetScheduledTaskState(string taskName)
     {
         string escaped = taskName.Replace("'", "''", StringComparison.Ordinal);
         return ProcessRunner.PowerShell(@"
 $task = Get-ScheduledTask -TaskName '" + escaped + @"' -ErrorAction SilentlyContinue
 if ($task) {
-  'present user=' + $task.Principal.UserId + ' logonType=' + $task.Principal.LogonType + ' runLevel=' + $task.Principal.RunLevel
+  'present'
+  'principalUserId=' + [string]$task.Principal.UserId
+  'principalGroupId=' + [string]$task.Principal.GroupId
+  'logonType=' + [string]$task.Principal.LogonType
+  'runLevel=' + [string]$task.Principal.RunLevel
+  'multipleInstances=' + [string]$task.Settings.MultipleInstances
+  foreach ($trigger in @($task.Triggers)) {
+    $triggerName = [string]$trigger.CimClass.CimClassName
+    if ($triggerName -like '*LogonTrigger') {
+      'trigger=AtLogOn;userId=' + [string]$trigger.UserId
+    } else {
+      'trigger=' + $triggerName + ';userId=' + [string]$trigger.UserId
+    }
+  }
 }
 ", requireSuccess: false);
+    }
+
+    private static bool HasNamedTaskUser(string taskState)
+    {
+        foreach (string line in taskState.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (line.StartsWith("principalUserId=", StringComparison.OrdinalIgnoreCase) &&
+                line.Length > "principalUserId=".Length)
+            {
+                return true;
+            }
+
+            if (line.StartsWith("trigger=AtLogOn;userId=", StringComparison.OrdinalIgnoreCase) &&
+                line.Length > "trigger=AtLogOn;userId=".Length)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string? TryReadConfigString(string path, string propertyName)

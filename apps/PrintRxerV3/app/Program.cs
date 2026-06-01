@@ -339,12 +339,10 @@ public static class Program
         string exePath = Environment.ProcessPath ?? System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? throw new InvalidOperationException("Could not resolve printRxer executable path.");
         string command =
             "$action = New-ScheduledTaskAction -Execute '" + EscapePowerShellSingleQuoted(exePath) + "' -Argument '--watch --config \"" + EscapePowerShellSingleQuoted(configPath) + "\"'; " +
-            "$logonTrigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME; " +
-            "$watchdogTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1) -RepetitionDuration (New-TimeSpan -Days 999); " +
-            "$principal = New-ScheduledTaskPrincipal -UserId \"$env:USERDOMAIN\\$env:USERNAME\" -LogonType Interactive -RunLevel Limited; " +
-            "$settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit (New-TimeSpan -Days 999) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable; " +
-            "Register-ScheduledTask -TaskName 'printRxer' -Action $action -Trigger @($logonTrigger, $watchdogTrigger) -Principal $principal -Settings $settings -Force | Out-Null; " +
-            "Start-ScheduledTask -TaskName 'printRxer'";
+            "$logonTrigger = New-ScheduledTaskTrigger -AtLogOn; " +
+            "$principal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\\Users' -RunLevel Limited; " +
+            "$settings = New-ScheduledTaskSettingsSet -MultipleInstances Parallel -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit (New-TimeSpan -Days 999) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable; " +
+            "Register-ScheduledTask -TaskName 'printRxer' -Action $action -Trigger $logonTrigger -Principal $principal -Settings $settings -Force | Out-Null";
         using System.Diagnostics.Process process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
         {
             FileName = "powershell.exe",

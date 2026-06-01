@@ -55,6 +55,9 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("Same-machine pilot: install both", form, StringComparison.Ordinal);
         Assert.Contains("Validate installation", form, StringComparison.Ordinal);
         Assert.Contains("Open logs folder", form, StringComparison.Ordinal);
+        Assert.Contains("Select logs folder", form, StringComparison.Ordinal);
+        Assert.Contains("Open printRxer logs folder", form, StringComparison.Ordinal);
+        Assert.Contains("Open HealthMailer logs folder", form, StringComparison.Ordinal);
         Assert.Contains("Create support bundle", form, StringComparison.Ordinal);
         Assert.Contains("Advanced / repair", form, StringComparison.Ordinal);
         Assert.Contains("Repair printRxer printer capture", form, StringComparison.Ordinal);
@@ -184,6 +187,59 @@ public sealed class ReleaseBundleNamingTests
         Assert.DoesNotContain("Get-Process -Name \"printRxer*\"", installer, StringComparison.Ordinal);
         Assert.Contains("Get-Process -Name 'printRxer'", installer, StringComparison.Ordinal);
         Assert.Contains("Get-Process -Name 'PrintRxer.Agent'", installer, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PrintRxer_installer_registers_watcher_for_all_interactive_users()
+    {
+        string repoRoot = FindRepoRoot();
+        string[] watcherRegistrationSources =
+        {
+            File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "PrintRxerInstaller.cs")),
+            File.ReadAllText(Path.Combine(repoRoot, "apps", "PrintRxerV3", "app", "Program.cs"))
+        };
+
+        foreach (string source in watcherRegistrationSources)
+        {
+            Assert.Contains("New-ScheduledTaskTrigger -AtLogOn", source, StringComparison.Ordinal);
+            Assert.DoesNotContain("New-ScheduledTaskTrigger -AtLogOn -User", source, StringComparison.Ordinal);
+            Assert.True(
+                source.Contains("New-ScheduledTaskPrincipal -GroupId 'BUILTIN\\Users' -RunLevel Limited", StringComparison.Ordinal) ||
+                source.Contains("New-ScheduledTaskPrincipal -GroupId 'BUILTIN\\\\Users' -RunLevel Limited", StringComparison.Ordinal),
+                "printRxer watcher task should use the BUILTIN\\Users group principal.");
+            Assert.DoesNotContain("New-ScheduledTaskPrincipal -UserId", source, StringComparison.Ordinal);
+            Assert.Contains("MultipleInstances Parallel", source, StringComparison.Ordinal);
+            Assert.DoesNotContain("MultipleInstances IgnoreNew", source, StringComparison.Ordinal);
+            Assert.DoesNotContain("watchdogTrigger", source, StringComparison.Ordinal);
+        }
+
+        string installer = watcherRegistrationSources[0];
+        Assert.DoesNotContain("printRxer scheduled task target user:", installer, StringComparison.Ordinal);
+        Assert.Contains("printRxer scheduled task target: all interactive Windows users.", installer, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PrintRxer_validation_checks_all_users_watcher_task_shape()
+    {
+        string repoRoot = FindRepoRoot();
+        string program = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "Program.cs"));
+
+        Assert.Contains("principalGroupId=BUILTIN\\\\Users", program, StringComparison.Ordinal);
+        Assert.Contains("runLevel=Limited", program, StringComparison.Ordinal);
+        Assert.Contains("multipleInstances=Parallel", program, StringComparison.Ordinal);
+        Assert.Contains("trigger=AtLogOn", program, StringComparison.Ordinal);
+        Assert.Contains("printRxer scheduled task is not configured for all interactive users.", program, StringComparison.Ordinal);
+        Assert.Contains("printRxer scheduled task is bound to a named Windows user.", program, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PrintRxer_installer_keeps_owner_sid_matching_enabled()
+    {
+        string repoRoot = FindRepoRoot();
+        string installer = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "PrintRxerInstaller.cs"));
+
+        Assert.Contains("RequireJobOwnerMatch = true", installer, StringComparison.Ordinal);
+        Assert.Contains("AllowMissingSubmittingSid = false", installer, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -83,6 +83,7 @@ Clean lab reset is explicit:
 - The duplicate ledger prevents repeat sends.
 - `result.json` and `summary.txt` provide terminal evidence for sent, failed, and quarantined packages.
 - printRxer installation/removal may require administrator/UAC approval because printer capture includes a port monitor, XPS driver, and local `printRxer` printer queue.
+- printRxer is installed once per machine. Its watcher scheduled task is registered for all interactive Windows users so shared workstations start a user-scoped watcher when each user logs on.
 - HealthMailer must be installed and run as the intended Outlook/Healthmail sender Windows user; Outlook COM automation depends on that signed-in user profile.
 
 ## Licensing Status

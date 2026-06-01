@@ -40,7 +40,7 @@ internal static class PrintRxerInstaller
         VerifyCapturePrinter();
 
         log("Registering printRxer watcher task.");
-        log("printRxer scheduled task target user: " + Environment.UserDomainName + "\\" + Environment.UserName);
+        log("printRxer scheduled task target: all interactive Windows users.");
         log("printRxer installer Windows identity: " + WindowsIdentity.GetCurrent().Name);
         RegisterScheduledTask();
     }
@@ -229,15 +229,12 @@ internal static class PrintRxerInstaller
     {
         string exe = InstallerPaths.InstalledExePath;
         string config = InstallerPaths.ConfigPath;
-        string user = Environment.UserDomainName + "\\" + Environment.UserName;
         string command = @"
 $action = New-ScheduledTaskAction -Execute '" + EscapeSingleQuoted(exe) + @"' -Argument '--watch --config """ + EscapeForPowerShellDoubleQuoted(config) + @"""'
-$logonTrigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
-$watchdogTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1) -RepetitionDuration (New-TimeSpan -Days 999)
-$principal = New-ScheduledTaskPrincipal -UserId '" + EscapeSingleQuoted(user) + @"' -LogonType Interactive -RunLevel Limited
-$settings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit (New-TimeSpan -Days 999) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
-Register-ScheduledTask -TaskName '" + InstallerPaths.TaskName + @"' -Action $action -Trigger @($logonTrigger, $watchdogTrigger) -Principal $principal -Settings $settings -Force | Out-Null
-Start-ScheduledTask -TaskName '" + InstallerPaths.TaskName + @"'
+$logonTrigger = New-ScheduledTaskTrigger -AtLogOn
+$principal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\Users' -RunLevel Limited
+$settings = New-ScheduledTaskSettingsSet -MultipleInstances Parallel -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit (New-TimeSpan -Days 999) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
+Register-ScheduledTask -TaskName '" + InstallerPaths.TaskName + @"' -Action $action -Trigger $logonTrigger -Principal $principal -Settings $settings -Force | Out-Null
 ";
         ProcessRunner.PowerShell(command);
     }

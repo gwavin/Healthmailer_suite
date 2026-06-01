@@ -27,6 +27,19 @@ Start-ScheduledTask -TaskName HealthMailer
 Stop-ScheduledTask -TaskName HealthMailer
 ```
 
+printRxer is installed once per workstation. Its watcher task should be an all-users logon task with `BUILTIN\Users` as the principal, `Limited` run level, and `Parallel` multiple-instance policy so each interactive Windows user can have their own watcher session on a shared machine. It should not be bound to the IT/admin account used for installation.
+
+Shared workstation validation:
+
+```powershell
+$task = Get-ScheduledTask -TaskName printRxer
+$task.Principal | Format-List UserId,GroupId,RunLevel,LogonType
+$task.Settings | Format-List MultipleInstances
+$task.Triggers | Format-List *
+```
+
+Confirm two different non-admin test users can log on, print to the local `printRxer` printer, and open their own picker without another user receiving the capture. Owner/SID matching must remain enabled.
+
 ## Validate Configuration
 
 ```powershell
