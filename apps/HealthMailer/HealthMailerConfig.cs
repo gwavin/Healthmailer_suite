@@ -10,7 +10,6 @@ public sealed class HealthMailerConfig
     public int PollIntervalSeconds { get; set; } = 5;
     public int StaleLockMinutes { get; set; } = 30;
     public bool WriteHtmlSummary { get; set; }
-    public ChartCopyOptions ChartCopy { get; set; } = new();
     public LoggingOptions Logging { get; set; } = new();
     public bool SendMail { get; set; }
     public bool ConfigCreatedByInstaller { get; set; }
@@ -60,10 +59,6 @@ public sealed class HealthMailerConfig
             {
                 SecurityUtilities.TryHardenDropDirectory(HandoffRoot);
             }
-        }
-        if (ChartCopy.Enabled && !string.IsNullOrWhiteSpace(ChartCopy.DestinationRoot))
-        {
-            TryCreateDirectory(ChartCopy.DestinationRoot);
         }
     }
 
@@ -120,7 +115,6 @@ public sealed class HealthMailerConfig
             config.StaleLockMinutes = 30;
         }
 
-        config.ChartCopy ??= new ChartCopyOptions();
         config.Logging ??= new LoggingOptions();
         if (config.AllowedRecipientDomains is null || config.AllowedRecipientDomains.Length == 0)
         {
@@ -141,14 +135,6 @@ public sealed class HealthMailerConfig
         SecurityUtilities.TryHardenConfigDirectory(Path.GetDirectoryName(configPath)!);
         SecurityUtilities.TryHardenConfigFile(configPath);
     }
-}
-
-public sealed class ChartCopyOptions
-{
-    public bool Enabled { get; set; }
-    public string DestinationRoot { get; set; } = string.Empty;
-    public string FileNameTemplate { get; set; } = "Rx-{MRN}-{PackageId}.pdf";
-    public bool RequireMrn { get; set; } = true;
 }
 
 public sealed class LoggingOptions

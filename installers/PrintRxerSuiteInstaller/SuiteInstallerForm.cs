@@ -610,13 +610,10 @@ internal sealed class SuiteInstallerForm : Form
 
     private void OpenLogsFolder()
     {
-        string? target = Directory.Exists(SuitePaths.PrintRxerLogsRoot)
-            ? SuitePaths.PrintRxerLogsRoot
-            : Directory.Exists(SuitePaths.HealthMailerLogsRoot)
-                ? SuitePaths.HealthMailerLogsRoot
-                : null;
+        bool rxExists = Directory.Exists(SuitePaths.PrintRxerLogsRoot);
+        bool hmExists = Directory.Exists(SuitePaths.HealthMailerLogsRoot);
 
-        if (target is null)
+        if (!rxExists && !hmExists)
         {
             string message = "No printRxer or HealthMailer log folder exists yet. Install or validate a component first; logs will appear under C:\\ProgramData\\printRxer\\logs or C:\\ProgramData\\HealthMailer\\logs.";
             AppendStatus(message);
@@ -624,11 +621,64 @@ internal sealed class SuiteInstallerForm : Form
             return;
         }
 
-        Process.Start(new ProcessStartInfo
+        using Form dialog = new()
         {
-            FileName = target,
-            UseShellExecute = true
+            Text = "Select logs folder",
+            StartPosition = FormStartPosition.CenterParent,
+            MinimumSize = new Size(460, 240),
+            Size = new Size(460, 260),
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            MaximizeBox = false,
+            MinimizeBox = false
+        };
+
+        TableLayoutPanel panel = new()
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Padding = new Padding(20)
+        };
+        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+        Button openPrintRxer = CreateButton("Open printRxer logs folder", (_, _) => 
+        { 
+            dialog.Close(); 
+            OpenFolder(SuitePaths.PrintRxerLogsRoot); 
         });
+        openPrintRxer.Enabled = rxExists;
+
+        Button openHealthMailer = CreateButton("Open HealthMailer logs folder", (_, _) => 
+        { 
+            dialog.Close(); 
+            OpenFolder(SuitePaths.HealthMailerLogsRoot); 
+        });
+        openHealthMailer.Enabled = hmExists;
+
+        Button cancel = CreateButton("Cancel", (_, _) => { dialog.Close(); });
+
+        foreach (Button button in new[] { openPrintRxer, openHealthMailer, cancel })
+        {
+            button.Dock = DockStyle.Fill;
+            button.Margin = new Padding(0, 0, 0, 10);
+            panel.RowStyles.Add(new RowStyle(SizeType.Percent, 33));
+            panel.Controls.Add(button);
+        }
+
+        dialog.Controls.Add(panel);
+        dialog.ShowDialog(this);
+    }
+
+    private static void OpenFolder(string path)
+    {
+        if (Directory.Exists(path))
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true
+            });
+        }
     }
 
     private void CreateSupportBundle()

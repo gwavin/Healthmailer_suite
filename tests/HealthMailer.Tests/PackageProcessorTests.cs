@@ -56,11 +56,10 @@ public sealed class PackageProcessorTests
     }
 
     [Fact]
-    public void ProcessAvailablePackages_valid_package_sends_copies_after_mail_writes_result_and_archives()
+    public void ProcessAvailablePackages_valid_package_sends_after_mail_writes_result_and_archives()
     {
         string handoffRoot = Path.Combine(Path.GetTempPath(), "healthmailer-handoff-" + Guid.NewGuid().ToString("N"));
         string localRoot = Path.Combine(Path.GetTempPath(), "healthmailer-local-" + Guid.NewGuid().ToString("N"));
-        string chartRoot = Path.Combine(Path.GetTempPath(), "healthmailer-viewpoint-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(handoffRoot);
         string packageDirectory = CreatePackage(handoffRoot, "pkg-1");
         RecordingMailer mailer = new();
@@ -70,12 +69,7 @@ public sealed class PackageProcessorTests
             LocalRoot = localRoot,
             SendMail = true,
             ConfigCreatedByInstaller = true,
-            LiveSendingApproved = true,
-            ChartCopy = new ChartCopyOptions
-            {
-                Enabled = true,
-                DestinationRoot = chartRoot
-            }
+            LiveSendingApproved = true
         };
 
         PackageProcessor processor = new(config, mailer, _ => { });
@@ -85,7 +79,6 @@ public sealed class PackageProcessorTests
         Assert.Single(mailer.Sent);
         Assert.False(Directory.Exists(packageDirectory));
         Assert.True(Directory.Exists(Path.Combine(localRoot, "sent", "pkg-1")));
-        Assert.Single(Directory.GetFiles(chartRoot, "*.pdf"));
         Assert.True(File.Exists(Path.Combine(localRoot, "sent", "pkg-1", "result.json")));
         Assert.Contains("Status: Sent", File.ReadAllText(Path.Combine(localRoot, "sent", "pkg-1", "summary.txt")));
         Assert.Contains("Outbound attachment filename: MRN999_prescription_20260526_1430.pdf", File.ReadAllText(Path.Combine(localRoot, "sent", "pkg-1", "summary.txt")));
@@ -212,26 +205,9 @@ public sealed class PackageProcessorTests
     }
 
     [Fact]
-    public void ProcessAvailablePackages_mail_failure_does_not_copy_to_chart()
-    {
-        TestPaths paths = CreatePaths(chartEnabled: true);
-        CreatePackage(paths.HandoffRoot, "pkg-mail-fail");
-        RecordingMailer mailer = new() { Failure = new InvalidOperationException("mail offline") };
-
-        int processed = CreateProcessor(paths, mailer).ProcessAvailablePackages();
-
-        Assert.Equal(1, processed);
-        Assert.Empty(Directory.GetFiles(paths.ChartRoot, "*.pdf"));
-        string failed = Path.Combine(paths.LocalRoot, "failed", "pkg-mail-fail");
-        Assert.True(Directory.Exists(failed));
-        Assert.Contains("MailFailed", File.ReadAllText(Path.Combine(failed, "result.json")));
-        Assert.Contains("MRN999_prescription_20260526_1430.pdf", File.ReadAllText(Path.Combine(failed, "result.json")));
-    }
-
-    [Fact]
     public void ProcessAvailablePackages_mail_failure_sanitises_package_evidence_but_logs_technical_detail()
     {
-        TestPaths paths = CreatePaths(chartEnabled: true);
+        TestPaths paths = CreatePaths();
         CreatePackage(paths.HandoffRoot, "pkg-mail-sensitive-fail");
         string sensitive = @"dispatcher failed at C:\Users\gavin\secret\server\share";
         RecordingMailer mailer = new() { Failure = new InvalidOperationException(sensitive) };
@@ -248,66 +224,6 @@ public sealed class PackageProcessorTests
         Assert.DoesNotContain(sensitive, resultJson, StringComparison.Ordinal);
         Assert.DoesNotContain(sensitive, summary, StringComparison.Ordinal);
         Assert.Contains(logs, line => line.Contains(sensitive, StringComparison.Ordinal));
-    }
-
-    [Fact]
-    public void ProcessAvailablePackages_chart_copy_failure_after_mail_is_recorded_distinctly()
-    {
-        TestPaths paths = CreatePaths(chartEnabled: true);
-        CreatePackage(paths.HandoffRoot, "pkg-chart-fail");
-        RecordingMailer mailer = new();
-        ThrowingChartCopy chartCopy = new();
-
-        int processed = new PackageProcessor(CreateConfig(paths), mailer, chartCopy, _ => { }).ProcessAvailablePackages();
-
-        Assert.Equal(1, processed);
-        Assert.Single(mailer.Sent);
-        string failed = Path.Combine(paths.LocalRoot, "failed", "pkg-chart-fail");
-        Assert.True(Directory.Exists(failed));
-        Assert.Contains("ChartCopyFailed", File.ReadAllText(Path.Combine(failed, "result.json")));
-        Assert.Contains("\"MailSent\": true", File.ReadAllText(Path.Combine(failed, "result.json")));
-    }
-
-    [Fact]
-    public void ProcessAvailablePackages_chart_copy_failure_sanitises_package_evidence_but_logs_technical_detail()
-    {
-        TestPaths paths = CreatePaths(chartEnabled: true);
-        CreatePackage(paths.HandoffRoot, "pkg-chart-sensitive-fail");
-        RecordingMailer mailer = new();
-        string sensitive = @"chart failed at \\server\secret\path";
-        ThrowingChartCopy chartCopy = new(sensitive);
-        List<string> logs = [];
-
-        int processed = new PackageProcessor(CreateConfig(paths), mailer, chartCopy, logs.Add).ProcessAvailablePackages();
-
-        Assert.Equal(1, processed);
-        string failed = Path.Combine(paths.LocalRoot, "failed", "pkg-chart-sensitive-fail");
-        string resultJson = File.ReadAllText(Path.Combine(failed, "result.json"));
-        string summary = File.ReadAllText(Path.Combine(failed, "summary.txt"));
-        Assert.Contains("Chart copy failed after mail processing. See local HealthMailer logs for technical details.", resultJson);
-        Assert.Contains("Chart copy failed after mail processing. See local HealthMailer logs for technical details.", summary);
-        Assert.DoesNotContain(sensitive, resultJson, StringComparison.Ordinal);
-        Assert.DoesNotContain(sensitive, summary, StringComparison.Ordinal);
-        Assert.Contains(logs, line => line.Contains(sensitive, StringComparison.Ordinal));
-    }
-
-    [Fact]
-    public void ProcessAvailablePackages_chart_copy_failure_after_mail_duplicate_protects_reintroduced_package()
-    {
-        TestPaths paths = CreatePaths(chartEnabled: true);
-        CreatePackage(paths.HandoffRoot, "pkg-chart-duplicate");
-        RecordingMailer mailer = new();
-        ThrowingChartCopy chartCopy = new();
-        HealthMailerConfig config = CreateConfig(paths);
-        PackageProcessor processor = new(config, mailer, chartCopy, _ => { });
-        processor.ProcessAvailablePackages();
-        CreatePackage(paths.HandoffRoot, "pkg-chart-duplicate");
-
-        int processed = processor.ProcessAvailablePackages();
-
-        Assert.Equal(1, processed);
-        Assert.Single(mailer.Sent);
-        Assert.True(Directory.Exists(Path.Combine(paths.LocalRoot, "quarantine", "pkg-chart-duplicate")));
     }
 
     [Theory]
@@ -501,15 +417,13 @@ public sealed class PackageProcessorTests
         return packageDirectory;
     }
 
-    private static TestPaths CreatePaths(bool chartEnabled = true)
+    private static TestPaths CreatePaths()
     {
         string root = Path.Combine(Path.GetTempPath(), "healthmailer-processor-" + Guid.NewGuid().ToString("N"));
         TestPaths paths = new(
             Path.Combine(root, "handoff"),
-            Path.Combine(root, "local"),
-            Path.Combine(root, "chart"));
+            Path.Combine(root, "local"));
         Directory.CreateDirectory(paths.HandoffRoot);
-        Directory.CreateDirectory(paths.ChartRoot);
         return paths;
     }
 
@@ -521,12 +435,7 @@ public sealed class PackageProcessorTests
             LocalRoot = paths.LocalRoot,
             SendMail = true,
             ConfigCreatedByInstaller = true,
-            LiveSendingApproved = true,
-            ChartCopy = new ChartCopyOptions
-            {
-                Enabled = !string.IsNullOrWhiteSpace(paths.ChartRoot),
-                DestinationRoot = paths.ChartRoot
-            }
+            LiveSendingApproved = true
         };
     }
 
@@ -535,7 +444,7 @@ public sealed class PackageProcessorTests
         return new PackageProcessor(CreateConfig(paths), mailer, _ => { });
     }
 
-    private sealed record TestPaths(string HandoffRoot, string LocalRoot, string ChartRoot);
+    private sealed record TestPaths(string HandoffRoot, string LocalRoot);
 
     private sealed class RecordingMailer : IMailHandoff
     {
@@ -564,21 +473,6 @@ public sealed class PackageProcessorTests
             Sent.Add(package);
             Started.Set();
             Assert.True(Release.Wait(TimeSpan.FromSeconds(5)));
-        }
-    }
-
-    private sealed class ThrowingChartCopy : IChartCopyWriter
-    {
-        private readonly string _message;
-
-        public ThrowingChartCopy(string message = "chart folder unavailable")
-        {
-            _message = message;
-        }
-
-        public string CopyToChartFolder(DeliveryPackage package, ChartCopyOptions options)
-        {
-            throw new IOException(_message);
         }
     }
 }

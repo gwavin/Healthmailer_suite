@@ -39,6 +39,9 @@ dotnet publish .\apps\PrintRxerV3\app\PrintRxerV3.App.csproj `
     --self-contained true `
     -p:PublishSingleFile=true `
     -p:IncludeNativeLibrariesForSelfExtract=true `
+    -p:PublishReadyToRun=true `
+    -p:CopyOutputSymbolsToPublishDirectory=false `
+    -m `
     -o $Output
 
 if ($LASTEXITCODE -ne 0) {

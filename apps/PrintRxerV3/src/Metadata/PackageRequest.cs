@@ -15,9 +15,9 @@ public sealed record PackageRequest
     public required string SelectedRecipientEmail { get; init; }
     public required string Subject { get; init; }
     public required string Body { get; init; }
-    public DocumentKind DocumentKind { get; init; } = DocumentKind.ClinicalDocument;
-    public string DocumentName { get; init; } = "Clinical document";
-    public string AttachmentDisplayName { get; init; } = "clinicalDocument.pdf";
+    public DocumentKind DocumentKind { get; init; } = DocumentKind.Prescription;
+    public string DocumentName { get; init; } = "Prescription";
+    public string AttachmentDisplayName { get; init; } = "prescription.pdf";
     public required string PdfSha256 { get; init; }
     public required string AuditNote { get; init; }
 }

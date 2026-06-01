@@ -184,7 +184,7 @@ public static class Program
             ProcessedLedgerPath = config.LedgerPath,
             OutlookRegistration = outlookStatus,
             SendMailEnabled = config.SendMail,
-            ChartCopyEnabled = config.ChartCopy.Enabled,
+            ChartCopyEnabled = false,
             LogPath = logPath,
             ActiveLogSizeBytes = File.Exists(logPath) ? new FileInfo(logPath).Length : 0,
             DiskFreeBytes = diskFree,
@@ -275,27 +275,12 @@ public static class Program
             return 2;
         }
 
-        using FolderBrowserDialog chartDialog = new()
-        {
-            Description = "Optional: select the ViewPoint/chart import folder. Press Cancel to skip chart copy for now.",
-            UseDescriptionForTitle = true,
-            ShowNewFolderButton = true
-        };
-
-        ChartCopyOptions chartOptions = new();
-        if (chartDialog.ShowDialog() == DialogResult.OK)
-        {
-            chartOptions.Enabled = true;
-            chartOptions.DestinationRoot = chartDialog.SelectedPath;
-        }
-
         HealthMailerConfig config = new()
         {
             HandoffRoot = handoffDialog.SelectedPath,
             SendMail = false,
             ConfigCreatedByInstaller = true,
-            LiveSendingApproved = false,
-            ChartCopy = chartOptions
+            LiveSendingApproved = false
         };
         config.EnsureDirectories();
         config.Save();
@@ -358,11 +343,6 @@ public static class Program
             }
 
             validateOutlook();
-        }
-
-        if (config.ChartCopy.Enabled && string.IsNullOrWhiteSpace(config.ChartCopy.DestinationRoot))
-        {
-            throw new InvalidOperationException("Chart copy is enabled but no destination root is configured.");
         }
     }
 

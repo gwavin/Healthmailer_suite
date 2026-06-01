@@ -98,7 +98,8 @@ function New-ZipFromFolder {
     }
 
     Write-Manifest -Root $Folder
-    Compress-Archive -Path (Join-Path $Folder '*') -DestinationPath $ZipPath -Force
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($Folder, $ZipPath, [System.IO.Compression.CompressionLevel]::Optimal, $false)
     Write-Step "Created $ZipPath"
 }
 
@@ -273,6 +274,9 @@ try {
             --self-contained true `
             -p:PublishSingleFile=true `
             -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:PublishReadyToRun=true `
+            -p:CopyOutputSymbolsToPublishDirectory=false `
+            -m `
             -o $installerPublish
         if ($LASTEXITCODE -ne 0) {
             throw "printRxer installer publish failed with exit code $LASTEXITCODE"
@@ -285,6 +289,9 @@ try {
             --self-contained true `
             -p:PublishSingleFile=true `
             -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:PublishReadyToRun=true `
+            -p:CopyOutputSymbolsToPublishDirectory=false `
+            -m `
             -o $healthMailerInstallerPublish
         if ($LASTEXITCODE -ne 0) {
             throw "HealthMailer installer publish failed with exit code $LASTEXITCODE"
@@ -297,6 +304,9 @@ try {
             --self-contained true `
             -p:PublishSingleFile=true `
             -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:PublishReadyToRun=true `
+            -p:CopyOutputSymbolsToPublishDirectory=false `
+            -m `
             -o $suiteInstallerPublish
         if ($LASTEXITCODE -ne 0) {
             throw "printRxer suite installer publish failed with exit code $LASTEXITCODE"

@@ -49,13 +49,6 @@ internal static class HealthMailerInstallerEngine
             PollIntervalSeconds = 5,
             StaleLockMinutes = 30,
             WriteHtmlSummary = false,
-            ChartCopy = new
-            {
-                Enabled = false,
-                DestinationRoot = string.Empty,
-                FileNameTemplate = "Rx-{MRN}-{PackageId}.pdf",
-                RequireMrn = true
-            },
             Logging = new { MaxLogBytes = 10485760, MaxLogFiles = 5 },
             SendMail = options.SendMail,
             ConfigCreatedByInstaller = true,

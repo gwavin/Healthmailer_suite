@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HealthMailer Outlook COM Troubleshooting</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      line-height: 1.5;
+      margin: 32px;
+      color: #1f2933;
+      max-width: 980px;
+    }
+    h1, h2 {
+      color: #102a43;
+    }
+    h1 {
+      border-bottom: 2px solid #bcccdc;
+      padding-bottom: 8px;
+    }
+    .summary {
+      background: #f0f7ff;
+      border-left: 5px solid #2f80ed;
+      padding: 14px 18px;
+      margin: 18px 0;
+    }
+    .warning {
+      background: #fff8e6;
+      border-left: 5px solid #f0b429;
+      padding: 14px 18px;
+      margin: 18px 0;
+    }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      background: #f5f7fa;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+    pre {
+      background: #0b1220;
+      color: #e5edf7;
+      padding: 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    ol, ul {
+      padding-left: 24px;
+    }
+    .small {
+      color: #52606d;
+      font-size: 0.95em;
+    }
+  </style>
+</head>
+<body>
+  <h1>HealthMailer Outlook COM Troubleshooting</h1>
+
+  <div class="summary">
+    <strong>Current finding:</strong> HealthMailer is running and watching the correct handoff folder,
+    but Outlook COM is failing before it can create the email.
+  </div>
+
+  <h2>Log Message Seen</h2>
+  <pre>Outlook COM method 'CreateItem' failed: The operation failed.
+System.Runtime.InteropServices.COMException (0x80004005): The operation failed.</pre>
+
+  <h2>What This Usually Means</h2>
+  <p>
+    HealthMailer uses classic desktop Outlook COM automation. This error usually means Outlook is not
+    available to the Windows user/session where HealthMailer is running, or Outlook has a prompt/profile
+    issue preventing automated mail creation.
+  </p>
+
+  <h2>Most Likely Causes</h2>
+  <ol>
+    <li>
+      <strong>HealthMailer is running under the wrong Windows user/session.</strong><br>
+      It must run as the same user who has the working Outlook/Healthmail profile.
+    </li>
+    <li>
+      <strong>Classic Outlook is not available or not initialised.</strong><br>
+      HealthMailer needs classic desktop Outlook. The new Outlook app does not provide the same COM automation.
+    </li>
+    <li>
+      <strong>Outlook has a first-run or blocking prompt.</strong><br>
+      Examples include profile selection, licence prompts, password prompts, mailbox setup, or add-in warnings.
+    </li>
+    <li>
+      <strong>The task is running outside the intended interactive user session.</strong><br>
+      Outlook COM is fragile when run outside the logged-in sender user's desktop session.
+    </li>
+  </ol>
+
+  <div class="warning">
+    <strong>Important:</strong> Sign in as the intended Healthmail sender user before running these checks.
+    Do not run the HealthMailer sending workflow as a different admin account unless that is the actual Outlook/Healthmail sender profile.
+  </div>
+
+  <h2>Step 1: Check the HealthMailer Scheduled Task</h2>
+  <p>Open PowerShell as the intended sender user and run:</p>
+  <pre>Get-ScheduledTask -TaskName HealthMailer |
+  Select-Object TaskName, State |
+  Format-List
+
+(Get-ScheduledTask -TaskName HealthMailer).Principal |
+  Format-List UserId, LogonType, RunLevel</pre>
+
+  <p>Confirm that:</p>
+  <ul>
+    <li><code>UserId</code> is the intended Outlook/Healthmail sender user.</li>
+    <li><code>LogonType</code> is appropriate for an interactive user session.</li>
+    <li>The task is present and not obviously disabled or broken.</li>
+  </ul>
+
+  <h2>Step 2: Validate HealthMailer</h2>
+  <p>Run:</p>
+  <pre>"C:\ProgramData\HealthMailer\app\HealthMailer.exe" --validate --config "C:\ProgramData\HealthMailer\healthmailer.settings.json"</pre>
+
+  <p>
+    This checks the installed HealthMailer configuration and Outlook registration. If validation fails,
+    keep the output for support review.
+  </p>
+
+  <h2>Step 3: Manually Check Classic Outlook</h2>
+  <ol>
+    <li>Sign in as the same Windows user shown in the scheduled task principal.</li>
+    <li>Open classic desktop Outlook.</li>
+    <li>Confirm the Healthmail account/profile is loaded.</li>
+    <li>Create a new email manually.</li>
+    <li>Resolve any prompts, licence messages, password prompts, or profile selection dialogs.</li>
+    <li>Leave Outlook open.</li>
+    <li>Print or process another test package.</li>
+  </ol>
+
+  <h2>Step 4: Check the Current Handoff Folder</h2>
+  <p>
+    The old log entries from 15 May used:
+  </p>
+  <pre>C:\ProgramData\printrxer_v3\handoff</pre>
+  <p>
+    The current 28 May log entries show the corrected handoff folder:
+  </p>
+  <pre>C:\ProgramData\printRxer\handoff</pre>
+  <p>
+    This suggests the current HealthMailer handoff path is corrected. The remaining issue is Outlook COM access.
+  </p>
+
+  <h2>Useful Log Location</h2>
+  <pre>C:\ProgramData\HealthMailer\logs\healthmailer.log</pre>
+
+  <p class="small">
+    This document is for local troubleshooting on an approved HSE-controlled machine. Do not include patient-identifiable
+    package contents in screenshots or emails outside approved support/governance channels.
+  </p>
+</body>
+</html>

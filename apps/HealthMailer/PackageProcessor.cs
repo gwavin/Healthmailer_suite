@@ -6,21 +6,14 @@ public sealed class PackageProcessor
 {
     private readonly HealthMailerConfig _config;
     private readonly IMailHandoff _mailHandoff;
-    private readonly IChartCopyWriter _chartCopyWriter;
     private readonly ProcessingAuditWriter _auditWriter = new();
     private readonly ProcessedPackageLedger _ledger;
     private readonly Action<string> _log;
 
     public PackageProcessor(HealthMailerConfig config, IMailHandoff mailHandoff, Action<string> log)
-        : this(config, mailHandoff, new ChartCopyWriter(), log)
-    {
-    }
-
-    public PackageProcessor(HealthMailerConfig config, IMailHandoff mailHandoff, IChartCopyWriter chartCopyWriter, Action<string> log)
     {
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _mailHandoff = mailHandoff ?? throw new ArgumentNullException(nameof(mailHandoff));
-        _chartCopyWriter = chartCopyWriter ?? throw new ArgumentNullException(nameof(chartCopyWriter));
         _log = log ?? (_ => { });
         _ledger = new ProcessedPackageLedger(_config.LedgerPath);
     }
@@ -133,23 +126,7 @@ public sealed class PackageProcessor
                 _mailHandoff.Send(package);
             }
 
-            string chartPath = string.Empty;
-            bool chartCopied = false;
-            try
-            {
-                chartPath = _chartCopyWriter.CopyToChartFolder(package, _config.ChartCopy);
-                chartCopied = !string.IsNullOrWhiteSpace(chartPath);
-            }
-            catch (Exception ex)
-            {
-                ProcessingResult chartFailed = CreateResult(package, PackageOutcome.ChartCopyFailed, SafePackageMessage(PackageOutcome.ChartCopyFailed), mailSent: true, chartCopied: false);
-                _ledger.Append(chartFailed);
-                WriteAndArchive(packageDirectory, chartFailed, _config.FailedRoot, claim);
-                _log($"Chart copy failed after mail for package {package.PackageId}: {ex}");
-                return true;
-            }
-
-            ProcessingResult sent = CreateResult(package, PackageOutcome.Sent, "Package processed.", mailSent: true, chartCopied: chartCopied, chartCopyPath: chartPath);
+            ProcessingResult sent = CreateResult(package, PackageOutcome.Sent, "Package processed.", mailSent: true, chartCopied: false, chartCopyPath: string.Empty);
             _ledger.Append(sent);
             WriteAndArchive(packageDirectory, sent, _config.SentRoot, claim);
             _log($"Processed package {package.PackageId} for {package.RecipientEmail}");

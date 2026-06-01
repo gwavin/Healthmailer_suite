@@ -61,24 +61,6 @@ public sealed class HandoffPackageTests
         Assert.Equal(first.Package!.CompletedPackageHash, second.Package!.CompletedPackageHash);
     }
 
-    [Fact]
-    public void ChartCopy_uses_phi_minimised_unique_filename_and_sidecar_metadata()
-    {
-        string packageDirectory = CreatePackage();
-        DeliveryPackage package = HandoffPackageLoader.TryLoad(packageDirectory).Package!;
-        string destinationRoot = Path.Combine(Path.GetTempPath(), "healthmailer-chart-" + Guid.NewGuid().ToString("N"));
-
-        string copiedPath = new ChartCopyWriter().CopyToChartFolder(package, new ChartCopyOptions
-        {
-            Enabled = true,
-            DestinationRoot = destinationRoot
-        });
-
-        Assert.Equal("Rx-MRN123-" + package.PackageId + ".pdf", Path.GetFileName(copiedPath));
-        Assert.True(File.Exists(copiedPath));
-        Assert.True(File.Exists(Path.ChangeExtension(copiedPath, ".json")));
-    }
-
     private static string CreatePackage(bool includeReady = true)
     {
         string packageDirectory = Path.Combine(Path.GetTempPath(), "healthmailer-package-" + Guid.NewGuid().ToString("N"));

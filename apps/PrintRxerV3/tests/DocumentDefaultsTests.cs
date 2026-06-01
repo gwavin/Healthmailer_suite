@@ -19,14 +19,23 @@ public sealed class DocumentDefaultsTests
     }
 
     [Theory]
-    [InlineData("")]
     [InlineData("Clinic letter")]
     [InlineData("Discharge summary")]
-    public void InferKind_defaults_to_clinical_document_when_uncertain(string documentName)
+    public void InferKind_infers_clinical_document_for_clinical_metadata(string documentName)
     {
         CapturedPrintJobContext context = CreateContext(documentName);
 
         Assert.Equal(DocumentKind.ClinicalDocument, DocumentDefaults.InferKind(context));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("Unknown document type")]
+    public void InferKind_defaults_to_prescription_when_uncertain(string documentName)
+    {
+        CapturedPrintJobContext context = CreateContext(documentName);
+
+        Assert.Equal(DocumentKind.Prescription, DocumentDefaults.InferKind(context));
     }
 
     [Fact]

@@ -21,6 +21,7 @@ public sealed record DocumentMessageDefaults
 public static class DocumentDefaults
 {
     private static readonly string[] PrescriptionTerms = ["rx", "prescription", "medication", "medicine", "drug", "pharmacy", "dispense"];
+    private static readonly string[] ClinicalTerms = ["clinic", "clinical", "letter", "note", "summary", "discharge", "referral", "report"];
     private static readonly HashSet<string> ReservedNames = new(StringComparer.OrdinalIgnoreCase)
     {
         "CON", "PRN", "AUX", "NUL",
@@ -32,9 +33,15 @@ public static class DocumentDefaults
     {
         ArgumentNullException.ThrowIfNull(context);
         string haystack = string.Join(' ', context.DocumentName, context.PrinterName, context.PrescribedBy);
-        return PrescriptionTerms.Any(term => Regex.IsMatch(haystack, @"\b" + Regex.Escape(term) + @"\b", RegexOptions.IgnoreCase))
-            ? DocumentKind.Prescription
-            : DocumentKind.ClinicalDocument;
+        if (PrescriptionTerms.Any(term => Regex.IsMatch(haystack, @"\b" + Regex.Escape(term) + @"\b", RegexOptions.IgnoreCase)))
+        {
+            return DocumentKind.Prescription;
+        }
+        if (ClinicalTerms.Any(term => Regex.IsMatch(haystack, @"\b" + Regex.Escape(term) + @"\b", RegexOptions.IgnoreCase)))
+        {
+            return DocumentKind.ClinicalDocument;
+        }
+        return DocumentKind.Prescription;
     }
 
     public static DocumentMessageDefaults Create(DocumentKind kind, CapturedPrintJobContext context)
