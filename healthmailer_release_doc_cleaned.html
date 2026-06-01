@@ -77,6 +77,14 @@
     or C++ build tools.
   </p>
 
+  <h3>SHA-256 Checksums</h3>
+  <p>Verify the integrity of downloaded zip files before distribution:</p>
+  <ul>
+    <li><strong>printRxerSuite-437ef7e.zip:</strong> <code>f3185a122284e21c1c97a49f47f57f56286578d2a6da8c91d51fe708f28459ff</code></li>
+    <li><strong>printRxer-437ef7e.zip:</strong> <code>4f574386a52527c870ff78315ac0136de38d791976483187705ddc52b603f8e1</code></li>
+    <li><strong>HealthMailer-437ef7e.zip:</strong> <code>df786888240d18ce525cdba8bbfe18b52289664641fcca23158a5befaffd3995</code></li>
+  </ul>
+
   <h2>Deployment Roles</h2>
   <ul>
     <li><strong>printRxer printing machine:</strong> the workstation where users print prescriptions to the local <code>printRxer</code> printer queue.</li>
@@ -96,6 +104,35 @@
     printing, sending, and support identities.
   </p>
 
+  <h2>Network Share Permissions</h2>
+  <p>
+    Configure the shared handoff directory (e.g. <code>\\server\HealthMailerDrop$\incoming</code>) with the following access controls:
+  </p>
+  <table style="width: 100%; border-collapse: collapse; margin-top: 10px; border: 1px solid #d9e2ec;">
+    <thead>
+      <tr style="background-color: #f0f4f8; text-align: left; border-bottom: 2px solid #d9e2ec;">
+        <th style="padding: 10px; border: 1px solid #d9e2ec;">Identity</th>
+        <th style="padding: 10px; border: 1px solid #d9e2ec;">NTFS / Directory Rights</th>
+        <th style="padding: 10px; border: 1px solid #d9e2ec;">Share Permissions</th>
+        <th style="padding: 10px; border: 1px solid #d9e2ec;">Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 10px; border: 1px solid #d9e2ec;"><strong>Standard Users (Clinicians)</strong></td>
+        <td style="padding: 10px; border: 1px solid #d9e2ec;">Write / Create Files</td>
+        <td style="padding: 10px; border: 1px solid #d9e2ec;">Change</td>
+        <td style="padding: 10px; border: 1px solid #d9e2ec;">Allows local printRxer instance to upload the generated PDF and JSON metadata.</td>
+      </tr>
+      <tr style="background-color: #f7f9fb;">
+        <td style="padding: 10px; border: 1px solid #d9e2ec;"><strong>HealthMailer Process Account</strong></td>
+        <td style="padding: 10px; border: 1px solid #d9e2ec;">Read, Write, Modify, Delete</td>
+        <td style="padding: 10px; border: 1px solid #d9e2ec;">Full Control</td>
+        <td style="padding: 10px; border: 1px solid #d9e2ec;">Allows central HealthMailer watcher to poll, lock, read, and delete/archive files.</td>
+      </tr>
+    </tbody>
+  </table>
+
   <h2>Recipient List Updates</h2>
   <p>
     printRxer reads the preferred recipient list from the configured handoff folder. The active
@@ -111,6 +148,14 @@
     temporary file, then rename it to <code>recipients.csv</code>. This avoids clients reading a
     half-written file.
   </p>
+
+  <h3>Recipient List Format Schema</h3>
+  <p>
+    The master CSV must follow the exact structure below (no patient-identifiable data should be included):
+  </p>
+  <pre><code>RecipientName,RecipientEmail,Code
+"Dr. Jane Doe","jane.doe@healthmail.ie","D123"
+"NMH Outpatients Clinic","outpatients@nmh.ie","NMH-01"</code></pre>
   <pre><code>$handoffRoot = "\\server\HealthMailerDrop$\incoming"
 $source = "\\approved-server\approved-share\HM-Recipients_Master.csv"
 $recipientFolder = Join-Path $handoffRoot "recipients"
@@ -228,6 +273,16 @@ $p.ExitCode
 
 $p = Start-Process -FilePath $healthMailer -ArgumentList @("--process-once", "--config", $config) -Wait -PassThru
 $p.ExitCode</code></pre>
+
+  <h2>Diagnostics and Support</h2>
+  <p>
+    If standard troubleshooting is required, IT can compile a complete diagnostics zip archive containing registry details, local configurations, and logs.
+  </p>
+  <p>Run the diagnostics utility script from an elevated PowerShell prompt:</p>
+  <pre><code>&amp; "C:\ProgramData\printRxer\payload\tools\New-PrintRxerSupportBundle.ps1"</code></pre>
+  <p>
+    Alternatively, open the suite launcher GUI, select <strong>Advanced / repair</strong>, and click <strong>Create support bundle</strong>.
+  </p>
 
   <h2>Uninstall</h2>
   <p>Standard uninstall preserves local data, logs, and archives by default.</p>
