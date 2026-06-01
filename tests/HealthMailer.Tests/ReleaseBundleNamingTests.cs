@@ -211,6 +211,7 @@ public sealed class ReleaseBundleNamingTests
             Assert.Contains("MultipleInstances Parallel", source, StringComparison.Ordinal);
             Assert.DoesNotContain("MultipleInstances IgnoreNew", source, StringComparison.Ordinal);
             Assert.DoesNotContain("watchdogTrigger", source, StringComparison.Ordinal);
+            Assert.Contains("Start-ScheduledTask -TaskName", source, StringComparison.Ordinal);
         }
 
         string installer = watcherRegistrationSources[0];

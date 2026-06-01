@@ -342,7 +342,8 @@ public static class Program
             "$logonTrigger = New-ScheduledTaskTrigger -AtLogOn; " +
             "$principal = New-ScheduledTaskPrincipal -GroupId 'BUILTIN\\Users' -RunLevel Limited; " +
             "$settings = New-ScheduledTaskSettingsSet -MultipleInstances Parallel -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit (New-TimeSpan -Days 999) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable; " +
-            "Register-ScheduledTask -TaskName 'printRxer' -Action $action -Trigger $logonTrigger -Principal $principal -Settings $settings -Force | Out-Null";
+            "Register-ScheduledTask -TaskName 'printRxer' -Action $action -Trigger $logonTrigger -Principal $principal -Settings $settings -Force | Out-Null; " +
+            "Start-ScheduledTask -TaskName 'printRxer'";
         using System.Diagnostics.Process process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
         {
             FileName = "powershell.exe",
