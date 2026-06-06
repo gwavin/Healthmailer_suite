@@ -155,6 +155,17 @@ $printConfig = $null
 $healthConfig = $null
 $printTaskState = Get-TaskState 'printRxer'
 $healthTaskState = Get-TaskState 'HealthMailer'
+$printProgramData = "C:\ProgramData\printRxer"
+if (Test-Path -LiteralPath $printProgramData -PathType Container) {
+    # Folder exists
+} else {
+    if ($printTaskState -eq 'NotInstalled') {
+        $notices.Add("printRxer ProgramData folder not found: $printProgramData")
+    } else {
+        $critical.Add("printRxer ProgramData folder not found: $printProgramData")
+    }
+}
+
 if (Test-Path -LiteralPath $PrintRxerConfig) {
     $printConfig = Get-Content -LiteralPath $PrintRxerConfig | ConvertFrom-Json
 } else {
@@ -162,6 +173,17 @@ if (Test-Path -LiteralPath $PrintRxerConfig) {
         $notices.Add("printRxer is not installed; config not found: $PrintRxerConfig")
     } else {
         $critical.Add("printRxer config not found: $PrintRxerConfig")
+    }
+}
+
+$healthProgramData = "C:\ProgramData\HealthMailer"
+if (Test-Path -LiteralPath $healthProgramData -PathType Container) {
+    # Folder exists
+} else {
+    if ($healthTaskState -eq 'NotInstalled') {
+        $notices.Add("HealthMailer ProgramData folder not found: $healthProgramData")
+    } else {
+        $critical.Add("HealthMailer ProgramData folder not found: $healthProgramData")
     }
 }
 
