@@ -1,11 +1,10 @@
-using PrintRxerSuiteInstaller;
-using Xunit;
+﻿using PrintRxerSuiteInstaller;
 
 namespace HealthMailer.Tests;
 
 public sealed class PrintRxerSuiteInstallerPreflightTests
 {
-    [Fact]
+    [Test]
     public void Preflight_reports_all_required_release_bundle_paths()
     {
         string root = CreateMinimalBundle();
@@ -18,7 +17,7 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
         Assert.Contains(results, result => result.RelativePath == @"payload\tools\New-PrintRxerSupportBundle.ps1");
     }
 
-    [Fact]
+    [Test]
     public void Preflight_reports_missing_release_bundle_paths()
     {
         string root = Path.Combine(Path.GetTempPath(), "printRxer-suite-preflight-" + Guid.NewGuid().ToString("N"));
@@ -30,7 +29,7 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
         Assert.Contains(results, result => result.RelativePath == @"payload\publish\HealthMailer\HealthMailer.exe" && !result.Exists);
     }
 
-    [Fact]
+    [Test]
     public void Suite_installer_waits_for_printrxer_setup_and_validates_printer_capture()
     {
         string source = File.ReadAllText(Path.Combine(
@@ -50,7 +49,7 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
         Assert.Contains("ProgressTitle(SetupKind.PrintRxer, uninstall: false)", source);
     }
 
-    [Fact]
+    [Test]
     public void Suite_installer_reports_uac_cancellation_as_user_cancelled_not_crash()
     {
         string runner = File.ReadAllText(Path.Combine(
@@ -73,7 +72,7 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
         Assert.Contains("printRxer install was cancelled before Windows made changes.", form);
     }
 
-    [Fact]
+    [Test]
     public void Suite_installer_does_not_request_second_uac_prompt_when_already_elevated()
     {
         string runner = File.ReadAllText(Path.Combine(
@@ -90,7 +89,7 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
         Assert.Contains("public static bool IsAdministrator()", runner);
     }
 
-    [Fact]
+    [Test]
     public void Suite_installer_printrxer_handoff_prompt_uses_healthmailer_style_layout()
     {
         string source = File.ReadAllText(Path.Combine(
@@ -112,7 +111,7 @@ public sealed class PrintRxerSuiteInstallerPreflightTests
         Assert.Contains("Suite installer is not elevated; requesting Windows administrator approval for printRxer setup.", source);
     }
 
-    [Fact]
+    [Test]
     public void Component_installers_can_resolve_suite_bundle_root_from_payload_setup()
     {
         string repoRoot = RepoRoot();

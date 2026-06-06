@@ -1,11 +1,10 @@
-using PrintRxerV3.App;
-using Xunit;
+﻿using PrintRxerV3.App;
 
 namespace PrintRxerV3.Tests;
 
 public sealed class RecipientPickerTimeoutTests
 {
-    [Fact]
+    [Test]
     public void ShouldAutoClose_after_timeout_when_selection_not_completed()
     {
         DateTimeOffset shownAt = DateTimeOffset.UtcNow;
@@ -13,7 +12,7 @@ public sealed class RecipientPickerTimeoutTests
         Assert.True(RecipientPickerTimeout.ShouldAutoClose(shownAt, shownAt.AddMinutes(3).AddSeconds(1), selectionCompleted: false));
     }
 
-    [Fact]
+    [Test]
     public void ShouldAutoClose_does_not_close_before_timeout_or_after_selection()
     {
         DateTimeOffset shownAt = DateTimeOffset.UtcNow;
@@ -22,10 +21,10 @@ public sealed class RecipientPickerTimeoutTests
         Assert.False(RecipientPickerTimeout.ShouldAutoClose(shownAt, shownAt.AddMinutes(4), selectionCompleted: true));
     }
 
-    [Theory]
-    [InlineData(1)]
-    [InlineData(400)]
-    [InlineData(900)]
+
+    [TestCase(1)]
+    [TestCase(400)]
+    [TestCase(900)]
     public void Splitter_layout_calculation_stays_within_valid_bounds(int width)
     {
         RecipientPickerSplitterLayout layout = RecipientPickerLayout.CalculateMainSplitter(width, splitterWidth: 5);
@@ -36,7 +35,7 @@ public sealed class RecipientPickerTimeoutTests
         Assert.True(layout.SplitterDistance <= Math.Max(width, 1) - layout.Panel2MinSize);
     }
 
-    [Fact]
+    [Test]
     public void Recipient_picker_no_longer_exposes_redundant_document_name_field()
     {
         string repoRoot = FindRepoRoot();

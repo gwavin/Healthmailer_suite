@@ -1,12 +1,11 @@
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using PrintRxerV3.Documents;
-using Xunit;
 
 namespace PrintRxerV3.Tests;
 
 public sealed class XpsTextExtractorTests
 {
-    [Fact]
+    [Test]
     public void ExtractGlyphText_reads_normal_fpage_unicode_strings()
     {
         string xpsPath = Path.Combine(Path.GetTempPath(), "xps-normal-" + Guid.NewGuid().ToString("N") + ".xps");
@@ -17,7 +16,7 @@ public sealed class XpsTextExtractorTests
         Assert.Contains("Hello World", values);
     }
 
-    [Fact]
+    [Test]
     public void ExtractGlyphText_rejects_oversized_page_without_throwing()
     {
         string xpsPath = Path.Combine(Path.GetTempPath(), "xps-large-" + Guid.NewGuid().ToString("N") + ".xps");

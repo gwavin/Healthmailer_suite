@@ -1,11 +1,10 @@
-using System.Text.Json;
-using Xunit;
+﻿using System.Text.Json;
 
 namespace HealthMailer.Tests;
 
 public sealed class HandoffWatcherTests
 {
-    [Fact]
+    [Test]
     public async Task RunAsync_retries_file_watcher_start_after_handoff_folder_becomes_available()
     {
         string root = Path.Combine(Path.GetTempPath(), "healthmailer-watcher-" + Guid.NewGuid().ToString("N"));
@@ -49,7 +48,7 @@ public sealed class HandoffWatcherTests
         await IgnoreCancellationAsync(runTask);
     }
 
-    [Fact]
+    [Test]
     public async Task RunAsync_processes_package_after_unavailable_handoff_folder_becomes_available()
     {
         string root = Path.Combine(Path.GetTempPath(), "healthmailer-watcher-process-" + Guid.NewGuid().ToString("N"));

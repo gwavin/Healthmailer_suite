@@ -1,12 +1,11 @@
-using PrintRxerV3.App;
+﻿using PrintRxerV3.App;
 using System.Runtime.Versioning;
-using Xunit;
 
 namespace PrintRxerV3.Tests;
 
 public sealed class PreviewPackageCreatorTests
 {
-    [Fact]
+    [Test]
     [SupportedOSPlatform("windows")]
     public void CreateSamplePackage_writes_handoff_package_under_requested_root()
     {

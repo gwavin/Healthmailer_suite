@@ -1,12 +1,11 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using PrintRxerV3.Recipients;
-using Xunit;
 
 namespace PrintRxerV3.Tests;
 
 public sealed class RecipientSourceServiceTests
 {
-    [Fact]
+    [Test]
     public void Derives_central_recipient_path_from_handoff_root()
     {
         RecipientSourceOptions options = new()
@@ -18,7 +17,7 @@ public sealed class RecipientSourceServiceTests
         Assert.Equal(@"\\server\HealthMailerDrop$\incoming\recipients\recipients.csv", options.CentralRecipientFile);
     }
 
-    [Fact]
+    [Test]
     public void Rejects_path_traversal_in_central_relative_path()
     {
         RecipientSourceOptions options = new()
@@ -30,7 +29,7 @@ public sealed class RecipientSourceServiceTests
         Assert.Throws<InvalidOperationException>(() => options.Validate());
     }
 
-    [Fact]
+    [Test]
     public void Manual_refresh_loads_valid_central_recipients_and_updates_cache_status()
     {
         string root = NewTempRoot();
@@ -59,7 +58,7 @@ public sealed class RecipientSourceServiceTests
         Assert.Equal(1, status.ActiveRecipientCount);
     }
 
-    [Fact]
+    [Test]
     public void Loads_cache_when_central_unavailable()
     {
         string root = NewTempRoot();
@@ -79,7 +78,7 @@ public sealed class RecipientSourceServiceTests
         Assert.Equal("Cache Clinic", Assert.Single(snapshot.Recipients).RecipientName);
     }
 
-    [Fact]
+    [Test]
     public void Loads_stale_cache_with_warning_before_block_threshold()
     {
         string root = NewTempRoot();
@@ -105,7 +104,7 @@ public sealed class RecipientSourceServiceTests
         Assert.Equal("Warning", status.CacheAgeStatus);
     }
 
-    [Fact]
+    [Test]
     public void Blocks_cache_older_than_block_threshold_and_uses_bundled_fallback()
     {
         string root = NewTempRoot();
@@ -130,7 +129,7 @@ public sealed class RecipientSourceServiceTests
         Assert.Contains("cache blocked", snapshot.Warning, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void Loads_bundled_fallback_when_central_and_cache_unavailable()
     {
         string root = NewTempRoot();
@@ -149,7 +148,7 @@ public sealed class RecipientSourceServiceTests
         Assert.Equal("Bundled Clinic", Assert.Single(snapshot.Recipients).RecipientName);
     }
 
-    [Fact]
+    [Test]
     public void Invalid_central_file_does_not_overwrite_existing_cache()
     {
         string root = NewTempRoot();
@@ -174,7 +173,7 @@ public sealed class RecipientSourceServiceTests
         Assert.DoesNotContain("Bad", File.ReadAllText(cache));
     }
 
-    [Fact]
+    [Test]
     public void Validator_rejects_duplicate_recipient_id()
     {
         string csv = Path.Combine(NewTempRoot(), "recipients.csv");
@@ -185,7 +184,7 @@ public sealed class RecipientSourceServiceTests
         Assert.Contains("duplicate", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void Validator_rejects_no_active_recipients()
     {
         string csv = Path.Combine(NewTempRoot(), "recipients.csv");
@@ -196,7 +195,7 @@ public sealed class RecipientSourceServiceTests
         Assert.Contains("active", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void Validator_accepts_healthmail_master_export_headers()
     {
         string csv = Path.Combine(NewTempRoot(), "recipients.csv");
@@ -211,7 +210,7 @@ public sealed class RecipientSourceServiceTests
         Assert.Contains("Dublin", recipient.SearchTerms);
     }
 
-    [Fact]
+    [Test]
     public void Validator_rejects_duplicate_healthmail_master_addresses()
     {
         string csv = Path.Combine(NewTempRoot(), "recipients.csv");
@@ -224,7 +223,7 @@ public sealed class RecipientSourceServiceTests
         Assert.Contains("duplicate", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void Refresh_tasks_do_not_overlap()
     {
         string root = NewTempRoot();

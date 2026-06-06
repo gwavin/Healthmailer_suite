@@ -1,11 +1,10 @@
-using PrintRxerV3.Capture;
-using Xunit;
+﻿using PrintRxerV3.Capture;
 
 namespace PrintRxerV3.Tests;
 
 public sealed class CapturedPrintJobWatcherTests
 {
-    [Fact]
+    [Test]
     public void RunUntilIdle_processes_available_jobs_and_notifies_for_each_package()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-watch-" + Guid.NewGuid().ToString("N"));
@@ -42,7 +41,7 @@ public sealed class CapturedPrintJobWatcherTests
         Assert.Equal(2, Directory.EnumerateDirectories(handoff).Count());
     }
 
-    [Fact]
+    [Test]
     public void RunUntilIdle_does_not_notify_when_selection_is_cancelled()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-watch-cancel-" + Guid.NewGuid().ToString("N"));

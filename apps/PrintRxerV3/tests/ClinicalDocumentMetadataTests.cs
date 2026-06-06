@@ -1,11 +1,10 @@
-using PrintRxerV3.Metadata;
-using Xunit;
+﻿using PrintRxerV3.Metadata;
 
 namespace PrintRxerV3.Tests;
 
 public sealed class ClinicalDocumentMetadataTests
 {
-    [Fact]
+    [Test]
     public void FromGlyphText_extracts_patient_name_and_hospital_number()
     {
         ClinicalDocumentMetadata metadata = ClinicalDocumentMetadata.FromGlyphText([
@@ -20,7 +19,7 @@ public sealed class ClinicalDocumentMetadataTests
         Assert.Equal("H04196948", metadata.Mrn);
     }
 
-    [Fact]
+    [Test]
     public void FromGlyphText_extracts_prescribed_by_when_available()
     {
         ClinicalDocumentMetadata metadata = ClinicalDocumentMetadata.FromGlyphText([
@@ -31,7 +30,7 @@ public sealed class ClinicalDocumentMetadataTests
         Assert.Equal("Dr Jane Murphy", metadata.PrescribedBy);
     }
 
-    [Fact]
+    [Test]
     public void FromGlyphText_does_not_treat_printed_date_as_prescriber()
     {
         ClinicalDocumentMetadata metadata = ClinicalDocumentMetadata.FromGlyphText([

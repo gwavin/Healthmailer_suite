@@ -2,13 +2,18 @@
 
 ## Build
 
-- [ ] `dotnet test .\PrintRxerSuite.slnx`
+- [ ] `dotnet build .\PrintRxerSuite.slnx`
+- [ ] `dotnet run --project .\tests\HealthMailer.Tests\HealthMailer.ContractTests.csproj`
+- [ ] `dotnet run --project .\apps\PrintRxerV3\tests\PrintRxerV3.ContractTests.csproj`
 - [ ] `powershell -ExecutionPolicy Bypass -File .\tools\New-PrintRxerSuiteReleaseBundle.ps1 -Version <version>`
 - [ ] Confirm `dist\printRxerSuite-<version>.zip` exists.
 - [ ] Extract `dist\printRxerSuite-<version>.zip` to a temporary folder.
 - [ ] Run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted folder using `Start-Process -Wait -PassThru`.
 - [ ] Confirm `PrintRxerSuiteInstaller.exe`, `INSTALL-BUNDLE-README.txt`, and `SHA256SUMS.txt` are present at the ZIP root.
 - [ ] Confirm component ZIPs exist for support/internal use.
+- [ ] Confirm `PrintRxerV3-Install-Guide.docx` is present at the printRxer component ZIP root.
+- [ ] Confirm `HealthMailer-Install-Guide.docx` is present at the HealthMailer component ZIP root.
+- [ ] Confirm component ZIPs contain `SHA256SUMS.txt` and exclude `.pdb`, `bin`, `obj`, `publish`, `tmp`, and staging folders.
 - [ ] Confirm version/build artifacts are from a clean checkout.
 
 ## Install
@@ -94,6 +99,8 @@
 ## Documentation
 
 - [ ] README role links are current.
+- [ ] Review current IT guidance in `docs/PrintRxer_HealthMailer_IT_QRG_Current.docx`.
+- [ ] Use `README.md`, `SECURITY.md`, `DEPLOYMENT.md`, `docs/OPERATIONS-RUNBOOK.md`, and this checklist as current release guidance.
 - [ ] Deployment guide matches scripts.
 - [ ] Configuration guide matches `HealthMailerConfig`.
 - [ ] Handoff contract matches code/tests.

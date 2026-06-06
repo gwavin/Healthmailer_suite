@@ -1,11 +1,10 @@
-using PrintRxerV3.Recipients;
-using Xunit;
+﻿using PrintRxerV3.Recipients;
 
 namespace PrintRxerV3.Tests;
 
 public sealed class RecipientCsvLoaderTests
 {
-    [Fact]
+    [Test]
     public void Load_skips_inactive_and_incomplete_rows()
     {
         string csvPath = WriteCsv(
@@ -22,7 +21,7 @@ public sealed class RecipientCsvLoaderTests
         Assert.Equal("alpha@example.ie", recipient.EmailAddress);
     }
 
-    [Fact]
+    [Test]
     public void Load_supports_common_healthmail_header_names_and_alias_search_text()
     {
         string csvPath = WriteCsv(
@@ -36,7 +35,7 @@ public sealed class RecipientCsvLoaderTests
         Assert.Contains("dublin", recipient.SearchText);
     }
 
-    [Fact]
+    [Test]
     public void Load_parses_quoted_commas()
     {
         string csvPath = WriteCsv(

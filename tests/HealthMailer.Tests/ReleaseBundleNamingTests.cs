@@ -1,10 +1,9 @@
-using Xunit;
-
+﻿
 namespace HealthMailer.Tests;
 
 public sealed class ReleaseBundleNamingTests
 {
-    [Fact]
+    [Test]
     public void Release_bundle_script_uses_final_printRxer_user_facing_names()
     {
         string repoRoot = FindRepoRoot();
@@ -27,12 +26,32 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("Target machines should not need a separate .NET Desktop Runtime installation", script, StringComparison.Ordinal);
         Assert.Contains("printRxerSetup.exe", script, StringComparison.Ordinal);
         Assert.Contains("payload\\publish\\printRxer", script, StringComparison.Ordinal);
+        Assert.Contains("PrintRxer_HealthMailer_IT_QRG_Current.docx", script, StringComparison.Ordinal);
+        Assert.Contains("PrintRxerV3-Install-Guide.docx", script, StringComparison.Ordinal);
+        Assert.Contains("HealthMailer-Install-Guide.docx", script, StringComparison.Ordinal);
+        Assert.Contains("HealthMailer.ContractTests.csproj", script, StringComparison.Ordinal);
+        Assert.Contains("PrintRxerV3.ContractTests.csproj", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("dotnet " + "test", script, StringComparison.Ordinal);
         Assert.DoesNotContain("The component installers are included at the ZIP root", script, StringComparison.Ordinal);
         Assert.DoesNotContain("PrintRxerV3Setup.exe", script, StringComparison.Ordinal);
         Assert.DoesNotContain("PrintRxerV3 install bundle", script, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Test]
+    public void Active_projects_have_no_package_references()
+    {
+        string repoRoot = FindRepoRoot();
+        foreach (string project in Directory.EnumerateFiles(repoRoot, "*.csproj", SearchOption.AllDirectories)
+                     .Where(path => !path.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                     .Where(path => !path.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)))
+        {
+            string source = File.ReadAllText(project);
+            Assert.DoesNotContain("Package" + "Reference", source, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Microsoft.NET." + "Test.Sdk", source, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Test]
     public void Release_workflow_uploads_suite_zip()
     {
         string repoRoot = FindRepoRoot();
@@ -43,7 +62,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("dist/HealthMailer-*.zip", workflow, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Test]
     public void Suite_installer_project_keeps_gui_first_actions_visible()
     {
         string repoRoot = FindRepoRoot();
@@ -95,7 +114,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("TableLayoutPanel panel", form, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Test]
     public void Component_uninstall_dialogs_present_same_data_removal_pattern()
     {
         string repoRoot = FindRepoRoot();
@@ -113,7 +132,7 @@ public sealed class ReleaseBundleNamingTests
         }
     }
 
-    [Fact]
+    [Test]
     public void Suite_health_script_counts_only_ready_packages_in_handoff_root()
     {
         string repoRoot = FindRepoRoot();
@@ -124,7 +143,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.DoesNotContain("$healthReadyCount = Get-DirectoryCount $healthConfig.HandoffRoot", script, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Test]
     public void Component_installers_expose_enterprise_cli_contract()
     {
         string repoRoot = FindRepoRoot();
@@ -159,7 +178,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("ResolveBundleRoot()", healthMailerPaths, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Test]
     public void PrintRxer_uninstaller_does_not_kill_its_own_setup_process()
     {
         string repoRoot = FindRepoRoot();
@@ -183,7 +202,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("Uninstalling...", uninstallForm, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Test]
     public void PrintRxer_installer_stops_existing_watcher_before_copying_files()
     {
         string repoRoot = FindRepoRoot();
@@ -203,7 +222,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("Get-Process -Name 'PrintRxer.Agent'", installer, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Test]
     public void PrintRxer_installer_registers_watcher_for_all_interactive_users()
     {
         string repoRoot = FindRepoRoot();
@@ -233,7 +252,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("printRxer scheduled task target: all interactive Windows users.", installer, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Test]
     public void PrintRxer_validation_checks_all_users_watcher_task_shape()
     {
         string repoRoot = FindRepoRoot();
@@ -248,7 +267,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("printRxer scheduled task is bound to a named Windows user.", program, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Test]
     public void PrintRxer_installer_keeps_owner_sid_matching_enabled()
     {
         string repoRoot = FindRepoRoot();
@@ -258,7 +277,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("AllowMissingSubmittingSid = false", installer, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Test]
     public void HealthMailer_package_lock_acquisition_does_not_depend_on_file_exists_precheck()
     {
         string repoRoot = FindRepoRoot();
@@ -272,7 +291,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.DoesNotContain("File.Exists(lockPath)", claimBody, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Test]
     public void HealthMailer_uninstaller_separates_active_install_from_preserved_data()
     {
         string repoRoot = FindRepoRoot();
@@ -291,7 +310,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("HealthMailer uninstall needs review. ProgramData was not fully removed.", program, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Test]
     public void HealthMailer_installer_stops_existing_watcher_before_copying_files()
     {
         string repoRoot = FindRepoRoot();
@@ -309,7 +328,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.DoesNotContain("Get-Process -Name 'HealthMailer*'", installer, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Test]
     public void Source_and_docs_do_not_use_legacy_underscored_printRxer_name()
     {
         string repoRoot = FindRepoRoot();
@@ -338,7 +357,7 @@ public sealed class ReleaseBundleNamingTests
         }
     }
 
-    [Fact]
+    [Test]
     public void Suite_deployment_text_separates_healthmailer_user_context_from_printrxer_admin_context()
     {
         string repoRoot = FindRepoRoot();

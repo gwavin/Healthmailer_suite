@@ -1,15 +1,14 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text.Json;
 using PrintRxerV3.Handoff;
 using PrintRxerV3.Metadata;
 using PrintRxerV3.Packaging;
-using Xunit;
 
 namespace PrintRxerV3.Tests;
 
 public sealed class PackagingTests
 {
-    [Fact]
+    [Test]
     public void PackageIdGenerator_creates_sortable_identifier_with_random_suffix()
     {
         DateTimeOffset timestamp = new(2026, 5, 9, 14, 30, 15, 123, TimeSpan.Zero);
@@ -19,7 +18,7 @@ public sealed class PackagingTests
         Assert.Matches(@"^20260509-143015123-[0-9a-f]{12}$", packageId);
     }
 
-    [Fact]
+    [Test]
     public void Sha256Hasher_returns_lowercase_hex_hash_for_file()
     {
         string filePath = Path.Combine(Path.GetTempPath(), "printrxer-v3-hash-" + Guid.NewGuid().ToString("N") + ".txt");
@@ -30,7 +29,7 @@ public sealed class PackagingTests
         Assert.Equal("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", hash);
     }
 
-    [Fact]
+    [Test]
     public void RequestBuilder_includes_required_workstation_picker_and_audit_metadata()
     {
         DateTimeOffset timestamp = new(2026, 5, 9, 14, 35, 0, TimeSpan.Zero);
@@ -80,7 +79,7 @@ public sealed class PackagingTests
         Assert.Equal("printRxer created this HealthMailer handoff package as workstation audit evidence; it did not send mail.", request.AuditNote);
     }
 
-    [Fact]
+    [Test]
     public void HandoffPackageWriter_writes_expected_files_and_ready_marker_last()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-package-" + Guid.NewGuid().ToString("N"));
@@ -118,7 +117,7 @@ public sealed class PackagingTests
         Assert.Contains("  prescription.pdf", File.ReadAllText(Path.Combine(packageDirectory, "request.sha256")));
     }
 
-    [Fact]
+    [Test]
     public void HandoffPackageWriter_rejects_non_pdf_payload_before_ready_marker()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-package-invalid-" + Guid.NewGuid().ToString("N"));
@@ -141,7 +140,7 @@ public sealed class PackagingTests
         Assert.Empty(Directory.EnumerateDirectories(root).Where(path => Path.GetFileName(path).StartsWith(".writing-", StringComparison.Ordinal)));
     }
 
-    [Fact]
+    [Test]
     public void HandoffPackageWriter_rejects_hash_mismatch()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-package-hash-" + Guid.NewGuid().ToString("N"));
@@ -163,7 +162,7 @@ public sealed class PackagingTests
         Assert.False(Directory.Exists(Path.Combine(root, "pkg-hash")));
     }
 
-    [Fact]
+    [Test]
     public void HandoffPackagePublisher_treats_existing_complete_matching_final_package_as_idempotent()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-publisher-idempotent-" + Guid.NewGuid().ToString("N"));
@@ -183,7 +182,7 @@ public sealed class PackagingTests
         Assert.True(Directory.Exists(Path.Combine(published, "pkg-existing")));
     }
 
-    [Fact]
+    [Test]
     public void HandoffPackagePublisher_leaves_local_package_queued_when_existing_final_package_is_incomplete()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-publisher-incomplete-" + Guid.NewGuid().ToString("N"));
@@ -205,7 +204,7 @@ public sealed class PackagingTests
         Assert.False(Directory.Exists(Path.Combine(published, "pkg-existing")));
     }
 
-    [Fact]
+    [Test]
     public void HandoffPackagePublisher_leaves_local_package_queued_when_existing_final_package_is_mismatched()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-publisher-mismatch-" + Guid.NewGuid().ToString("N"));

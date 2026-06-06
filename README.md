@@ -42,7 +42,8 @@ A development/build machine still needs the .NET SDK.
 Create a release bundle from the project root:
 
 ```powershell
-dotnet test .\PrintRxerSuite.slnx
+dotnet run --project .\tests\HealthMailer.Tests\HealthMailer.ContractTests.csproj
+dotnet run --project .\apps\PrintRxerV3\tests\PrintRxerV3.ContractTests.csproj
 powershell -ExecutionPolicy Bypass -File .\tools\New-PrintRxerSuiteReleaseBundle.ps1
 ```
 

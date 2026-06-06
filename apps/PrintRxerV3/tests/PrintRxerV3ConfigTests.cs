@@ -1,13 +1,12 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text.Json;
 using PrintRxerV3.Capture;
-using Xunit;
 
 namespace PrintRxerV3.Tests;
 
 public sealed class PrintRxerV3ConfigTests
 {
-    [Fact]
+    [Test]
     public void EnsureLocalDirectories_repeated_calls_do_not_leak_process_handles()
     {
         if (!OperatingSystem.IsWindows())
@@ -41,7 +40,7 @@ public sealed class PrintRxerV3ConfigTests
         Assert.True(after - before <= 5, $"Handle count grew by {after - before}.");
     }
 
-    [Fact]
+    [Test]
     public void Load_roundtrips_persistent_config_fields()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-config-" + Guid.NewGuid().ToString("N"));
@@ -74,7 +73,7 @@ public sealed class PrintRxerV3ConfigTests
         Assert.True(Directory.Exists(loaded.LogsRoot));
     }
 
-    [Fact]
+    [Test]
     public void Defaults_are_tuned_for_fast_picker_startup_with_stability_check()
     {
         PrintRxerV3Config config = new()
@@ -89,7 +88,7 @@ public sealed class PrintRxerV3ConfigTests
         Assert.Equal(1, config.RetryIntervalSeconds);
     }
 
-    [Fact]
+    [Test]
     public void Temp_root_defaults_under_local_data_area()
     {
         PrintRxerV3Config config = new();
@@ -97,7 +96,7 @@ public sealed class PrintRxerV3ConfigTests
         Assert.EndsWith(Path.Combine("printRxer", "temp"), config.TempRoot, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void Default_paths_use_final_printRxer_product_name_for_new_installs()
     {
         PrintRxerV3Config config = new();
@@ -107,7 +106,7 @@ public sealed class PrintRxerV3ConfigTests
         Assert.EndsWith(Path.Combine("printRxer", "config", "printRxer.settings.json"), PrintRxerV3Config.DefaultConfigPath, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void PrintRxerV3Log_rotates_and_caps_retained_files()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-log-" + Guid.NewGuid().ToString("N"));
@@ -124,7 +123,7 @@ public sealed class PrintRxerV3ConfigTests
         Assert.False(File.Exists(Path.Combine(root, "printRxer.3.log")));
     }
 
-    [Fact]
+    [Test]
     public void Install_script_writes_config_without_registering_task()
     {
         string repoRoot = FindRepoRoot();

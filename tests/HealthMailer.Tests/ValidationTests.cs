@@ -1,10 +1,9 @@
-using Xunit;
-
+﻿
 namespace HealthMailer.Tests;
 
 public sealed class ValidationTests
 {
-    [Fact]
+    [Test]
     public void Validate_dry_run_without_send_does_not_require_outlook()
     {
         HealthMailerConfig config = new()
@@ -17,7 +16,7 @@ public sealed class ValidationTests
         Program.ValidateConfiguration(config, validateOutlook: static () => throw new InvalidOperationException("Outlook should not be checked"));
     }
 
-    [Fact]
+    [Test]
     public void EnsureDirectories_does_not_create_unc_handoff_root()
     {
         HealthMailerConfig config = new()
@@ -32,7 +31,7 @@ public sealed class ValidationTests
         Assert.True(Directory.Exists(config.LocalRoot));
     }
 
-    [Fact]
+    [Test]
     public void Validate_rejects_live_sending_without_explicit_approval()
     {
         HealthMailerConfig config = new()
@@ -48,7 +47,7 @@ public sealed class ValidationTests
         Assert.Contains("live sending", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void Validate_rejects_live_sending_without_installer_created_marker()
     {
         HealthMailerConfig config = new()
@@ -65,7 +64,7 @@ public sealed class ValidationTests
         Assert.Contains("installer-created", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void Validate_allows_installer_created_dry_run_without_outlook_check()
     {
         HealthMailerConfig config = new()
@@ -80,7 +79,7 @@ public sealed class ValidationTests
         Program.ValidateConfiguration(config, static () => throw new InvalidOperationException("Outlook should not be checked"));
     }
 
-    [Fact]
+    [Test]
     public void Validate_allows_installer_created_live_send_after_outlook_check()
     {
         bool checkedOutlook = false;
@@ -102,7 +101,7 @@ public sealed class ValidationTests
         Assert.True(checkedOutlook);
     }
 
-    [Fact]
+    [Test]
     public void Load_missing_config_creates_safe_dry_run_config()
     {
         string configPath = Path.Combine(Path.GetTempPath(), "healthmailer-missing-config-" + Guid.NewGuid().ToString("N"), "healthmailer.settings.json");

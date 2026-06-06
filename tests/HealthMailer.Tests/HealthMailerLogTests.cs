@@ -1,11 +1,10 @@
-using HealthMailer;
-using Xunit;
+﻿using HealthMailer;
 
 namespace HealthMailer.Tests;
 
 public sealed class HealthMailerLogTests
 {
-    [Fact]
+    [Test]
     public void Write_rotates_active_log_and_caps_retained_files()
     {
         string root = Path.Combine(Path.GetTempPath(), "healthmailer-log-" + Guid.NewGuid().ToString("N"));

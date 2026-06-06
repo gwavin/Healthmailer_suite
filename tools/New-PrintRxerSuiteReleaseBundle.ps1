@@ -164,6 +164,8 @@ function Copy-ReleaseDocumentation {
 
     Copy-RequiredFile '.\healthmailer_release_doc_cleaned.html' (Join-Path $Destination 'healthmailer_release_doc.html')
     Copy-RequiredFile '.\printRxer_HealthMailer_User_Guide.html' (Join-Path $Destination 'printRxer_HealthMailer_User_Guide.html')
+    Copy-RequiredFile '.\docs\PrintRxer_HealthMailer_IT_QRG_Current.docx' (Join-Path $Destination 'PrintRxerV3-Install-Guide.docx')
+    Copy-RequiredFile '.\docs\PrintRxer_HealthMailer_IT_QRG_Current.docx' (Join-Path $Destination 'HealthMailer-Install-Guide.docx')
 
     foreach ($doc in @(
         'RECIPIENTS.md',
@@ -246,10 +248,16 @@ try {
     New-Item -ItemType Directory -Force -Path $stagingRoot | Out-Null
 
     if (-not $SkipTests) {
-        Write-Step "Running tests."
-        dotnet test .\PrintRxerSuite.slnx
+        Write-Step "Running HealthMailer contract tests."
+        dotnet run --project .\tests\HealthMailer.Tests\HealthMailer.ContractTests.csproj
         if ($LASTEXITCODE -ne 0) {
-            throw "dotnet test failed with exit code $LASTEXITCODE"
+            throw "HealthMailer contract tests failed with exit code $LASTEXITCODE"
+        }
+
+        Write-Step "Running printRxer contract tests."
+        dotnet run --project .\apps\PrintRxerV3\tests\PrintRxerV3.ContractTests.csproj
+        if ($LASTEXITCODE -ne 0) {
+            throw "printRxer contract tests failed with exit code $LASTEXITCODE"
         }
     }
 
@@ -414,6 +422,7 @@ Safety notes:
         Copy-RequiredFile (Join-Path '.\tools' $tool) (Join-Path $printRxerRoot ('payload\tools\' + $tool))
     }
     Copy-RequiredFile '.\healthmailer_release_doc_cleaned.html' (Join-Path $printRxerRoot 'healthmailer_release_doc.html')
+    Copy-RequiredFile '.\docs\PrintRxer_HealthMailer_IT_QRG_Current.docx' (Join-Path $printRxerRoot 'PrintRxerV3-Install-Guide.docx')
     Get-ChildItem -LiteralPath (Join-Path $printRxerRoot 'payload\publish\printRxer') -Filter '*.pdb' -File -ErrorAction SilentlyContinue |
         Remove-Item -Force
 
@@ -455,6 +464,7 @@ Notes:
     Copy-RequiredDirectory $healthMailerPublish (Join-Path $healthMailerRoot 'payload\publish\HealthMailer')
     Copy-RequiredDirectory '.\assets\branding' (Join-Path $healthMailerRoot 'payload\assets\branding')
     Copy-RequiredFile '.\healthmailer_release_doc_cleaned.html' (Join-Path $healthMailerRoot 'healthmailer_release_doc.html')
+    Copy-RequiredFile '.\docs\PrintRxer_HealthMailer_IT_QRG_Current.docx' (Join-Path $healthMailerRoot 'HealthMailer-Install-Guide.docx')
     Get-ChildItem -LiteralPath (Join-Path $healthMailerRoot 'payload\publish\HealthMailer') -Filter '*.pdb' -File -ErrorAction SilentlyContinue |
         Remove-Item -Force
 

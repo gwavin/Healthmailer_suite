@@ -1,11 +1,10 @@
-using System.Reflection;
-using Xunit;
+﻿using System.Reflection;
 
 namespace HealthMailer.Tests;
 
 public sealed class MailHandoffTests
 {
-    [Fact]
+    [Test]
     public void AttachmentFilePreparer_creates_friendly_temp_copy_and_cleans_up()
     {
         string root = Path.Combine(Path.GetTempPath(), "healthmailer-attachment-" + Guid.NewGuid().ToString("N"));
@@ -26,10 +25,10 @@ public sealed class MailHandoffTests
         Assert.False(Directory.Exists(preparedDirectory));
     }
 
-    [Theory]
-    [InlineData("..\\..\\bad.exe")]
-    [InlineData("C:\\Temp\\bad.pdf")]
-    [InlineData("")]
+
+    [TestCase("..\\..\\bad.exe")]
+    [TestCase("C:\\Temp\\bad.pdf")]
+    [TestCase("")]
     public void AttachmentFilePreparer_sanitises_invalid_display_names_inside_temp_folder(string displayName)
     {
         string root = Path.Combine(Path.GetTempPath(), "healthmailer-attachment-" + Guid.NewGuid().ToString("N"));
@@ -45,7 +44,7 @@ public sealed class MailHandoffTests
         Assert.True(File.Exists(prepared.Path));
     }
 
-    [Fact]
+    [Test]
     public void ResolveRecipients_throws_when_outlook_resolve_all_returns_false()
     {
         MethodInfo method = typeof(OutlookMailHandoff).GetMethod("ResolveRecipients", BindingFlags.NonPublic | BindingFlags.Static)!;
@@ -56,7 +55,7 @@ public sealed class MailHandoffTests
         Assert.Contains("could not resolve", ex.InnerException!.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void ResolveRecipients_allows_true_resolve_all_result()
     {
         MethodInfo method = typeof(OutlookMailHandoff).GetMethod("ResolveRecipients", BindingFlags.NonPublic | BindingFlags.Static)!;

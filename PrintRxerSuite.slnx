@@ -10,7 +10,7 @@
     <Project Path="apps/PrintRxerV3/src/PrintRxerV3.csproj" />
   </Folder>
   <Folder Name="/apps/PrintRxerV3/tests/">
-    <Project Path="apps/PrintRxerV3/tests/PrintRxerV3.Tests.csproj" />
+    <Project Path="apps/PrintRxerV3/tests/PrintRxerV3.ContractTests.csproj" />
   </Folder>
   <Folder Name="/installers/PrintRxerV3Installer/">
     <Project Path="installers/PrintRxerV3Installer/PrintRxerV3Installer.csproj" />
@@ -22,6 +22,6 @@
     <Project Path="installers/PrintRxerSuiteInstaller/PrintRxerSuiteInstaller.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/HealthMailer.Tests/HealthMailer.Tests.csproj" />
+    <Project Path="tests/HealthMailer.Tests/HealthMailer.ContractTests.csproj" />
   </Folder>
 </Solution>

@@ -1,12 +1,11 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using HealthMailer;
-using Xunit;
 
 namespace HealthMailer.Tests;
 
 public sealed class HandoffPackageTests
 {
-    [Fact]
+    [Test]
     public void TryLoadReadyPackage_rejects_directory_without_ready_marker()
     {
         string packageDirectory = CreatePackage(includeReady: false);
@@ -17,7 +16,7 @@ public sealed class HandoffPackageTests
         Assert.Contains("READY", result.Error, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void TryLoadReadyPackage_rejects_hash_mismatch()
     {
         string packageDirectory = CreatePackage();
@@ -29,7 +28,7 @@ public sealed class HandoffPackageTests
         Assert.Contains("SHA256", result.Error, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void TryLoadReadyPackage_maps_v3_request_to_delivery_package()
     {
         string packageDirectory = CreatePackage();
@@ -48,7 +47,7 @@ public sealed class HandoffPackageTests
         Assert.EndsWith("prescription.pdf", result.Package.AttachmentPath);
     }
 
-    [Fact]
+    [Test]
     public void TryLoadReadyPackage_completed_hash_is_deterministic()
     {
         string packageDirectory = CreatePackage();

@@ -1,12 +1,10 @@
-using System.Text.Json;
-using Xunit;
+﻿using System.Text.Json;
 
 namespace HealthMailer.Tests;
 
-[Collection(ProcessHandleMeasurementCollection.Name)]
 public sealed class PackageProcessorTests
 {
-    [Fact]
+    [Test]
     public void EnsureDirectories_repeated_calls_do_not_leak_process_handles()
     {
         if (!OperatingSystem.IsWindows())
@@ -34,7 +32,7 @@ public sealed class PackageProcessorTests
         Assert.True(after - before <= 5, $"Handle count grew by {after - before}.");
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_returns_zero_when_handoff_root_is_unavailable()
     {
         string root = Path.Combine(Path.GetTempPath(), "healthmailer-unavailable-" + Guid.NewGuid().ToString("N"));
@@ -55,7 +53,7 @@ public sealed class PackageProcessorTests
         Assert.Contains(logs, line => line.Contains("handoff folder", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_valid_package_sends_after_mail_writes_result_and_archives()
     {
         string handoffRoot = Path.Combine(Path.GetTempPath(), "healthmailer-handoff-" + Guid.NewGuid().ToString("N"));
@@ -84,7 +82,7 @@ public sealed class PackageProcessorTests
         Assert.Contains("Outbound attachment filename: MRN999_prescription_20260526_1430.pdf", File.ReadAllText(Path.Combine(localRoot, "sent", "pkg-1", "summary.txt")));
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_sendmail_false_validates_without_sent_outcome_or_duplicate_poisoning()
     {
         TestPaths paths = CreatePaths();
@@ -118,7 +116,7 @@ public sealed class PackageProcessorTests
         Assert.Single(liveMailer.Sent);
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_archives_when_handoff_and_local_roots_differ()
     {
         string rootA = Path.Combine(Path.GetTempPath(), "healthmailer-handoff-a-" + Guid.NewGuid().ToString("N"));
@@ -142,7 +140,7 @@ public sealed class PackageProcessorTests
         Assert.True(File.Exists(Path.Combine(rootB, "validated-no-send", "pkg-cross-root", "prescription.pdf")));
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_missing_ready_is_ignored()
     {
         TestPaths paths = CreatePaths();
@@ -156,7 +154,7 @@ public sealed class PackageProcessorTests
         Assert.True(Directory.Exists(packageDirectory));
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_uploading_package_is_ignored_even_with_ready()
     {
         TestPaths paths = CreatePaths();
@@ -170,7 +168,7 @@ public sealed class PackageProcessorTests
         Assert.True(Directory.Exists(packageDirectory));
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_bad_pdf_hash_validation_fails_and_quarantines()
     {
         TestPaths paths = CreatePaths();
@@ -187,7 +185,7 @@ public sealed class PackageProcessorTests
         Assert.Contains("MRN999_prescription_20260526_1430.pdf", File.ReadAllText(Path.Combine(quarantine, "result.json")));
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_duplicate_package_is_quarantined_and_not_resent()
     {
         TestPaths paths = CreatePaths();
@@ -204,7 +202,7 @@ public sealed class PackageProcessorTests
         Assert.True(Directory.Exists(Path.Combine(paths.LocalRoot, "quarantine", "pkg-duplicate")));
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_mail_failure_sanitises_package_evidence_but_logs_technical_detail()
     {
         TestPaths paths = CreatePaths();
@@ -226,12 +224,12 @@ public sealed class PackageProcessorTests
         Assert.Contains(logs, line => line.Contains(sensitive, StringComparison.Ordinal));
     }
 
-    [Theory]
-    [InlineData("recipient@healthmail.ie")]
-    [InlineData("recipient@hse.ie")]
-    [InlineData("recipient@nmh.ie")]
-    [InlineData("recipient@rotunda.ie")]
-    [InlineData("RECIPIENT@HEALTHMAIL.IE")]
+
+    [TestCase("recipient@healthmail.ie")]
+    [TestCase("recipient@hse.ie")]
+    [TestCase("recipient@nmh.ie")]
+    [TestCase("recipient@rotunda.ie")]
+    [TestCase("RECIPIENT@HEALTHMAIL.IE")]
     public void ProcessAvailablePackages_allows_approved_recipient_domains_at_send_boundary(string email)
     {
         TestPaths paths = CreatePaths();
@@ -244,11 +242,11 @@ public sealed class PackageProcessorTests
         Assert.Single(mailer.Sent);
     }
 
-    [Theory]
-    [InlineData("recipient@gmail.com")]
-    [InlineData("recipient@example.com")]
-    [InlineData("")]
-    [InlineData("not-an-address")]
+
+    [TestCase("recipient@gmail.com")]
+    [TestCase("recipient@example.com")]
+    [TestCase("")]
+    [TestCase("not-an-address")]
     public void ProcessAvailablePackages_rejects_unapproved_or_malformed_recipient_at_send_boundary(string email)
     {
         TestPaths paths = CreatePaths();
@@ -264,7 +262,7 @@ public sealed class PackageProcessorTests
         Assert.Contains("RecipientRejected", File.ReadAllText(Path.Combine(quarantine, "result.json")));
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_rejects_live_send_without_installer_created_marker()
     {
         TestPaths paths = CreatePaths();
@@ -283,7 +281,7 @@ public sealed class PackageProcessorTests
         Assert.Contains("installer-created", File.ReadAllText(Path.Combine(quarantine, "result.json")), StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_stale_lock_is_retried()
     {
         TestPaths paths = CreatePaths();
@@ -297,7 +295,7 @@ public sealed class PackageProcessorTests
         Assert.Single(mailer.Sent);
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_fresh_lock_is_ignored()
     {
         TestPaths paths = CreatePaths();
@@ -312,7 +310,7 @@ public sealed class PackageProcessorTests
         Assert.True(Directory.Exists(packageDirectory));
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_invalid_stale_lock_uses_file_timestamp_and_retries()
     {
         TestPaths paths = CreatePaths();
@@ -328,7 +326,7 @@ public sealed class PackageProcessorTests
         Assert.Single(mailer.Sent);
     }
 
-    [Fact]
+    [Test]
     public async Task TryProcessPackage_concurrent_claim_allows_only_one_processor()
     {
         TestPaths paths = CreatePaths();
@@ -348,7 +346,7 @@ public sealed class PackageProcessorTests
         Assert.Single(mailer.Sent);
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_does_not_delete_archives_during_normal_processing()
     {
         TestPaths paths = CreatePaths();
@@ -371,7 +369,7 @@ public sealed class PackageProcessorTests
         Assert.True(Directory.Exists(oldQuarantine));
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_deletes_old_sent_prescription_pdf_but_keeps_audit_files()
     {
         TestPaths paths = CreatePaths();
@@ -401,7 +399,7 @@ public sealed class PackageProcessorTests
         Assert.True(File.Exists(Path.Combine(oldFailed, "prescription.pdf")));
     }
 
-    [Fact]
+    [Test]
     public void ProcessAvailablePackages_sent_prescription_retention_zero_preserves_sent_pdf()
     {
         TestPaths paths = CreatePaths();
@@ -423,7 +421,7 @@ public sealed class PackageProcessorTests
         Assert.True(File.Exists(Path.Combine(oldSent, "prescription.pdf")));
     }
 
-    [Fact]
+    [Test]
     public void SummaryHtml_contains_no_scripts_or_external_resources()
     {
         TestPaths paths = CreatePaths();

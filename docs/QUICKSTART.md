@@ -5,7 +5,8 @@ This is the shortest local test path for the two-exe suite. Normal users should 
 ## 1. Build And Test
 
 ```powershell
-dotnet test .\PrintRxerSuite.slnx
+dotnet run --project .\tests\HealthMailer.Tests\HealthMailer.ContractTests.csproj
+dotnet run --project .\apps\PrintRxerV3\tests\PrintRxerV3.ContractTests.csproj
 ```
 
 ## 2. Publish Apps

@@ -1,12 +1,11 @@
-using PrintRxerV3.App;
+﻿using PrintRxerV3.App;
 using PrintRxerV3.Capture;
-using Xunit;
 
 namespace PrintRxerV3.Tests;
 
 public sealed class PreviewPrescriptionServiceTests
 {
-    [Fact]
+    [Test]
     public void PreparePreview_writes_pdf_under_configured_temp_root()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-preview-" + Guid.NewGuid().ToString("N"));
@@ -34,7 +33,7 @@ public sealed class PreviewPrescriptionServiceTests
         Assert.True(File.Exists(previewPath));
     }
 
-    [Fact]
+    [Test]
     public void PreparePreview_does_not_create_output_when_renderer_fails()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-preview-fail-" + Guid.NewGuid().ToString("N"));

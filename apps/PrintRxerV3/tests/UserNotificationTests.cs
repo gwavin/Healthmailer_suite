@@ -1,11 +1,10 @@
-using PrintRxerV3.Notifications;
-using Xunit;
+﻿using PrintRxerV3.Notifications;
 
 namespace PrintRxerV3.Tests;
 
 public sealed class UserNotificationTests
 {
-    [Fact]
+    [Test]
     public void BuildPackageReadyMessage_names_handoff_folder_and_scheduled_sending()
     {
         string packageFolder = @"C:\ProgramData\printRxer\handoff\pkg-1";

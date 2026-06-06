@@ -1,10 +1,9 @@
-using Xunit;
-
+﻿
 namespace HealthMailer.Tests;
 
 public sealed class GovernanceDocumentTests
 {
-    [Fact]
+    [Test]
     public void Support_bundle_script_readme_warns_that_non_pdf_evidence_may_contain_phi()
     {
         string text = File.ReadAllText(Path.Combine(RepositoryRoot(), "tools", "New-PrintRxerSupportBundle.ps1"));
@@ -14,7 +13,7 @@ public sealed class GovernanceDocumentTests
         Assert.Contains("approved HSE support/governance channels", text, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void External_release_note_contains_no_personal_local_testing_path()
     {
         string text = File.ReadAllText(Path.Combine(RepositoryRoot(), "healthmailer_release_doc_cleaned.html"));
@@ -23,7 +22,7 @@ public sealed class GovernanceDocumentTests
         Assert.DoesNotContain(@"Documents\Testing", text, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void HealthMailer_gui_installer_makes_live_sending_choice_explicit()
     {
         string text = File.ReadAllText(Path.Combine(RepositoryRoot(), "installers", "HealthMailerInstaller", "InstallForm.cs"));
@@ -33,7 +32,7 @@ public sealed class GovernanceDocumentTests
         Assert.Contains("new InstallOptions(_selectedHandoffRoot, _sendMailCheckBox.Checked, SelectedRetentionDays())", text, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void HealthMailer_quiet_installer_requires_explicit_send_mail_argument()
     {
         string text = File.ReadAllText(Path.Combine(RepositoryRoot(), "installers", "HealthMailerInstaller", "Program.cs"));
@@ -43,7 +42,7 @@ public sealed class GovernanceDocumentTests
         Assert.DoesNotContain("value = true;" + Environment.NewLine + "            error = null;" + Environment.NewLine + "            return true;", text, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void Support_bundle_script_copies_actual_healthmailer_config_and_hse_transfer_warning()
     {
         string text = File.ReadAllText(Path.Combine(RepositoryRoot(), "tools", "New-PrintRxerSupportBundle.ps1"));
@@ -53,7 +52,7 @@ public sealed class GovernanceDocumentTests
         Assert.Contains("Do not email or transfer this bundle except through approved HSE support/governance channels.", text, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void Release_bundle_script_writes_metadata_and_latest_artifact_manifest()
     {
         string text = File.ReadAllText(Path.Combine(RepositoryRoot(), "tools", "New-PrintRxerSuiteReleaseBundle.ps1"));
@@ -64,7 +63,7 @@ public sealed class GovernanceDocumentTests
         Assert.Contains("Get-FileHash", text, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public void Outlook_resolve_all_false_fails_before_send()
     {
         string text = File.ReadAllText(Path.Combine(RepositoryRoot(), "apps", "HealthMailer", "MailHandoff.cs"));

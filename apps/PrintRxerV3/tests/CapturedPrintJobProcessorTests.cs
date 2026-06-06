@@ -1,15 +1,14 @@
-using PrintRxerV3.Capture;
+﻿using PrintRxerV3.Capture;
 using PrintRxerV3.Handoff;
 using PrintRxerV3.Metadata;
 using PrintRxerV3.Packaging;
 using System.Text.Json;
-using Xunit;
 
 namespace PrintRxerV3.Tests;
 
 public sealed class CapturedPrintJobProcessorTests
 {
-    [Fact]
+    [Test]
     public void ProcessOne_moves_ready_capture_to_processed_after_handoff_package_is_written()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-capture-" + Guid.NewGuid().ToString("N"));
@@ -69,7 +68,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.True(Directory.Exists(Path.Combine(processed, "20260509-120000000-job42")));
     }
 
-    [Fact]
+    [Test]
     public void ProcessOne_cleans_completed_print_jobs_before_opening_picker()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-queue-clean-" + Guid.NewGuid().ToString("N"));
@@ -103,7 +102,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.Equal(1, pickerCalls);
     }
 
-    [Fact]
+    [Test]
     public void ProcessOne_publishes_package_when_handoff_folder_is_available()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-publish-ok-" + Guid.NewGuid().ToString("N"));
@@ -129,7 +128,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.Contains(logs, line => line.StartsWith("PackagePublished:", StringComparison.Ordinal));
     }
 
-    [Fact]
+    [Test]
     public void ProcessOne_keeps_package_in_local_outbox_when_handoff_folder_is_unavailable()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-publish-defer-" + Guid.NewGuid().ToString("N"));
@@ -158,7 +157,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.Contains(logs, line => line.Contains("Package queued locally; handoff folder unavailable; will retry automatically.", StringComparison.Ordinal));
     }
 
-    [Fact]
+    [Test]
     public void ProcessOne_moves_package_to_failed_when_publish_failure_is_not_recoverable()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-publish-failed-" + Guid.NewGuid().ToString("N"));
@@ -203,7 +202,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.Contains(logs, line => line.StartsWith("PackagePublishFailed:", StringComparison.Ordinal));
     }
 
-    [Fact]
+    [Test]
     public void RetryPendingPublication_publishes_local_outbox_after_handoff_folder_returns()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-publish-retry-" + Guid.NewGuid().ToString("N"));
@@ -230,7 +229,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.Single(Directory.EnumerateDirectories(published));
     }
 
-    [Fact]
+    [Test]
     public void RetryPendingPublication_is_idempotent_when_package_already_exists_in_handoff()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-publish-idem-" + Guid.NewGuid().ToString("N"));
@@ -256,7 +255,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.True(Directory.Exists(Path.Combine(published, "pkg-1")));
     }
 
-    [Fact]
+    [Test]
     public void ProcessOne_returns_null_when_no_capture_is_ready()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-empty-" + Guid.NewGuid().ToString("N"));
@@ -271,7 +270,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.Null(processor.ProcessOne());
     }
 
-    [Fact]
+    [Test]
     public void ProcessOne_moves_capture_to_deferred_when_recipient_selection_is_cancelled()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-cancel-" + Guid.NewGuid().ToString("N"));
@@ -315,7 +314,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.False(Directory.Exists(handoff));
     }
 
-    [Fact]
+    [Test]
     public void ProcessOne_moves_capture_to_deferred_when_pdf_rendering_fails()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-render-fail-" + Guid.NewGuid().ToString("N"));
@@ -369,7 +368,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.False(Directory.Exists(handoff));
     }
 
-    [Fact]
+    [Test]
     public void ProcessOne_creates_package_when_submitting_sid_matches_current_user()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-owner-match-" + Guid.NewGuid().ToString("N"));
@@ -403,7 +402,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.False(Directory.Exists(job));
     }
 
-    [Fact]
+    [Test]
     public void ProcessOne_defers_capture_when_submitting_sid_differs_from_current_user()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-owner-mismatch-" + Guid.NewGuid().ToString("N"));
@@ -440,7 +439,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.True(File.Exists(Path.Combine(deferredJob, "printRxer_failure.txt")));
     }
 
-    [Fact]
+    [Test]
     public void ProcessOne_defers_capture_when_submitting_sid_is_missing_by_default()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-owner-missing-" + Guid.NewGuid().ToString("N"));
@@ -467,7 +466,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.True(Directory.Exists(Path.Combine(deferred, "20260509-120000000-job47")));
     }
 
-    [Fact]
+    [Test]
     public void ProcessOne_allows_missing_submitting_sid_only_with_explicit_import_override()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-owner-import-" + Guid.NewGuid().ToString("N"));
@@ -499,7 +498,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.True(result.PackageCreated);
     }
 
-    [Fact]
+    [Test]
     public void ProcessOne_waits_when_payload_is_missing_or_zero_or_recent()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-payload-wait-" + Guid.NewGuid().ToString("N"));
@@ -531,7 +530,7 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.True(Directory.Exists(recent));
     }
 
-    [Fact]
+    [Test]
     public void ProcessOne_defers_unstable_payload_after_metadata_grace_period()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-payload-stale-" + Guid.NewGuid().ToString("N"));

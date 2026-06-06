@@ -1,11 +1,10 @@
-using System.Text.Json;
-using Xunit;
+﻿using System.Text.Json;
 
 namespace HealthMailer.Tests;
 
 public sealed class ProcessingAuditTests
 {
-    [Fact]
+    [Test]
     public void HasSent_detects_sent_package_by_package_id()
     {
         string ledgerPath = CreateLedgerPath();
@@ -16,7 +15,7 @@ public sealed class ProcessingAuditTests
         Assert.True(ledger.HasSent(package));
     }
 
-    [Fact]
+    [Test]
     public void HasSent_detects_sent_package_by_completed_hash()
     {
         string ledgerPath = CreateLedgerPath();
@@ -27,7 +26,7 @@ public sealed class ProcessingAuditTests
         Assert.True(ledger.HasSent(package));
     }
 
-    [Fact]
+    [Test]
     public void Append_updates_in_memory_cache()
     {
         string ledgerPath = CreateLedgerPath();
@@ -40,7 +39,7 @@ public sealed class ProcessingAuditTests
         Assert.True(ledger.HasSent(package));
     }
 
-    [Fact]
+    [Test]
     public void HasSent_reloads_cache_when_ledger_changes_externally()
     {
         string ledgerPath = CreateLedgerPath();
@@ -59,7 +58,7 @@ public sealed class ProcessingAuditTests
         Assert.True(ledger.HasSent(package));
     }
 
-    [Fact]
+    [Test]
     public void HasSent_treats_mail_sent_true_as_duplicate_protection_even_when_outcome_is_not_sent()
     {
         string ledgerPath = CreateLedgerPath();
@@ -81,7 +80,7 @@ public sealed class ProcessingAuditTests
         Assert.Contains("MailSent", File.ReadAllText(ledgerPath));
     }
 
-    [Fact]
+    [Test]
     public void HasSent_ignores_malformed_json_lines()
     {
         string ledgerPath = CreateLedgerPath();

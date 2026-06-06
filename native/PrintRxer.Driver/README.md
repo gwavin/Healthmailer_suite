@@ -39,10 +39,12 @@ Use [tools/Build-PrintRxerDriverPackage.ps1](../../tools/Build-PrintRxerDriverPa
 
 Use [tools/Install-PrintRxerDriver.ps1](../../tools/Install-PrintRxerDriver.ps1) to test-sign, stage, and install it locally.
 
-## Remaining Work
+## Current Release Status
 
-What still remains before the queue can be installed reliably on a clean machine:
+The release bundle includes the prebuilt driver package and the normal printRxer installer installs or repairs the port monitor, driver, and local queue. Target machines do not need the SDK, WDK, Visual Studio, or C++ build tools.
 
-- settle the final INF model metadata and hardware-ID strategy
-- sign the generated catalog for local installation
-- install the driver package and rerun [tools/Install-PrintRxerQueue.ps1](../../tools/Install-PrintRxerQueue.ps1)
+## Operational Notes
+
+- Installing or removing printer-capture components requires administrator approval.
+- The prebuilt package must remain paired with the release bundle that produced it.
+- Use [tools/Install-PrintRxerDriver.ps1](../../tools/Install-PrintRxerDriver.ps1) and [tools/Install-PrintRxerQueue.ps1](../../tools/Install-PrintRxerQueue.ps1) only for approved repair or development work; normal installation should use the bundled setup application.

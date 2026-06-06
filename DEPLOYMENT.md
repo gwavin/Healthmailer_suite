@@ -64,7 +64,8 @@ The suite preserves the lessons from the original printRxer testing:
 From the repository root:
 
 ```powershell
-dotnet test .\PrintRxerSuite.slnx
+dotnet run --project .\tests\HealthMailer.Tests\HealthMailer.ContractTests.csproj
+dotnet run --project .\apps\PrintRxerV3\tests\PrintRxerV3.ContractTests.csproj
 powershell -ExecutionPolicy Bypass -File .\tools\New-PrintRxerSuiteReleaseBundle.ps1
 ```
 

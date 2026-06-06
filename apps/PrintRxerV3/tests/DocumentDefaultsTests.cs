@@ -1,16 +1,15 @@
-using PrintRxerV3.Capture;
+﻿using PrintRxerV3.Capture;
 using PrintRxerV3.Metadata;
-using Xunit;
 
 namespace PrintRxerV3.Tests;
 
 public sealed class DocumentDefaultsTests
 {
-    [Theory]
-    [InlineData("Rx for discharge")]
-    [InlineData("Prescription Jane Doe")]
-    [InlineData("Medication list")]
-    [InlineData("Pharmacy dispense note")]
+
+    [TestCase("Rx for discharge")]
+    [TestCase("Prescription Jane Doe")]
+    [TestCase("Medication list")]
+    [TestCase("Pharmacy dispense note")]
     public void InferKind_uses_prescription_for_rx_like_metadata(string documentName)
     {
         CapturedPrintJobContext context = CreateContext(documentName);
@@ -18,9 +17,9 @@ public sealed class DocumentDefaultsTests
         Assert.Equal(DocumentKind.Prescription, DocumentDefaults.InferKind(context));
     }
 
-    [Theory]
-    [InlineData("Clinic letter")]
-    [InlineData("Discharge summary")]
+
+    [TestCase("Clinic letter")]
+    [TestCase("Discharge summary")]
     public void InferKind_infers_clinical_document_for_clinical_metadata(string documentName)
     {
         CapturedPrintJobContext context = CreateContext(documentName);
@@ -28,9 +27,9 @@ public sealed class DocumentDefaultsTests
         Assert.Equal(DocumentKind.ClinicalDocument, DocumentDefaults.InferKind(context));
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("Unknown document type")]
+
+    [TestCase("")]
+    [TestCase("Unknown document type")]
     public void InferKind_defaults_to_prescription_when_uncertain(string documentName)
     {
         CapturedPrintJobContext context = CreateContext(documentName);
@@ -38,7 +37,7 @@ public sealed class DocumentDefaultsTests
         Assert.Equal(DocumentKind.Prescription, DocumentDefaults.InferKind(context));
     }
 
-    [Fact]
+    [Test]
     public void Create_returns_prescription_wording_and_mrn_filename()
     {
         DateTimeOffset captured = new(2026, 5, 26, 14, 30, 0, TimeSpan.Zero);
@@ -53,7 +52,7 @@ public sealed class DocumentDefaultsTests
         Assert.Equal("MRN123456_prescription_" + captured.ToLocalTime().ToString("yyyyMMdd_HHmm") + ".pdf", defaults.AttachmentDisplayName);
     }
 
-    [Fact]
+    [Test]
     public void Create_uses_patient_name_when_prescription_mrn_is_missing()
     {
         DateTimeOffset captured = new(2026, 5, 26, 14, 30, 0, TimeSpan.Zero);
@@ -64,7 +63,7 @@ public sealed class DocumentDefaultsTests
         Assert.Equal("JohnSmith_prescription_" + captured.ToLocalTime().ToString("yyyyMMdd_HHmm") + ".pdf", defaults.AttachmentDisplayName);
     }
 
-    [Fact]
+    [Test]
     public void Create_uses_generic_prescription_filename_without_identifiers()
     {
         DateTimeOffset captured = new(2026, 5, 26, 14, 30, 0, TimeSpan.Zero);
@@ -74,7 +73,7 @@ public sealed class DocumentDefaultsTests
         Assert.Equal("prescription_" + captured.ToLocalTime().ToString("yyyyMMdd_HHmm") + ".pdf", defaults.AttachmentDisplayName);
     }
 
-    [Fact]
+    [Test]
     public void Create_returns_clinical_wording_and_generic_clinical_filename()
     {
         DateTimeOffset captured = new(2026, 5, 26, 14, 30, 0, TimeSpan.Zero);
@@ -89,21 +88,21 @@ public sealed class DocumentDefaultsTests
         Assert.Equal("clinicalDocument_" + captured.ToLocalTime().ToString("yyyyMMdd_HHmm") + ".pdf", defaults.AttachmentDisplayName);
     }
 
-    [Theory]
-    [InlineData("John Smith", "JohnSmith")]
-    [InlineData("John O'Brien", "JohnOBrien")]
-    [InlineData("Anne-Marie Smith", "Anne-MarieSmith")]
-    [InlineData("MRN 123/45", "MRN12345")]
+
+    [TestCase("John Smith", "JohnSmith")]
+    [TestCase("John O'Brien", "JohnOBrien")]
+    [TestCase("Anne-Marie Smith", "Anne-MarieSmith")]
+    [TestCase("MRN 123/45", "MRN12345")]
     public void SanitizeComponent_removes_unsafe_characters(string value, string expected)
     {
         Assert.Equal(expected, DocumentDefaults.SanitizeComponent(value));
     }
 
-    [Theory]
-    [InlineData("../../../bad.pdf", "bad.pdf")]
-    [InlineData("report.docx", "report.pdf")]
-    [InlineData("", "fallback.pdf")]
-    [InlineData("CON.pdf", "fallback.pdf")]
+
+    [TestCase("../../../bad.pdf", "bad.pdf")]
+    [TestCase("report.docx", "report.pdf")]
+    [TestCase("", "fallback.pdf")]
+    [TestCase("CON.pdf", "fallback.pdf")]
     public void SanitizeAttachmentFileName_prevents_paths_and_forces_pdf(string value, string expected)
     {
         Assert.Equal(expected, DocumentDefaults.SanitizeAttachmentFileName(value, "fallback.pdf"));

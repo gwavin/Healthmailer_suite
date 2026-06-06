@@ -1,10 +1,9 @@
-using Xunit;
-
+﻿
 namespace PrintRxerV3.Tests;
 
 public sealed class InstallerRecipientSourceTests
 {
-    [Fact]
+    [Test]
     public void Installer_seeds_derived_central_recipients_without_overwriting_existing_file()
     {
         string source = ReadRepositoryFile("installers", "PrintRxerV3Installer", "PrintRxerInstaller.cs");
@@ -16,7 +15,7 @@ public sealed class InstallerRecipientSourceTests
         Assert.DoesNotContain("File.Copy(bundled, centralFile, overwrite: true)", source, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Test]
     public void Installer_always_installs_local_bundled_fallback_and_can_populate_cache()
     {
         string source = ReadRepositoryFile("installers", "PrintRxerV3Installer", "PrintRxerInstaller.cs");
