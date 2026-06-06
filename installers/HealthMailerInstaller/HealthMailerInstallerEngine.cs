@@ -28,6 +28,8 @@ internal static class HealthMailerInstallerEngine
         log("Stopping existing HealthMailer watcher/process before updating application files.");
         StopExistingWatcher(log);
 
+        log("Preparing HealthMailer application binary folder for update.");
+        InstallerSecurity.PrepareApplicationDirectoryForUpdate(InstallerPaths.ProgramFilesRoot);
         log("Installing HealthMailer application files.");
         CopyDirectory(InstallerPaths.PayloadPublishRoot, InstallerPaths.ProgramFilesRoot);
         log("Hardening HealthMailer application binary folder.");

@@ -343,6 +343,13 @@ public sealed class ReleaseBundleNamingTests
         string security = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "InstallerSecurity.cs"));
         string runner = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "ProcessRunner.cs"));
 
+        int prepareIndex = engine.IndexOf("InstallerSecurity.PrepareApplicationDirectoryForUpdate(InstallerPaths.ProgramFilesRoot)", StringComparison.Ordinal);
+        int copyIndex = engine.IndexOf("CopyDirectory(InstallerPaths.PayloadPublishRoot, InstallerPaths.ProgramFilesRoot)", StringComparison.Ordinal);
+        int hardenIndex = engine.IndexOf("InstallerSecurity.HardenApplicationDirectory(InstallerPaths.ProgramFilesRoot)", StringComparison.Ordinal);
+
+        Assert.True(prepareIndex >= 0, "HealthMailer repair/update should prepare the protected app folder before copying files.");
+        Assert.True(copyIndex > prepareIndex, "HealthMailer app files must be copied after update preparation.");
+        Assert.True(hardenIndex > copyIndex, "HealthMailer app folder must be re-hardened after copying files.");
         Assert.Contains("InstallerSecurity.HardenApplicationDirectory(InstallerPaths.ProgramFilesRoot)", engine, StringComparison.Ordinal);
         Assert.Contains("InstallerSecurity.VerifyApplicationDirectory(InstallerPaths.ProgramFilesRoot)", program, StringComparison.Ordinal);
         Assert.Contains("ProcessRunner.RunForResult(", program, StringComparison.Ordinal);
@@ -353,6 +360,12 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("WellKnownSidType.BuiltinUsersSid", security, StringComparison.Ordinal);
         Assert.Contains("WellKnownSidType.AuthenticatedUserSid", security, StringComparison.Ordinal);
         Assert.Contains("FileSystemRights.ReadAndExecute", security, StringComparison.Ordinal);
+        Assert.Contains("FileSystemRights.WriteData", security, StringComparison.Ordinal);
+        Assert.Contains("FileSystemRights.AppendData", security, StringComparison.Ordinal);
+        Assert.Contains("FileSystemRights.DeleteSubdirectoriesAndFiles", security, StringComparison.Ordinal);
+        Assert.DoesNotContain("FileSystemRights.Write |", security, StringComparison.Ordinal);
+        Assert.DoesNotContain("FileSystemRights.Modify |", security, StringComparison.Ordinal);
+        Assert.Contains("owning sender user or with approved administrative support", security, StringComparison.Ordinal);
         Assert.Contains("throw new FatalSecurityException", security, StringComparison.Ordinal);
     }
 

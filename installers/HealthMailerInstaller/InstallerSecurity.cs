@@ -6,12 +6,45 @@ namespace HealthMailerInstaller;
 internal static class InstallerSecurity
 {
     private const FileSystemRights UnsafeRights =
-        FileSystemRights.Write |
-        FileSystemRights.Modify |
-        FileSystemRights.FullControl |
+        FileSystemRights.WriteData |
+        FileSystemRights.AppendData |
+        FileSystemRights.WriteAttributes |
+        FileSystemRights.WriteExtendedAttributes |
         FileSystemRights.Delete |
+        FileSystemRights.DeleteSubdirectoriesAndFiles |
         FileSystemRights.ChangePermissions |
         FileSystemRights.TakeOwnership;
+
+    public static void PrepareApplicationDirectoryForUpdate(string path)
+    {
+        try
+        {
+            Directory.CreateDirectory(path);
+            DirectoryInfo directory = new(path);
+            DirectorySecurity security = directory.GetAccessControl(AccessControlSections.Access);
+            security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+            SecurityIdentifier runtimeUser = CurrentUserSid();
+            security.SetAccessRule(DirectoryRule(runtimeUser, FileSystemRights.Modify));
+            directory.SetAccessControl(security);
+
+            string probePath = Path.Combine(path, ".healthmailer-update-write-probe-" + Guid.NewGuid().ToString("N") + ".tmp");
+            try
+            {
+                File.WriteAllText(probePath, "HealthMailer installer update write probe.");
+            }
+            finally
+            {
+                File.Delete(probePath);
+            }
+        }
+        catch (Exception ex) when (ex is not FatalSecurityException)
+        {
+            throw new FatalSecurityException(
+                "Could not prepare HealthMailer application binary folder '" + path +
+                "' for repair/update. Run HealthMailer repair/update as the owning sender user or with approved administrative support.",
+                ex);
+        }
+    }
 
     public static void HardenApplicationDirectory(string path)
     {
