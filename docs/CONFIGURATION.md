@@ -100,7 +100,7 @@ Mapped drives are not supported for scheduled-task handoff paths. Use UNC paths 
 
 ## Local Security Boundaries
 
-Security hardening is built into installer and runtime setup paths. `%ProgramFiles%` holds protected application binaries. `%ProgramData%` holds mutable local data, logs, archives, configuration, ledger, recipient cache, and outbox material.
+Security hardening is built into installer and runtime setup paths. printRxer protected application binaries are held under `%ProgramFiles%`, while SYSTEM-loaded print-capture assets are held under `%SystemRoot%\System32`. For this release, HealthMailer application binaries remain at `C:\ProgramData\HealthMailer\app`; the installer treats that specific folder as a protected application-binary boundary and fails installation if its restrictive ACL cannot be applied and verified. Other `%ProgramData%` locations hold mutable local data, logs, archives, configuration, ledger, recipient cache, and outbox material.
 
 The printRxer installer validates that its protected application workspace resolves under Program Files and that its data directories resolve under ProgramData. These roots must remain separate and non-nested. For printRxer local recipient/cache paths and SYSTEM-loaded print-capture components, ACL hardening is part of the installation safety boundary. Environments that prevent explicit restriction and verification of those permissions fail installation with a `FatalSecurityException`.
 

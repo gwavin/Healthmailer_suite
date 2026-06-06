@@ -335,6 +335,28 @@ public sealed class ReleaseBundleNamingTests
     }
 
     [Test]
+    public void HealthMailer_installer_hardens_app_folder_and_runs_runtime_validation()
+    {
+        string repoRoot = FindRepoRoot();
+        string program = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "Program.cs"));
+        string engine = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "HealthMailerInstallerEngine.cs"));
+        string security = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "InstallerSecurity.cs"));
+        string runner = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "ProcessRunner.cs"));
+
+        Assert.Contains("InstallerSecurity.HardenApplicationDirectory(InstallerPaths.ProgramFilesRoot)", engine, StringComparison.Ordinal);
+        Assert.Contains("InstallerSecurity.VerifyApplicationDirectory(InstallerPaths.ProgramFilesRoot)", program, StringComparison.Ordinal);
+        Assert.Contains("ProcessRunner.RunForResult(", program, StringComparison.Ordinal);
+        Assert.Contains("\"--validate --config \\\"\" + InstallerPaths.ConfigPath", program, StringComparison.Ordinal);
+        Assert.Contains("return ValidationFailed;", program, StringComparison.Ordinal);
+        Assert.Contains("RUNTIME VALIDATION:", program, StringComparison.Ordinal);
+        Assert.Contains("public static ProcessResult RunForResult", runner, StringComparison.Ordinal);
+        Assert.Contains("WellKnownSidType.BuiltinUsersSid", security, StringComparison.Ordinal);
+        Assert.Contains("WellKnownSidType.AuthenticatedUserSid", security, StringComparison.Ordinal);
+        Assert.Contains("FileSystemRights.ReadAndExecute", security, StringComparison.Ordinal);
+        Assert.Contains("throw new FatalSecurityException", security, StringComparison.Ordinal);
+    }
+
+    [Test]
     public void Source_and_docs_do_not_use_legacy_underscored_printRxer_name()
     {
         string repoRoot = FindRepoRoot();

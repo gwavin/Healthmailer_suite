@@ -5,7 +5,24 @@ namespace HealthMailerInstaller;
 
 internal static class ProcessRunner
 {
+    public readonly record struct ProcessResult(int ExitCode, string Output);
+
     public static string Run(string fileName, string arguments, bool requireSuccess = true)
+    {
+        ProcessResult result = RunForResult(fileName, arguments);
+        if (requireSuccess && result.ExitCode != 0)
+        {
+            string detail = string.IsNullOrWhiteSpace(result.Output)
+                ? "No further detail was reported."
+                : result.Output;
+            string tool = Path.GetFileName(fileName);
+            throw new InvalidOperationException($"{tool} could not complete this setup step. Windows returned exit code {result.ExitCode}.\n\n{detail}");
+        }
+
+        return result.Output;
+    }
+
+    public static ProcessResult RunForResult(string fileName, string arguments)
     {
         using Process process = new()
         {
@@ -30,16 +47,7 @@ internal static class ProcessRunner
         process.WaitForExit();
 
         string text = output.ToString().Trim();
-        if (requireSuccess && process.ExitCode != 0)
-        {
-            string detail = string.IsNullOrWhiteSpace(text)
-                ? "No further detail was reported."
-                : text;
-            string tool = Path.GetFileName(fileName);
-            throw new InvalidOperationException($"{tool} could not complete this setup step. Windows returned exit code {process.ExitCode}.\n\n{detail}");
-        }
-
-        return text;
+        return new ProcessResult(process.ExitCode, text);
     }
 
     public static string PowerShell(string command, bool requireSuccess = true)

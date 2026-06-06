@@ -38,6 +38,9 @@ $p.ExitCode
 Get-Acl "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer Port Monitor" | Format-List AccessToString
 Get-Acl "$env:WINDIR\System32\PrintRxerPortMonitor.dll" | Format-List AccessToString
 
+# Verify protected HealthMailer application binaries
+Get-Acl "C:\ProgramData\HealthMailer\app" | Format-List AccessToString
+
 # Verify all-users printRxer watcher task
 $task = Get-ScheduledTask -TaskName printRxer
 $task.Principal | Select-Object UserId, GroupId, RunLevel, LogonType

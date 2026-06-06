@@ -30,6 +30,8 @@ internal static class HealthMailerInstallerEngine
 
         log("Installing HealthMailer application files.");
         CopyDirectory(InstallerPaths.PayloadPublishRoot, InstallerPaths.ProgramFilesRoot);
+        log("Hardening HealthMailer application binary folder.");
+        InstallerSecurity.HardenApplicationDirectory(InstallerPaths.ProgramFilesRoot);
 
         log("Writing HealthMailer configuration.");
         WriteConfig(options);

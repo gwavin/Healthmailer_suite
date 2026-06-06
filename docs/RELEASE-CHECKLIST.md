@@ -23,6 +23,9 @@
 - [ ] Download/extract the suite ZIP rather than building from source on the target machine.
 - [ ] Open `PrintRxerSuiteInstaller.exe`.
 - [ ] `Validate installation` runs before install and reports expected missing/not-installed items without crashing.
+- [ ] `HealthMailerSetup.exe --validate` invokes installed HealthMailer runtime validation and reports runtime failures as validation exit code `7`.
+- [ ] Live-send validation fails when Outlook COM is unavailable or live sending is not installer-approved.
+- [ ] `C:\ProgramData\HealthMailer\app` ACL does not grant ordinary users write, modify, delete, permission-change, ownership-change, or full-control rights.
 - [ ] `Install printRxer printing machine` explains that printer capture may require administrator approval and opens the printRxer component installer.
 - [ ] printRxer install creates/repairs the native port monitor, PrintRxer XPS driver, and local printer queue named `printRxer`.
 - [ ] `Install HealthMailer sending machine` opens the HealthMailer component installer as the current Outlook/Healthmail sender user.

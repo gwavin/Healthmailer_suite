@@ -90,6 +90,8 @@ Chart/ViewPoint copy is removed/deferred and cannot be enabled in the current re
 
 ## Known Limits
 
+- For this release, HealthMailer application binaries remain at `C:\ProgramData\HealthMailer\app` rather than Program Files. The installer applies and verifies a protected application-binary ACL on that folder: SYSTEM and Administrators retain full control, the intended HealthMailer runtime user retains read/execute access, and broad ordinary groups must not have write/tamper rights. Installation and `HealthMailerSetup.exe --validate` fail if this boundary cannot be verified.
+
 - Outlook ultimately controls onward mail transmission.
 - Shared folder ACLs cannot be fully enforced by application code.
 - PDF import workflows may have weaker original print-job identity metadata than native print capture.

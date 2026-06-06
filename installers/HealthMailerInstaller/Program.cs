@@ -180,6 +180,19 @@ internal static class Program
 
         if (!taskState.Contains("present", StringComparison.OrdinalIgnoreCase)) { failures.Add("HealthMailer scheduled task is not installed."); }
 
+        if (Directory.Exists(InstallerPaths.ProgramFilesRoot))
+        {
+            try
+            {
+                InstallerSecurity.VerifyApplicationDirectory(InstallerPaths.ProgramFilesRoot);
+                log("HealthMailer application binary folder ACL validation succeeded.");
+            }
+            catch (FatalSecurityException ex)
+            {
+                failures.Add(ex.Message);
+            }
+        }
+
         foreach (string failure in failures)
         {
             log("VALIDATION: " + failure);
@@ -187,6 +200,34 @@ internal static class Program
 
         if (failures.Count > 0)
         {
+            return ValidationFailed;
+        }
+
+        log("Running installed HealthMailer runtime validation.");
+        ProcessRunner.ProcessResult runtimeValidation;
+        try
+        {
+            runtimeValidation = ProcessRunner.RunForResult(
+                InstallerPaths.InstalledExePath,
+                "--validate --config \"" + InstallerPaths.ConfigPath + "\"");
+        }
+        catch (Exception ex)
+        {
+            log("VALIDATION: Could not run installed HealthMailer runtime validation. " + ex.Message);
+            return ValidationFailed;
+        }
+
+        if (!string.IsNullOrWhiteSpace(runtimeValidation.Output))
+        {
+            foreach (string line in runtimeValidation.Output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries))
+            {
+                log("RUNTIME VALIDATION: " + line);
+            }
+        }
+
+        if (runtimeValidation.ExitCode != 0)
+        {
+            log("VALIDATION: Installed HealthMailer runtime validation failed with exit code " + runtimeValidation.ExitCode + ".");
             return ValidationFailed;
         }
 
