@@ -372,6 +372,32 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("level=\"asInvoker\"", printRxerManifest, StringComparison.Ordinal);
     }
 
+    [Test]
+    public void Port_monitor_install_chain_hardens_system_loaded_dll_and_registry_key()
+    {
+        string repoRoot = FindRepoRoot();
+        string installer = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "PrintRxerInstaller.cs"));
+        string monitorScript = File.ReadAllText(Path.Combine(repoRoot, "tools", "Install-PrintRxerPortMonitor.ps1"));
+        string driverScript = File.ReadAllText(Path.Combine(repoRoot, "tools", "Install-PrintRxerDriver.ps1"));
+
+        Assert.Contains("Path.Combine(system32, \"PrintRxerPortMonitor.dll\")", installer, StringComparison.Ordinal);
+        Assert.Contains("WellKnownSidType.LocalSystemSid", installer, StringComparison.Ordinal);
+        Assert.Contains("WellKnownSidType.BuiltinAdministratorsSid", installer, StringComparison.Ordinal);
+        Assert.Contains("WellKnownSidType.LocalServiceSid", installer, StringComparison.Ordinal);
+        Assert.Contains("RegistrySecurity", installer, StringComparison.Ordinal);
+        Assert.Contains("VerifyPortMonitorRegistrySecurity", installer, StringComparison.Ordinal);
+
+        foreach (string script in new[] { monitorScript, driverScript })
+        {
+            Assert.Contains("#Requires -RunAsAdministrator", script, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("Get-Acl", script, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("Set-Acl", script, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("'System32\\PrintRxerPortMonitor.dll'", script, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(@"ProgramData\PrintRxerPortMonitor.dll", script, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(@"LocalAppData\PrintRxerPortMonitor.dll", script, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
     private static string FindRepoRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);

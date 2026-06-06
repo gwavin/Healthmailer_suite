@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using Microsoft.Win32;
 using PrintRxerV3.Recipients;
 
 namespace PrintRxerV3Installer;
@@ -35,6 +36,9 @@ internal static class PrintRxerInstaller
 
         log("Installing printRxer capture printer.");
         InstallCapturePrinter();
+
+        log("Hardening SYSTEM-loaded port monitor.");
+        HardenAndVerifyPortMonitor();
 
         log("Verifying printRxer capture printer.");
         VerifyCapturePrinter();
@@ -320,6 +324,102 @@ if ($printer.PortName -ne 'printrx:') { throw ('The printRxer printer is using p
 if ($printer.DriverName -ne 'PrintRxer XPS Driver') { throw ('The printRxer printer is using driver ' + $printer.DriverName + ' instead of PrintRxer XPS Driver.') }
 ";
         ProcessRunner.PowerShell(command);
+    }
+
+    private static void HardenAndVerifyPortMonitor()
+    {
+        string system32 = Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32"));
+        string dllPath = Path.GetFullPath(Path.Combine(system32, "PrintRxerPortMonitor.dll"));
+        if (!string.Equals(Path.GetDirectoryName(dllPath), system32, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("The port monitor DLL must be installed directly under Windows System32.");
+        }
+
+        if (!File.Exists(dllPath))
+        {
+            throw new FileNotFoundException("The installed port monitor DLL was not found.", dllPath);
+        }
+
+        SecurityIdentifier system = new(WellKnownSidType.LocalSystemSid, null);
+        SecurityIdentifier admins = new(WellKnownSidType.BuiltinAdministratorsSid, null);
+        SecurityIdentifier localService = new(WellKnownSidType.LocalServiceSid, null);
+
+        FileSecurity fileSecurity = new();
+        fileSecurity.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        fileSecurity.AddAccessRule(new FileSystemAccessRule(system, FileSystemRights.FullControl, AccessControlType.Allow));
+        fileSecurity.AddAccessRule(new FileSystemAccessRule(admins, FileSystemRights.FullControl, AccessControlType.Allow));
+        fileSecurity.AddAccessRule(new FileSystemAccessRule(localService, FileSystemRights.ReadAndExecute | FileSystemRights.Read, AccessControlType.Allow));
+        new FileInfo(dllPath).SetAccessControl(fileSecurity);
+        VerifyPortMonitorFileSecurity(dllPath, system, admins, localService);
+
+        const string monitorKeyPath = @"SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer Port Monitor";
+        using RegistryKey key = Registry.LocalMachine.OpenSubKey(
+            monitorKeyPath,
+            RegistryKeyPermissionCheck.ReadWriteSubTree,
+            RegistryRights.ChangePermissions | RegistryRights.ReadKey | RegistryRights.WriteKey)
+            ?? throw new InvalidOperationException("The registered PrintRxer port monitor key was not found.");
+
+        RegistrySecurity registrySecurity = new();
+        registrySecurity.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        registrySecurity.AddAccessRule(new RegistryAccessRule(system, RegistryRights.FullControl, InheritanceFlags.None, PropagationFlags.None, AccessControlType.Allow));
+        registrySecurity.AddAccessRule(new RegistryAccessRule(admins, RegistryRights.FullControl, InheritanceFlags.None, PropagationFlags.None, AccessControlType.Allow));
+        key.SetAccessControl(registrySecurity);
+        VerifyPortMonitorRegistrySecurity(key, system, admins);
+    }
+
+    private static void VerifyPortMonitorFileSecurity(string path, SecurityIdentifier system, SecurityIdentifier admins, SecurityIdentifier localService)
+    {
+        FileSecurity security = new FileInfo(path).GetAccessControl(AccessControlSections.Access);
+        if (!security.AreAccessRulesProtected)
+        {
+            throw new InvalidOperationException("Port monitor DLL ACL inheritance is still enabled.");
+        }
+
+        FileSystemAccessRule[] rules = security.GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier))
+            .Cast<FileSystemAccessRule>()
+            .ToArray();
+        VerifyOnlyAllowedFileRule(rules, system, FileSystemRights.FullControl);
+        VerifyOnlyAllowedFileRule(rules, admins, FileSystemRights.FullControl);
+        VerifyOnlyAllowedFileRule(rules, localService, FileSystemRights.ReadAndExecute | FileSystemRights.Read);
+        if (rules.Length != 3)
+        {
+            throw new InvalidOperationException("Port monitor DLL contains an unexpected explicit access rule.");
+        }
+    }
+
+    private static void VerifyOnlyAllowedFileRule(FileSystemAccessRule[] rules, SecurityIdentifier identity, FileSystemRights requiredRights)
+    {
+        FileSystemAccessRule? rule = rules.SingleOrDefault(candidate => identity.Equals(candidate.IdentityReference));
+        if (rule is null || rule.AccessControlType != AccessControlType.Allow || (rule.FileSystemRights & requiredRights) != requiredRights)
+        {
+            throw new InvalidOperationException("Port monitor DLL ACL does not match the hardened security specification.");
+        }
+    }
+
+    private static void VerifyPortMonitorRegistrySecurity(RegistryKey key, SecurityIdentifier system, SecurityIdentifier admins)
+    {
+        RegistrySecurity security = key.GetAccessControl(AccessControlSections.Access);
+        if (!security.AreAccessRulesProtected)
+        {
+            throw new InvalidOperationException("Port monitor registry-key ACL inheritance is still enabled.");
+        }
+
+        RegistryAccessRule[] rules = security.GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier))
+            .Cast<RegistryAccessRule>()
+            .ToArray();
+        foreach (SecurityIdentifier identity in new[] { system, admins })
+        {
+            RegistryAccessRule? rule = rules.SingleOrDefault(candidate => identity.Equals(candidate.IdentityReference));
+            if (rule is null || rule.AccessControlType != AccessControlType.Allow || (rule.RegistryRights & RegistryRights.FullControl) != RegistryRights.FullControl)
+            {
+                throw new InvalidOperationException("Port monitor registry-key ACL does not match the hardened security specification.");
+            }
+        }
+
+        if (rules.Length != 2)
+        {
+            throw new InvalidOperationException("Port monitor registry key contains an unexpected explicit access rule.");
+        }
     }
 
     private static string EscapeSingleQuoted(string value)

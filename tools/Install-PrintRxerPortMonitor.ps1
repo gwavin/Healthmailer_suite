@@ -1,3 +1,5 @@
+#Requires -RunAsAdministrator
+
 [CmdletBinding()]
 param(
     [switch]$RestartSpoolerAfterInstall = $true,
@@ -22,6 +24,77 @@ $icaclsExe = Join-Path $env:WINDIR 'System32\icacls.exe'
 $logDirectory = Join-Path $repoRoot 'bin\logs'
 $logPath = Join-Path $logDirectory 'Install-PrintRxerPortMonitor.log'
 $bootstrapLogPath = Join-Path $logDirectory 'Install-PrintRxerPortMonitor.bootstrap.log'
+
+function Set-HardenedPortMonitorFileAcl {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $acl = Get-Acl -LiteralPath $Path
+    $acl.SetAccessRuleProtection($true, $false)
+    foreach ($rule in @($acl.Access)) {
+        $acl.RemoveAccessRuleAll($rule)
+    }
+    $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new('SYSTEM', 'FullControl', 'Allow'))
+    $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new('BUILTIN\Administrators', 'FullControl', 'Allow'))
+    $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new('NT AUTHORITY\LOCAL SERVICE', 'ReadAndExecute,Read', 'Allow'))
+    Set-Acl -LiteralPath $Path -AclObject $acl
+}
+
+function Set-HardenedPortMonitorRegistryAcl {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $acl = Get-Acl -LiteralPath $Path
+    $acl.SetAccessRuleProtection($true, $false)
+    foreach ($rule in @($acl.Access)) {
+        $acl.RemoveAccessRuleAll($rule)
+    }
+    $acl.AddAccessRule([Security.AccessControl.RegistryAccessRule]::new('SYSTEM', 'FullControl', 'Allow'))
+    $acl.AddAccessRule([Security.AccessControl.RegistryAccessRule]::new('BUILTIN\Administrators', 'FullControl', 'Allow'))
+    Set-Acl -LiteralPath $Path -AclObject $acl
+}
+
+function Assert-HardenedPortMonitorFileAcl {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $expected = @{
+        'S-1-5-18' = [Security.AccessControl.FileSystemRights]::FullControl
+        'S-1-5-32-544' = [Security.AccessControl.FileSystemRights]::FullControl
+        'S-1-5-19' = [Security.AccessControl.FileSystemRights]::ReadAndExecute -bor [Security.AccessControl.FileSystemRights]::Read
+    }
+    $acl = Get-Acl -LiteralPath $Path
+    if (-not $acl.AreAccessRulesProtected) {
+        throw "Port monitor DLL ACL inheritance is enabled: $Path"
+    }
+    $rules = @($acl.Access | Where-Object { -not $_.IsInherited })
+    if ($rules.Count -ne $expected.Count) {
+        throw "Port monitor DLL has unexpected explicit ACL entries: $Path"
+    }
+    foreach ($rule in $rules) {
+        $sid = $rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+        if (-not $expected.ContainsKey($sid) -or $rule.AccessControlType -ne 'Allow' -or (($rule.FileSystemRights -band $expected[$sid]) -ne $expected[$sid])) {
+            throw "Port monitor DLL ACL does not match the hardened specification: $Path"
+        }
+    }
+}
+
+function Assert-HardenedPortMonitorRegistryAcl {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $expected = @('S-1-5-18', 'S-1-5-32-544')
+    $acl = Get-Acl -LiteralPath $Path
+    if (-not $acl.AreAccessRulesProtected) {
+        throw "Port monitor registry ACL inheritance is enabled: $Path"
+    }
+    $rules = @($acl.Access | Where-Object { -not $_.IsInherited })
+    if ($rules.Count -ne $expected.Count) {
+        throw "Port monitor registry key has unexpected explicit ACL entries: $Path"
+    }
+    foreach ($rule in $rules) {
+        $sid = $rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+        if ($sid -notin $expected -or $rule.AccessControlType -ne 'Allow' -or (($rule.RegistryRights -band [Security.AccessControl.RegistryRights]::FullControl) -ne [Security.AccessControl.RegistryRights]::FullControl)) {
+            throw "Port monitor registry ACL does not match the hardened specification: $Path"
+        }
+    }
+}
 
 function Write-BootstrapTrace {
     param(
@@ -250,6 +323,8 @@ try {
     } else {
         Copy-Item -LiteralPath $builtDllPath -Destination $systemDllPath -Force
     }
+    Set-HardenedPortMonitorFileAcl -Path $systemDllPath
+    Assert-HardenedPortMonitorFileAcl -Path $systemDllPath
 
     Start-Service -Name Spooler
     Wait-ServiceStatus -Name Spooler -Status Running
@@ -287,6 +362,9 @@ public static class PrintRxerNativeMethods
             throw "AddMonitor failed with Win32 error $lastError."
         }
     }
+    Set-HardenedPortMonitorRegistryAcl -Path $monitorRegistryPath
+    Assert-HardenedPortMonitorRegistryAcl -Path $monitorRegistryPath
+    Assert-HardenedPortMonitorFileAcl -Path $systemDllPath
 
     if ($RestartSpoolerAfterInstall) {
         Restart-Service -Name Spooler -Force

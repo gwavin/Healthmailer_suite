@@ -37,6 +37,8 @@ printRxer does not process another user's captured job by default. If `submittin
 
 printRxer also waits for the captured payload to be stable before opening the picker. The payload must exist, be non-empty, be old enough to satisfy the stability window, and be readable. This avoids picker prompts for partially written XPS/OXPS files.
 
+The native port monitor is loaded by the Windows Print Spooler under `NT AUTHORITY\SYSTEM`. Installation fixes `PrintRxerPortMonitor.dll` directly under `%SystemRoot%\System32`, replaces its inherited DACL with explicit SYSTEM and Administrators full control plus LocalService read/execute, and restricts the monitor registry key to SYSTEM and Administrators. Installation fails if these ACL checks do not pass. Port-monitor and driver repair scripts require an elevated administrative PowerShell session.
+
 ## Audit Evidence
 
 HealthMailer writes `result.json` for terminal outcomes and preserves packages in `sent`, `failed`, or `quarantine`.

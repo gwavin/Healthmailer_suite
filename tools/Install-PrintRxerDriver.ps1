@@ -1,3 +1,5 @@
+#Requires -RunAsAdministrator
+
 [CmdletBinding()]
 param(
     [switch]$CreateQueue = $true,
@@ -15,6 +17,48 @@ $rundll32Exe = Join-Path $env:WINDIR 'System32\rundll32.exe'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $logDirectory = Join-Path $repoRoot 'bin\logs'
 $logPath = Join-Path $logDirectory 'Install-PrintRxerDriver.log'
+$portMonitorDllPath = Join-Path $env:WINDIR 'System32\PrintRxerPortMonitor.dll'
+
+function Set-HardenedPortMonitorFileAcl {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $acl = Get-Acl -LiteralPath $Path
+    $acl.SetAccessRuleProtection($true, $false)
+    foreach ($rule in @($acl.Access)) {
+        $acl.RemoveAccessRuleAll($rule)
+    }
+    $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new('SYSTEM', 'FullControl', 'Allow'))
+    $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new('BUILTIN\Administrators', 'FullControl', 'Allow'))
+    $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new('NT AUTHORITY\LOCAL SERVICE', 'ReadAndExecute,Read', 'Allow'))
+    Set-Acl -LiteralPath $Path -AclObject $acl
+}
+
+function Assert-HardenedPortMonitorFileAcl {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        throw "The SYSTEM-loaded port monitor DLL is missing: $Path"
+    }
+    $expected = @{
+        'S-1-5-18' = [Security.AccessControl.FileSystemRights]::FullControl
+        'S-1-5-32-544' = [Security.AccessControl.FileSystemRights]::FullControl
+        'S-1-5-19' = [Security.AccessControl.FileSystemRights]::ReadAndExecute -bor [Security.AccessControl.FileSystemRights]::Read
+    }
+    $acl = Get-Acl -LiteralPath $Path
+    if (-not $acl.AreAccessRulesProtected) {
+        throw "Port monitor DLL ACL inheritance is enabled: $Path"
+    }
+    $rules = @($acl.Access | Where-Object { -not $_.IsInherited })
+    if ($rules.Count -ne $expected.Count) {
+        throw "Port monitor DLL has unexpected explicit ACL entries: $Path"
+    }
+    foreach ($rule in $rules) {
+        $sid = $rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+        if (-not $expected.ContainsKey($sid) -or $rule.AccessControlType -ne 'Allow' -or (($rule.FileSystemRights -band $expected[$sid]) -ne $expected[$sid])) {
+            throw "Port monitor DLL ACL does not match the hardened specification: $Path"
+        }
+    }
+}
 
 function Import-RelaunchOptions {
     param(
@@ -156,6 +200,9 @@ function Test-DriverBuildPrerequisitesAvailable {
 }
 
 try {
+    Set-HardenedPortMonitorFileAcl -Path $portMonitorDllPath
+    Assert-HardenedPortMonitorFileAcl -Path $portMonitorDllPath
+
     if (-not $UsePrebuiltPackage -and -not (Test-DriverBuildPrerequisitesAvailable)) {
         if (Test-PrebuiltDriverPackageAvailable) {
             Write-Step 'Local Windows driver build tools were not found. Falling back to the prebuilt signed driver package.'
@@ -322,6 +369,7 @@ public static class PrintRxerDriverApi
     }
 
     Write-Host "Installed printer driver $driverName"
+    Assert-HardenedPortMonitorFileAcl -Path $portMonitorDllPath
     Write-Host "Catalog: $catalogPath"
     Write-Host "Certificate: $certificatePath"
     Write-Host "Log: $logPath"
