@@ -156,7 +156,8 @@ $healthConfig = $null
 $printTaskState = Get-TaskState 'printRxer'
 $healthTaskState = Get-TaskState 'HealthMailer'
 $printProgramData = "C:\ProgramData\printRxer"
-if (Test-Path -LiteralPath $printProgramData -PathType Container) {
+$printProgramDataExists = Test-Path -LiteralPath $printProgramData -PathType Container
+if ($printProgramDataExists) {
     # Folder exists
 } else {
     if ($printTaskState -eq 'NotInstalled') {
@@ -177,7 +178,8 @@ if (Test-Path -LiteralPath $PrintRxerConfig) {
 }
 
 $healthProgramData = "C:\ProgramData\HealthMailer"
-if (Test-Path -LiteralPath $healthProgramData -PathType Container) {
+$healthProgramDataExists = Test-Path -LiteralPath $healthProgramData -PathType Container
+if ($healthProgramDataExists) {
     # Folder exists
 } else {
     if ($healthTaskState -eq 'NotInstalled') {
@@ -239,6 +241,8 @@ Test-PrintRxerPortMonitorSecurity
 
 $result = [ordered]@{
     Status = if ($critical.Count -gt 0) { 'Critical' } elseif ($warnings.Count -gt 0) { 'Warning' } elseif ($printTaskState -eq 'NotInstalled' -and $healthTaskState -eq 'NotInstalled') { 'NotInstalled' } else { 'Healthy' }
+    PrintRxerProgramDataExists = $printProgramDataExists
+    HealthMailerProgramDataExists = $healthProgramDataExists
     PrintRxerConfig = $PrintRxerConfig
     HealthMailerConfig = $HealthMailerConfig
     PrintRxerTask = $printTaskState
@@ -259,6 +263,8 @@ if ($Json) {
     $result | ConvertTo-Json -Depth 5
 } else {
     Write-Host "PrintRxer Suite health: $($result.Status)"
+    Write-Host "printRxer ProgramData: $(if ($result.PrintRxerProgramDataExists) { 'Exists' } else { 'Missing' })"
+    Write-Host "HealthMailer ProgramData: $(if ($result.HealthMailerProgramDataExists) { 'Exists' } else { 'Missing' })"
     Write-Host "printRxer task: $($result.PrintRxerTask)"
     Write-Host "HealthMailer task: $($result.HealthMailerTask)"
     Write-Host "Pending/READY/failed/quarantine: $printPendingCount/$healthReadyCount/$failedCount/$quarantineCount"
