@@ -77,7 +77,7 @@ Do not manually edit or truncate `processed-ledger.jsonl`. It is duplicate-send 
 | `ValidationFailed` | Inspect `request.json`, `request.sha256`, PDF hash, and package generation source. |
 | `Duplicate` | Do not resend without governance approval; inspect ledger and prior sent package. |
 | `MailFailed` | Check Outlook is running/signed in, sender account policy, and COM registration. |
-| `ChartCopyFailed` | Mail may already have been sent; check ViewPoint/chart folder ACLs and naming rules. |
+| `ChartCopyFailed` | Legacy/deferred compatibility outcome from older evidence; chart copy is not active in the current release. Confirm mail state before handling. |
 | `Failed` | Collect logs and package evidence. |
 
 ## printRxer Deferred Captures

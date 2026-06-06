@@ -12,7 +12,7 @@ printRxer
 HealthMailer
   runs where Outlook/Healthmail is installed and signed in
   watches the handoff folder
-  validates packages, sends through local Outlook COM, optionally copies to chart/ViewPoint
+  validates packages and sends through local Outlook COM
 ```
 
 ## Deployment Scenarios
@@ -49,7 +49,7 @@ The suite preserves the lessons from the original printRxer testing:
 - `READY` prevents half-package processing.
 - SHA256 validation prevents mismatched PDF/metadata packages.
 - The duplicate ledger prevents duplicate sends.
-- Mail happens before chart/ViewPoint copy.
+- Chart/ViewPoint copy is removed/deferred in the current release.
 - Failed/quarantined packages include `result.json` and `summary.txt`.
 - HealthMailer logs are capped and rotated.
 - printRxer logs are capped and rotated.
@@ -167,12 +167,11 @@ dotnet publish .\apps\PrintRxerV3\app\PrintRxerV3.App.csproj -c Release -r win-x
 
 ## HealthMailer Install
 
-Use the suite launcher from the release ZIP. It starts the HealthMailer component installer and asks for the handoff folder and optional ViewPoint/chart folder.
+Use the suite launcher from the release ZIP. It starts the HealthMailer component installer and asks for the handoff folder.
 
 The wizard asks for:
 
 1. The printRxer handoff folder.
-2. Optional ViewPoint/chart import folder.
 
 It writes:
 

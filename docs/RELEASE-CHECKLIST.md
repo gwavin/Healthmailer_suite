@@ -51,8 +51,7 @@
 - [ ] Duplicate package is quarantined and not resent.
 - [ ] Stale lock is retried.
 - [ ] Fresh lock is left alone.
-- [ ] Mail failure does not copy to chart/ViewPoint.
-- [ ] Chart-copy failure after mail is recorded as `ChartCopyFailed`.
+- [ ] Confirm current release docs and config do not present removed/deferred chart/ViewPoint copy as available.
 - [ ] `result.json` and `summary.txt` are present for terminal outcomes.
 - [ ] Optional `summary.html` has no scripts or external resources.
 - [ ] HealthMailer log rotation caps `healthmailer.log` and old logs.

@@ -124,19 +124,21 @@ Example:
 }
 ```
 
+`chartCopied` and `chartCopyPath` are retained legacy compatibility fields. Chart/ViewPoint copy is removed/deferred in the current release, so new results report `false` and an empty path.
+
 ## Outcomes
 
 | Outcome | Meaning | Terminal folder |
 | --- | --- | --- |
-| `Sent` | Mail handoff succeeded and optional chart copy succeeded or was disabled. | `sent` |
+| `Sent` | Mail handoff succeeded. | `sent` |
 | `Failed` | Unexpected processor failure. | `failed` |
 | `Quarantined` | Reserved for quarantined safety outcome. | `quarantine` |
 | `Duplicate` | Package ID or completed package hash already sent. | `quarantine` |
 | `ValidationFailed` | Package malformed or hash mismatch. | `quarantine` |
 | `RecipientRejected` | Recipient email is blank, malformed, or outside the HealthMailer allowed domain list. | `quarantine` |
 | `ValidatedNoSend` | Package validated while `SendMail=false`; no Outlook send occurred. | `validated-no-send` |
-| `ChartCopyFailed` | Mail succeeded, chart copy failed. | `failed` |
-| `MailFailed` | Outlook handoff failed before chart copy. | `failed` |
+| `ChartCopyFailed` | Legacy/deferred compatibility outcome; not produced by the current chart-copy-disabled processing path. | `failed` |
+| `MailFailed` | Outlook handoff failed. | `failed` |
 
 ## Ledger
 

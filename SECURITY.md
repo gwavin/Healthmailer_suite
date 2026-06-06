@@ -29,7 +29,7 @@ HealthMailer sends only packages that pass all checks:
 - selected recipient email is present
 - duplicate-send ledger does not already contain the package ID or completed package hash
 
-The `READY` marker prevents half-written packages from being processed. SHA256 validation prevents mismatched PDF/metadata packages. Mail send happens before optional chart/ViewPoint copy, so chart import is not attempted for unsent mail unless the implementation is deliberately changed later.
+The `READY` marker prevents half-written packages from being processed. SHA256 validation prevents mismatched PDF/metadata packages. Chart/ViewPoint copy is removed/deferred in the current release.
 
 ## Print Capture Controls
 
@@ -59,7 +59,7 @@ The ledger is treated as safety-critical duplicate-send evidence. HealthMailer r
 
 ## Failure Handling
 
-Validation failures and duplicates are quarantined. Mail failures and chart-copy failures are archived to `failed` with distinct result outcomes. HealthMailer fails closed: malformed packages are not sendable work.
+Validation failures and duplicates are quarantined. Mail failures are archived to `failed`. HealthMailer fails closed: malformed packages are not sendable work.
 
 Failed and quarantined packages include `result.json` and `summary.txt` where a terminal HealthMailer outcome is reached. printRxer deferred captures include a readable `printRxer_failure.txt` reason.
 
@@ -84,11 +84,11 @@ Local folder hardening is role-specific:
 
 ## Chart/ViewPoint Copy
 
-Chart/ViewPoint copy may create both a PDF and a sidecar JSON file. The sidecar can contain patient identifiers such as MRN and patient name, plus package ID and PDF hash. Enable this only for an approved local or server-side chart import folder with appropriate access controls.
+Chart/ViewPoint copy is removed/deferred and cannot be enabled in the current release. Legacy audit fields and the `ChartCopyFailed` outcome remain readable for compatibility with older evidence.
 
 ## Known Limits
 
 - Outlook ultimately controls onward mail transmission.
 - Shared folder ACLs cannot be fully enforced by application code.
 - PDF import workflows may have weaker original print-job identity metadata than native print capture.
-- ViewPoint/chart import naming must be confirmed locally before clinical use.
+- Any future ViewPoint/chart import workflow requires separate design, security review, and local validation before clinical use.

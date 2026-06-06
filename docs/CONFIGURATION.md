@@ -12,7 +12,9 @@ The easiest configuration path is:
 HealthMailer.exe --install
 ```
 
-The installer asks for the handoff folder and optional ViewPoint/chart folder, writes config, registers the scheduled task, and validates the result.
+The installer asks for the handoff folder, writes config, registers the scheduled task, and validates the result.
+
+Chart/ViewPoint copy is removed/deferred in the current release. It is not a supported configuration option.
 
 ## Settings
 
@@ -30,10 +32,6 @@ The installer asks for the handoff folder and optional ViewPoint/chart folder, w
 | `AllowedRecipientDomains` | Final HealthMailer send-boundary recipient domain allow-list. | `healthmail.ie`, `hse.ie`, `nmh.ie`, `rotunda.ie` |
 | `Logging.MaxLogBytes` | Active log size cap before rotation. | `10485760` |
 | `Logging.MaxLogFiles` | Number of rotated logs to keep. | `5` |
-| `ChartCopy.Enabled` | Enables post-mail chart/ViewPoint copy. | `false` |
-| `ChartCopy.DestinationRoot` | Chart/ViewPoint import folder. | empty |
-| `ChartCopy.FileNameTemplate` | PDF filename template for chart copy. | `Rx-{MRN}-{PackageId}.pdf` |
-| `ChartCopy.RequireMrn` | Fails chart copy if MRN is unavailable. | `true` |
 
 Derived paths under `LocalRoot`:
 
@@ -68,12 +66,6 @@ processed-ledger.jsonl
   "Logging": {
     "MaxLogBytes": 10485760,
     "MaxLogFiles": 5
-  },
-  "ChartCopy": {
-    "Enabled": false,
-    "DestinationRoot": "",
-    "FileNameTemplate": "Rx-{MRN}-{PackageId}.pdf",
-    "RequireMrn": true
   }
 }
 ```
@@ -100,12 +92,6 @@ processed-ledger.jsonl
   "Logging": {
     "MaxLogBytes": 10485760,
     "MaxLogFiles": 5
-  },
-  "ChartCopy": {
-    "Enabled": true,
-    "DestinationRoot": "\\\\server\\ViewPointImport$",
-    "FileNameTemplate": "Rx-{MRN}-{PackageId}.pdf",
-    "RequireMrn": true
   }
 }
 ```

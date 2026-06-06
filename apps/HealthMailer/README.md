@@ -2,7 +2,7 @@
 
 HealthMailer is the local Outlook courier for printRxer handoff packages.
 
-It watches a configured handoff folder, validates a completed printRxer package, sends the PDF through the logged-in user's Outlook profile, optionally copies the PDF to a ViewPoint/chart import folder, writes terminal audit records, and archives the package locally.
+It watches a configured handoff folder, validates a completed printRxer package, sends the PDF through the logged-in user's Outlook profile, writes terminal audit records, and archives the package locally.
 
 ## Runtime Flow
 
@@ -20,8 +20,6 @@ validate READY + PDF signature + SHA256
 recipient domain allow-list + live-send approval
         |
 Outlook COM send using current user profile
-        |
-optional chart/ViewPoint copy
         |
 result.json + summary.txt
         |
@@ -46,10 +44,7 @@ Run the setup wizard:
 .\publish\HealthMailer\HealthMailer.exe --install
 ```
 
-The wizard asks the user to browse to:
-
-- the printRxer handoff folder
-- optionally, the ViewPoint/chart import folder
+The wizard asks the user to browse to the printRxer handoff folder.
 
 It writes config to:
 
@@ -91,16 +86,15 @@ HealthMailer also maintains:
 
 The ledger records package IDs and completed package hashes once `MailSent=true`.
 If either value is seen again, HealthMailer quarantines the duplicate instead of
-sending it, including cases where chart/ViewPoint copy failed after mail handoff.
+sending it. Legacy chart-copy audit outcomes remain readable for compatibility.
 
 The default processing order is:
 
 ```text
-validate -> mail send -> chart/ViewPoint copy -> result.json -> archive
+validate -> mail send -> result.json -> archive
 ```
 
-Chart/ViewPoint copy therefore happens only after a successful mail handoff
-unless code is explicitly changed to use a different policy.
+Chart/ViewPoint copy is removed/deferred in the current release.
 
 For local folders, the installer attempts to harden ACLs for the HealthMailer root and configured folders. For shared folders, ACLs must still be set correctly on the file server. The share should be restricted to the printRxer writer identity, the HealthMailer runtime user, local admins, and authorised support admins only.
 
@@ -149,13 +143,5 @@ powershell -ExecutionPolicy Bypass -File .\tools\Uninstall-HealthMailer.ps1 -Rem
 
 ## ViewPoint Import
 
-The chart-copy feature is configurable but conservative by default. It uses this filename template:
-
-```text
-Rx-{MRN}-{PackageId}.pdf
-```
-
-and writes a JSON sidecar containing package ID, MRN, patient name, copied timestamp, and PDF SHA256.
-
-The exact ViewPoint import filename convention still needs confirmation from the local ViewPoint documentation or vendor/admin configuration. Until that is confirmed, the filename template should be treated as a safe placeholder rather than a guaranteed chart-ingestion contract.
+ViewPoint/chart copy is removed/deferred and cannot be enabled in the current release. Legacy audit fields and outcomes remain readable for compatibility with older evidence. Any future import workflow requires separate design, security review, and local validation.
 

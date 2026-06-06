@@ -72,6 +72,17 @@ public sealed class GovernanceDocumentTests
         Assert.Contains("ResolveAll", text, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Test]
+    public void Current_release_guidance_marks_chart_copy_removed_or_deferred()
+    {
+        string configuration = File.ReadAllText(Path.Combine(RepositoryRoot(), "docs", "CONFIGURATION.md"));
+        string checklist = File.ReadAllText(Path.Combine(RepositoryRoot(), "docs", "RELEASE-CHECKLIST.md"));
+
+        Assert.Contains("removed/deferred", configuration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("ChartCopy.Enabled", configuration, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Chart-copy failure after mail", checklist, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string RepositoryRoot()
     {
         string current = AppContext.BaseDirectory;

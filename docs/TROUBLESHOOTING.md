@@ -112,15 +112,9 @@ Check:
 - The sender mailbox is locally approved.
 - The HealthMailer scheduled task is running in the intended user session.
 
-## Chart/ViewPoint Copy Fails
+## Legacy Chart/ViewPoint Copy Outcome
 
-If `result.json` shows `ChartCopyFailed`, mail may already have been sent. Check:
-
-- chart folder path
-- UNC availability
-- ACLs for HealthMailer runtime user
-- MRN availability when `RequireMrn=true`
-- local ViewPoint import naming rules
+Chart/ViewPoint copy is removed/deferred in the current release. If older evidence contains `ChartCopyFailed`, confirm whether mail was sent and preserve the evidence for review. Do not attempt to enable chart copy through current configuration.
 
 ## Duplicate Package
 
