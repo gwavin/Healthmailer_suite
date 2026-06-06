@@ -53,6 +53,9 @@
 
     <h2>Installation</h2>
     <ul>
+        <li><strong>Smoke test first:</strong> run <code>.\PrintRxerSuiteInstaller.exe --smoke-test</code> from the extracted suite ZIP and stop if it fails.</li>
+        <li><strong>Provision:</strong> use <code>.\payload\setup\printRxerSetup.exe</code> and <code>.\payload\setup\HealthMailerSetup.exe</code> with the same handoff path.</li>
+        <li><strong>Validate:</strong> run both component setup executables with <code>--validate</code> after installation.</li>
         <li>Run printRxer installation in an administrator-capable context because it installs the port monitor, PrintRxer XPS driver, printer queue, app files, and watcher task.</li>
         <li>Run HealthMailer setup as the intended Outlook/Healthmail sender user so Outlook COM and the scheduled task use the correct Windows profile.</li>
         <li>Live sending requires explicit installer-created approval. Use dry-run validation before enabling sending.</li>

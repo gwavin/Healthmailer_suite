@@ -18,6 +18,39 @@
 | printRxer recipient cache | `C:\ProgramData\printRxer\data\recipients\recipients.cache.csv` |
 | printRxer recipient status | `C:\ProgramData\printRxer\data\recipients\recipient-source-status.json` |
 
+## Post-install Audit Matrix
+
+Run from the extracted suite ZIP root:
+
+```powershell
+# Smoke-test extracted bundle before install
+$p = Start-Process -FilePath .\PrintRxerSuiteInstaller.exe -ArgumentList "--smoke-test" -Wait -PassThru
+$p.ExitCode
+
+# Validate installed components
+$p = Start-Process -FilePath .\payload\setup\printRxerSetup.exe -ArgumentList "--validate" -Wait -PassThru
+$p.ExitCode
+
+$p = Start-Process -FilePath .\payload\setup\HealthMailerSetup.exe -ArgumentList "--validate" -Wait -PassThru
+$p.ExitCode
+
+# Verify SYSTEM-loaded print-capture ACLs
+Get-Acl "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer Port Monitor" | Format-List AccessToString
+Get-Acl "$env:WINDIR\System32\PrintRxerPortMonitor.dll" | Format-List AccessToString
+
+# Verify all-users printRxer watcher task
+$task = Get-ScheduledTask -TaskName printRxer
+$task.Principal | Select-Object UserId, GroupId, RunLevel, LogonType
+$task.Settings | Select-Object MultipleInstances
+```
+
+Compliance checks:
+
+- If `BUILTIN\Users`, `Authenticated Users`, or ordinary domain user groups have Write, Modify, FullControl, SetValue, ChangePermissions, or TakeOwnership permissions on `PrintRxerPortMonitor.dll` or the PrintRxer port monitor registry key, the installation is outside compliance bounds and must be re-evaluated.
+- Expected native component control is SYSTEM and Administrators full control, with only required service read/execute access where applicable.
+- The printRxer scheduled task should be an all-users logon task with limited run level and parallel instances so shared workstations do not bind the watcher to the installing administrator account.
+- Confirm two different non-admin test users can log on, print to the local `printRxer` printer, and receive only their own picker session.
+
 ## Scheduled Task
 
 ```powershell

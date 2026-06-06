@@ -96,9 +96,17 @@ processed-ledger.jsonl
 }
 ```
 
-UNC paths are preferred over mapped drive letters for scheduled tasks.
+Mapped drives are not supported for scheduled-task handoff paths. Use UNC paths directly.
 
-Local ACL hardening is best-effort and applies only to local NTFS paths. HealthMailer does not create or harden unavailable UNC handoff roots; UNC share and NTFS permissions must be configured server-side by IT.
+## Local Security Boundaries
+
+Security hardening is built into installer and runtime setup paths. `%ProgramFiles%` holds protected application binaries. `%ProgramData%` holds mutable local data, logs, archives, configuration, ledger, recipient cache, and outbox material.
+
+The printRxer installer validates that its protected application workspace resolves under Program Files and that its data directories resolve under ProgramData. These roots must remain separate and non-nested. For printRxer local recipient/cache paths and SYSTEM-loaded print-capture components, ACL hardening is part of the installation safety boundary. Environments that prevent explicit restriction and verification of those permissions fail installation with a `FatalSecurityException`.
+
+HealthMailer applies local NTFS hardening to its ProgramData evidence, config, log, archive, and ledger folders where possible. UNC handoff shares are not secured by application code. Server-side share and NTFS permissions must be configured and verified by IT before live PHI testing.
+
+Group Policy and endpoint security controls must not prevent installer ACL application on local ProgramData or System32 print-capture assets. Any exception must be investigated rather than bypassed.
 
 Local HealthMailer archives, failed packages, quarantine, logs, config, and ledger are restricted evidence stores. The local handoff/drop folder is the only category that may intentionally allow broader local write access for same-machine printRxer to HealthMailer compatibility.
 
@@ -131,7 +139,7 @@ HealthMailer.exe --process-once --config C:\ProgramData\HealthMailer\healthmaile
 Quiet install can set sent prescription PDF retention explicitly:
 
 ```powershell
-.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true --sent-prescription-retention-days 14
+.\payload\setup\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true --sent-prescription-retention-days 14
 ```
 
 ## Scripted IT Configuration

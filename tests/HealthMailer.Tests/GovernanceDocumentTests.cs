@@ -83,6 +83,25 @@ public sealed class GovernanceDocumentTests
         Assert.DoesNotContain("Chart-copy failure after mail", checklist, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Test]
+    public void Deployment_guidance_is_a_prescriptive_security_aware_playbook()
+    {
+        string root = RepositoryRoot();
+        string deployment = File.ReadAllText(Path.Combine(root, "DEPLOYMENT.md"));
+        string configuration = File.ReadAllText(Path.Combine(root, "docs", "CONFIGURATION.md"));
+        string contract = File.ReadAllText(Path.Combine(root, "docs", "HANDOFF-CONTRACT.md"));
+        string runbook = File.ReadAllText(Path.Combine(root, "docs", "OPERATIONS-RUNBOOK.md"));
+
+        Assert.Contains(@"PrintRxerSuiteInstaller.exe -ArgumentList ""--smoke-test""", deployment, StringComparison.Ordinal);
+        Assert.Contains(@"payload\setup\printRxerSetup.exe", deployment, StringComparison.Ordinal);
+        Assert.Contains(@"payload\setup\HealthMailerSetup.exe", deployment, StringComparison.Ordinal);
+        Assert.Contains("RequireJobOwnerMatch=true", deployment, StringComparison.Ordinal);
+        Assert.Contains("AllowMissingSubmittingSid=false", deployment, StringComparison.Ordinal);
+        Assert.Contains("FatalSecurityException", configuration, StringComparison.Ordinal);
+        Assert.Contains("cryptographically validated pipeline", contract, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(@"Get-Acl ""$env:WINDIR\System32\PrintRxerPortMonitor.dll""", runbook, StringComparison.Ordinal);
+    }
+
     private static string RepositoryRoot()
     {
         string current = AppContext.BaseDirectory;

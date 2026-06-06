@@ -15,6 +15,25 @@ printRxer creates a package folder for HealthMailer.
 
 HealthMailer ignores directories beginning with `.` and processes only final folders containing `READY`.
 
+## Operational Boundary
+
+The shared handoff folder is an automated, cryptographically validated pipeline. Do not manually create, edit, repair, rename, or delete active package files except under an approved support procedure.
+
+Manual manipulation of `request.json`, `request.sha256`, `prescription.pdf`, or `READY` will normally cause validation failure, quarantine, duplicate detection, or loss of audit clarity.
+
+HealthMailer cross-checks that:
+
+- the final folder is not dot-prefixed;
+- `READY` exists;
+- required files exist;
+- the PDF starts with `%PDF-`;
+- the PDF hash matches `request.json`;
+- the PDF hash matches `request.sha256`;
+- the recipient domain is allowed; and
+- the package ID and completed package hash are not already in the ledger.
+
+These controls reject packages that fail validation and reduce spoofing and accidental-ingestion risk. The ledger prevents duplicate sends by package ID and completed package hash. The handoff folder should normally be empty or contain only active package folders.
+
 ## `request.json`
 
 Required fields include:

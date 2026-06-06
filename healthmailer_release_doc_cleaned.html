@@ -78,12 +78,7 @@
   </p>
 
   <h3>SHA-256 Checksums</h3>
-  <p>Verify the integrity of downloaded zip files before distribution:</p>
-  <ul>
-    <li><strong>printRxerSuite-v5.zip:</strong> <code>9b01ac0fc8ec3279be5d46a6d60caacf5fec2eeb3407993678c0b460b3eac3fe</code></li>
-    <li><strong>printRxer-v5.zip:</strong> <code>7ed686d4ffdd338d7ae0991c63683a7bc4659d554366c5c3ee5fd18e24d5bcc0</code></li>
-    <li><strong>HealthMailer-v5.zip:</strong> <code>d9aa3b50d98b72b27da1ffb7c1d95c954a7862615d7004604925a16852fefa5a</code></li>
-  </ul>
+  <p>Verify release ZIPs against the <code>SHA256SUMS.txt</code> supplied in the release bundle.</p>
 
   <h2>Deployment Roles</h2>
   <ul>
@@ -189,38 +184,45 @@ Move-Item -LiteralPath $temporaryFile -Destination $activeFile -Force</code></pr
     the port monitor, XPS driver, and local <code>printRxer</code> printer queue.
   </div>
 
-  <h2>Quiet / Enterprise Installation Commands</h2>
+  <h2>Three-Phase Deployment</h2>
   <p>
-    Run commands from the extracted release bundle folder. When using PowerShell, use
-    <code>Start-Process -Wait -PassThru</code> so GUI executables complete and return an exit code.
+    Run commands from the extracted suite ZIP root. Use <code>Start-Process -Wait -PassThru</code>
+    so GUI executables complete and return an exit code. Stop deployment on any non-zero exit code.
   </p>
 
-  <p><strong>printRxer printing machine:</strong></p>
-  <pre><code>$p = Start-Process -FilePath .\printRxerSetup.exe -ArgumentList @(
+  <h3>Phase 1: Pre-flight</h3>
+  <pre><code>$p = Start-Process -FilePath .\PrintRxerSuiteInstaller.exe -ArgumentList "--smoke-test" -Wait -PassThru
+$p.ExitCode</code></pre>
+
+  <h3>Phase 2: Provision</h3>
+  <pre><code>$handoffRoot = "\\server\HealthMailerDrop$\incoming"
+
+$p = Start-Process -FilePath .\payload\setup\printRxerSetup.exe -ArgumentList @(
   "--quiet",
   "--handoff-root",
-  "\\server\HealthMailerDrop$\incoming"
+  $handoffRoot
 ) -Wait -PassThru
 $p.ExitCode</code></pre>
 
-  <p><strong>HealthMailer sending machine:</strong></p>
   <pre><code># First validation / dry-run deployment
-$p = Start-Process -FilePath .\HealthMailerSetup.exe -ArgumentList @(
+$p = Start-Process -FilePath .\payload\setup\HealthMailerSetup.exe -ArgumentList @(
   "--quiet",
   "--handoff-root",
-  "\\server\HealthMailerDrop$\incoming",
+  $handoffRoot,
   "--send-mail",
   "false"
 ) -Wait -PassThru
 $p.ExitCode
 
 # Live sending deployment, after approval
-$p = Start-Process -FilePath .\HealthMailerSetup.exe -ArgumentList @(
+$p = Start-Process -FilePath .\payload\setup\HealthMailerSetup.exe -ArgumentList @(
   "--quiet",
   "--handoff-root",
-  "\\server\HealthMailerDrop$\incoming",
+  $handoffRoot,
   "--send-mail",
-  "true"
+  "true",
+  "--sent-prescription-retention-days",
+  "14"
 ) -Wait -PassThru
 $p.ExitCode</code></pre>
 
@@ -239,14 +241,14 @@ $p.ExitCode</code></pre>
   <p><strong>Same-machine pilot:</strong></p>
   <pre><code>$handoffRoot = "C:\ProgramData\printRxer\handoff"
 
-$p = Start-Process -FilePath .\printRxerSetup.exe -ArgumentList @(
+$p = Start-Process -FilePath .\payload\setup\printRxerSetup.exe -ArgumentList @(
   "--quiet",
   "--handoff-root",
   $handoffRoot
 ) -Wait -PassThru
 $p.ExitCode
 
-$p = Start-Process -FilePath .\HealthMailerSetup.exe -ArgumentList @(
+$p = Start-Process -FilePath .\payload\setup\HealthMailerSetup.exe -ArgumentList @(
   "--quiet",
   "--handoff-root",
   $handoffRoot,
@@ -255,15 +257,11 @@ $p = Start-Process -FilePath .\HealthMailerSetup.exe -ArgumentList @(
 ) -Wait -PassThru
 $p.ExitCode</code></pre>
 
-  <h2>Validation</h2>
-  <p>Use this enterprise validation sequence after extracting the bundle and after installation.</p>
-  <pre><code>$p = Start-Process -FilePath .\PrintRxerSuiteInstaller.exe -ArgumentList "--smoke-test" -Wait -PassThru
+  <h3>Phase 3: Validate</h3>
+  <pre><code>$p = Start-Process -FilePath .\payload\setup\printRxerSetup.exe -ArgumentList "--validate" -Wait -PassThru
 $p.ExitCode
 
-$p = Start-Process -FilePath .\printRxerSetup.exe -ArgumentList "--validate" -Wait -PassThru
-$p.ExitCode
-
-$p = Start-Process -FilePath .\HealthMailerSetup.exe -ArgumentList "--validate" -Wait -PassThru
+$p = Start-Process -FilePath .\payload\setup\HealthMailerSetup.exe -ArgumentList "--validate" -Wait -PassThru
 $p.ExitCode</code></pre>
   <p>
     The suite smoke test writes <code>PrintRxerSuiteInstaller.smoke-test.log</code> to the
@@ -301,17 +299,17 @@ $p.ExitCode</code></pre>
     administrator PowerShell session so Windows can remove printer, driver, port, and ProgramData
     components. Exit code <code>3</code> means insufficient permissions.
   </p>
-  <pre><code>$p = Start-Process -FilePath .\printRxerSetup.exe -ArgumentList @("--uninstall", "--quiet") -Wait -PassThru
+  <pre><code>$p = Start-Process -FilePath .\payload\setup\printRxerSetup.exe -ArgumentList @("--uninstall", "--quiet") -Wait -PassThru
 $p.ExitCode
 
-$p = Start-Process -FilePath .\HealthMailerSetup.exe -ArgumentList @("--uninstall", "--quiet") -Wait -PassThru
+$p = Start-Process -FilePath .\payload\setup\HealthMailerSetup.exe -ArgumentList @("--uninstall", "--quiet") -Wait -PassThru
 $p.ExitCode</code></pre>
 
   <p>Clean lab reset removes local data and should be used only when explicitly approved.</p>
-  <pre><code>$p = Start-Process -FilePath .\printRxerSetup.exe -ArgumentList @("--uninstall", "--quiet", "--remove-data") -Wait -PassThru
+  <pre><code>$p = Start-Process -FilePath .\payload\setup\printRxerSetup.exe -ArgumentList @("--uninstall", "--quiet", "--remove-data") -Wait -PassThru
 $p.ExitCode
 
-$p = Start-Process -FilePath .\HealthMailerSetup.exe -ArgumentList @("--uninstall", "--quiet", "--remove-data") -Wait -PassThru
+$p = Start-Process -FilePath .\payload\setup\HealthMailerSetup.exe -ArgumentList @("--uninstall", "--quiet", "--remove-data") -Wait -PassThru
 $p.ExitCode</code></pre>
 
   <h2>Logs</h2>

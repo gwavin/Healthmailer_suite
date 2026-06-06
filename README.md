@@ -49,32 +49,32 @@ powershell -ExecutionPolicy Bypass -File .\tools\New-PrintRxerSuiteReleaseBundle
 
 The generated ZIPs are written under `dist\`. For normal installation, use `printRxerSuite-<version>.zip`, extract it, and run `PrintRxerSuiteInstaller.exe`.
 
-Support can run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted bundle folder to validate the bundle layout without installing anything. It writes `PrintRxerSuiteInstaller.smoke-test.log` beside the suite installer where possible.
+Normal IT handoff starts with `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted bundle folder. It validates the bundle layout without installing anything and writes `PrintRxerSuiteInstaller.smoke-test.log` beside the suite installer where possible. The full deterministic deployment flow is in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Short Enterprise Examples
 
 Run commands from the extracted suite ZIP root when IT deployment tooling requires quiet mode.
 
 ```powershell
-.\printRxerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming"
-.\printRxerSetup.exe --validate
+.\payload\setup\printRxerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming"
+.\payload\setup\printRxerSetup.exe --validate
 
-.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true --sent-prescription-retention-days 14
-.\HealthMailerSetup.exe --validate
+.\payload\setup\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true --sent-prescription-retention-days 14
+.\payload\setup\HealthMailerSetup.exe --validate
 ```
 
 Standard uninstall preserves local data/logs/archives by default:
 
 ```powershell
-.\printRxerSetup.exe --uninstall --quiet
-.\HealthMailerSetup.exe --uninstall --quiet
+.\payload\setup\printRxerSetup.exe --uninstall --quiet
+.\payload\setup\HealthMailerSetup.exe --uninstall --quiet
 ```
 
 Clean lab reset is explicit:
 
 ```powershell
-.\printRxerSetup.exe --uninstall --quiet --remove-data
-.\HealthMailerSetup.exe --uninstall --quiet --remove-data
+.\payload\setup\printRxerSetup.exe --uninstall --quiet --remove-data
+.\payload\setup\HealthMailerSetup.exe --uninstall --quiet --remove-data
 ```
 
 ## Safety Notes
