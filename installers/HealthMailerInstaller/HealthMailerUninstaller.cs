@@ -19,20 +19,10 @@ internal static class HealthMailerUninstaller
         log("Stopping and removing HealthMailer watcher task.");
         TryStep(() => RemoveWatcher(log), "Watcher cleanup", log);
 
-        if (removeData)
-        {
-            log("Removing ProgramData lab-reset data.");
-            TryStep(() => DeleteDirectoryBestEffort(InstallerPaths.ProgramDataRoot, log), "ProgramData cleanup", log);
-        }
-        else
-        {
-            log("Preserving ProgramData: " + InstallerPaths.ProgramDataRoot);
-        }
-
         log("Removing installed application files.");
         if (Directory.Exists(InstallerPaths.ProgramFilesRoot))
         {
-            TryStep(() => DeleteDirectoryBestEffort(InstallerPaths.ProgramFilesRoot, log), "Application file cleanup", log);
+            TryStep(() => RemoveProtectedApplicationDirectory(log), "Application file cleanup", log);
         }
 
         if (Directory.Exists(InstallerPaths.LegacyProgramFilesRoot))
@@ -40,11 +30,49 @@ internal static class HealthMailerUninstaller
             TryStep(() => DeleteDirectoryBestEffort(InstallerPaths.LegacyProgramFilesRoot, log), "Legacy application file cleanup", log);
         }
 
-        if (removeData && Directory.Exists(InstallerPaths.ProgramDataRoot))
+        if (removeData)
         {
-            log("Checking for late-created ProgramData folders.");
-            TryStep(() => RemoveWatcher(log), "Late watcher cleanup", log);
-            TryStep(() => DeleteDirectoryBestEffort(InstallerPaths.ProgramDataRoot, log), "Final ProgramData cleanup", log);
+            log("Removing remaining ProgramData lab-reset data after application file cleanup.");
+            if (Directory.Exists(InstallerPaths.ProgramDataRoot))
+            {
+                TryStep(() => DeleteDirectoryBestEffort(InstallerPaths.ProgramDataRoot, log), "Final ProgramData cleanup", log);
+            }
+        }
+        else
+        {
+            log("Preserving ProgramData evidence except installed application files: " + InstallerPaths.ProgramDataRoot);
+        }
+    }
+
+    private static void RemoveProtectedApplicationDirectory(Action<string> log)
+    {
+        log("Preparing hardened HealthMailer application folder for removal.");
+        InstallerSecurity.PrepareApplicationDirectoryForRemoval(InstallerPaths.ProgramFilesRoot);
+        DeleteProtectedApplicationDirectory(InstallerPaths.ProgramFilesRoot);
+    }
+
+    private static void DeleteProtectedApplicationDirectory(string path)
+    {
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            try
+            {
+                Directory.Delete(path, recursive: true);
+                return;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                if (attempt < 2)
+                {
+                    Thread.Sleep(500);
+                    continue;
+                }
+
+                InstallerSecurity.HardenApplicationDirectory(path);
+                throw new IOException(
+                    "Could not remove the protected HealthMailer application folder. A Windows process may still hold HealthMailer.exe. Restart Windows and rerun uninstall.",
+                    ex);
+            }
         }
     }
 
@@ -80,6 +108,13 @@ Get-ScheduledTask -TaskName 'HealthMailer' -ErrorAction SilentlyContinue | ForEa
     Unregister-ScheduledTask -TaskName 'HealthMailer' -Confirm:$false -ErrorAction SilentlyContinue
 }
 Get-Process -Name 'HealthMailer' -ErrorAction SilentlyContinue | Stop-Process -Force
+$deadline = (Get-Date).AddSeconds(10)
+while ((Get-Process -Name 'HealthMailer' -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
+    Start-Sleep -Milliseconds 250
+}
+if (Get-Process -Name 'HealthMailer' -ErrorAction SilentlyContinue) {
+    throw 'HealthMailer process did not stop before uninstall. Restart Windows and rerun uninstall.'
+}
 ";
         string output = ProcessRunner.PowerShell(command, requireSuccess: false);
         LogOutput(output, log);

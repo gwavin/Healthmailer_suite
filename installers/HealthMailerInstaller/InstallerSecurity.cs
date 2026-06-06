@@ -46,6 +46,25 @@ internal static class InstallerSecurity
         }
     }
 
+    public static void PrepareApplicationDirectoryForRemoval(string path)
+    {
+        try
+        {
+            DirectoryInfo directory = new(path);
+            DirectorySecurity security = directory.GetAccessControl(AccessControlSections.Access);
+            security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+            security.SetAccessRule(DirectoryRule(CurrentUserSid(), FileSystemRights.FullControl));
+            directory.SetAccessControl(security);
+        }
+        catch (Exception ex) when (ex is not FatalSecurityException)
+        {
+            throw new FatalSecurityException(
+                "Could not prepare HealthMailer application binary folder '" + path +
+                "' for removal. Restart Windows and rerun uninstall as the owning sender user or with approved administrative support.",
+                ex);
+        }
+    }
+
     public static void HardenApplicationDirectory(string path)
     {
         try

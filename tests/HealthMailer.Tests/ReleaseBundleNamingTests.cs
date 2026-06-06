@@ -312,6 +312,17 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("public static bool HasLocalData()", uninstaller, StringComparison.Ordinal);
         Assert.Contains("icacls $path /grant:r", uninstaller, StringComparison.Ordinal);
         Assert.Contains("Remove-Item -LiteralPath $path -Recurse -Force", uninstaller, StringComparison.Ordinal);
+        int appCleanupIndex = uninstaller.IndexOf("RemoveProtectedApplicationDirectory(log)", StringComparison.Ordinal);
+        int programDataCleanupIndex = uninstaller.IndexOf("DeleteDirectoryBestEffort(InstallerPaths.ProgramDataRoot", StringComparison.Ordinal);
+        Assert.True(appCleanupIndex >= 0, "HealthMailer uninstall must prepare and remove the hardened app folder.");
+        Assert.True(programDataCleanupIndex > appCleanupIndex, "HealthMailer app-folder cleanup must happen before remove-data ProgramData cleanup.");
+        Assert.Contains("InstallerSecurity.PrepareApplicationDirectoryForRemoval(InstallerPaths.ProgramFilesRoot)", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("DeleteProtectedApplicationDirectory(InstallerPaths.ProgramFilesRoot)", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("InstallerSecurity.HardenApplicationDirectory(path)", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("Restart Windows and rerun uninstall.", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("Preserving ProgramData evidence except installed application files", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("Final ProgramData cleanup", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("HealthMailer process did not stop before uninstall", uninstaller, StringComparison.Ordinal);
         Assert.Contains("bool useTempLog = uninstall && removeData", program, StringComparison.Ordinal);
         Assert.Contains("HealthMailer uninstall needs review. ProgramData was not fully removed.", program, StringComparison.Ordinal);
     }
