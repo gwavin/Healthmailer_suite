@@ -16,6 +16,8 @@ internal static class PrintRxerInstaller
 {
     public static void Install(InstallOptions options, Action<string> log)
     {
+        InstallerPaths.ValidateSecurityBoundaries();
+
         if (!Directory.Exists(InstallerPaths.PayloadPublishRoot))
         {
             throw new DirectoryNotFoundException("The installer payload is missing: " + InstallerPaths.PayloadPublishRoot);
@@ -131,7 +133,7 @@ internal static class PrintRxerInstaller
 
             _ = RecipientCsvValidator.LoadValidated(centralFile);
             File.Copy(centralFile, cacheDestination, overwrite: true);
-            TryHardenFile(cacheDestination, FileSystemRights.Modify);
+            HardenFile(cacheDestination, FileSystemRights.Modify);
             log("RecipientCacheUpdated: " + cacheDestination);
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or InvalidDataException or SystemException)
@@ -180,26 +182,31 @@ internal static class PrintRxerInstaller
     private static void HardenRecipientFiles()
     {
         string recipientRoot = Path.Combine(InstallerPaths.ProgramDataRoot, "data", "recipients");
-        TryHardenDirectory(recipientRoot, FileSystemRights.Modify);
-        TryHardenFile(Path.Combine(recipientRoot, "bundled-recipients.csv"), FileSystemRights.ReadAndExecute);
-        TryHardenFile(Path.Combine(recipientRoot, "recipients.cache.csv"), FileSystemRights.Modify);
-        TryHardenFile(Path.Combine(recipientRoot, "recipient-source-status.json"), FileSystemRights.Modify);
+        HardenDirectory(recipientRoot, FileSystemRights.Modify);
+        HardenFile(Path.Combine(recipientRoot, "bundled-recipients.csv"), FileSystemRights.ReadAndExecute);
+        HardenFile(Path.Combine(recipientRoot, "recipients.cache.csv"), FileSystemRights.Modify);
+        HardenFile(Path.Combine(recipientRoot, "recipient-source-status.json"), FileSystemRights.Modify);
     }
 
-    private static void TryHardenDirectory(string path, FileSystemRights runtimeRights)
+    private static void HardenDirectory(string path, FileSystemRights runtimeRights)
     {
         try
         {
             DirectoryInfo directory = new(path);
             directory.SetAccessControl(CreateBaseDirectorySecurity(runtimeRights));
+            VerifyDirectorySecurity(directory, runtimeRights);
         }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+        catch (FatalSecurityException)
         {
-            throw new FatalSecurityException($"Failed to secure/harden directory ACLs on {path}", ex);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new FatalSecurityException($"Fatal local security failure while applying and verifying directory ACLs on '{path}'.", ex);
         }
     }
 
-    private static void TryHardenFile(string path, FileSystemRights runtimeRights)
+    private static void HardenFile(string path, FileSystemRights runtimeRights)
     {
         if (!File.Exists(path))
         {
@@ -216,11 +223,51 @@ internal static class PrintRxerInstaller
             security.AddAccessRule(new FileSystemAccessRule(system, FileSystemRights.FullControl, AccessControlType.Allow));
             security.AddAccessRule(new FileSystemAccessRule(admins, FileSystemRights.FullControl, AccessControlType.Allow));
             security.AddAccessRule(new FileSystemAccessRule(users, runtimeRights, AccessControlType.Allow));
-            new FileInfo(path).SetAccessControl(security);
+            FileInfo file = new(path);
+            file.SetAccessControl(security);
+            VerifyFileSecurity(file, runtimeRights);
         }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+        catch (FatalSecurityException)
         {
-            throw new FatalSecurityException($"Failed to secure/harden file ACLs on {path}", ex);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new FatalSecurityException($"Fatal local security failure while applying and verifying file ACLs on '{path}'.", ex);
+        }
+    }
+
+    private static void VerifyDirectorySecurity(DirectoryInfo directory, FileSystemRights runtimeRights) =>
+        VerifyLocalSecurity(directory.GetAccessControl(AccessControlSections.Access), runtimeRights, directory.FullName, "directory");
+
+    private static void VerifyFileSecurity(FileInfo file, FileSystemRights runtimeRights) =>
+        VerifyLocalSecurity(file.GetAccessControl(AccessControlSections.Access), runtimeRights, file.FullName, "file");
+
+    private static void VerifyLocalSecurity(FileSystemSecurity security, FileSystemRights runtimeRights, string path, string itemType)
+    {
+        if (!security.AreAccessRulesProtected)
+        {
+            throw new FatalSecurityException($"Fatal local security failure: ACL inheritance remains enabled on {itemType} '{path}'.");
+        }
+
+        FileSystemAccessRule[] rules = security.GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier))
+            .Cast<FileSystemAccessRule>()
+            .ToArray();
+        VerifyRequiredLocalRule(rules, new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), FileSystemRights.FullControl, path);
+        VerifyRequiredLocalRule(rules, new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null), FileSystemRights.FullControl, path);
+        VerifyRequiredLocalRule(rules, new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null), runtimeRights, path);
+        if (rules.Length != 3)
+        {
+            throw new FatalSecurityException($"Fatal local security failure: unexpected explicit ACL entries remain on '{path}'.");
+        }
+    }
+
+    private static void VerifyRequiredLocalRule(FileSystemAccessRule[] rules, SecurityIdentifier identity, FileSystemRights requiredRights, string path)
+    {
+        FileSystemAccessRule? rule = rules.SingleOrDefault(candidate => identity.Equals(candidate.IdentityReference));
+        if (rule is null || rule.AccessControlType != AccessControlType.Allow || (rule.FileSystemRights & requiredRights) != requiredRights)
+        {
+            throw new FatalSecurityException($"Fatal local security failure: required ACL entry is missing or incomplete on '{path}'.");
         }
     }
 

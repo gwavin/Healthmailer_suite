@@ -402,6 +402,27 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("New-Item -Path $monitorRegistryPath -Force", monitorScript, StringComparison.Ordinal);
     }
 
+    [Test]
+    public void PrintRxer_installer_fails_secure_for_local_acls_and_validates_path_boundaries()
+    {
+        string repoRoot = FindRepoRoot();
+        string installer = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "PrintRxerInstaller.cs"));
+        string paths = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "InstallerPaths.cs"));
+
+        Assert.Contains("InstallerPaths.ValidateSecurityBoundaries();", installer, StringComparison.Ordinal);
+        Assert.Contains("VerifyDirectorySecurity(directory, runtimeRights)", installer, StringComparison.Ordinal);
+        Assert.Contains("VerifyFileSecurity(file, runtimeRights)", installer, StringComparison.Ordinal);
+        Assert.Contains("Fatal local security failure", installer, StringComparison.Ordinal);
+        Assert.DoesNotContain("TryHardenDirectory", installer, StringComparison.Ordinal);
+        Assert.DoesNotContain("TryHardenFile", installer, StringComparison.Ordinal);
+
+        Assert.Contains("ValidateSecurityBoundaries(ProgramFilesRoot, ProgramDataRoot, InstalledExePath)", paths, StringComparison.Ordinal);
+        Assert.Contains("Environment.SpecialFolder.ProgramFiles", paths, StringComparison.Ordinal);
+        Assert.Contains("Environment.SpecialFolder.CommonApplicationData", paths, StringComparison.Ordinal);
+        Assert.Contains("must be separate and non-nested", paths, StringComparison.Ordinal);
+        Assert.Contains("It must resolve under", paths, StringComparison.Ordinal);
+    }
+
     private static string FindRepoRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
