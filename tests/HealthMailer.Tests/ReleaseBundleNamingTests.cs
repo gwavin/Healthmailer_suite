@@ -302,6 +302,7 @@ public sealed class ReleaseBundleNamingTests
     {
         string repoRoot = FindRepoRoot();
         string uninstaller = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "HealthMailerUninstaller.cs"));
+        string uninstallForm = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "UninstallForm.cs"));
         string program = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "Program.cs"));
 
         string isInstalledBody = uninstaller.Substring(
@@ -316,13 +317,19 @@ public sealed class ReleaseBundleNamingTests
         int programDataCleanupIndex = uninstaller.IndexOf("DeleteDirectoryBestEffort(InstallerPaths.ProgramDataRoot", StringComparison.Ordinal);
         Assert.True(appCleanupIndex >= 0, "HealthMailer uninstall must prepare and remove the hardened app folder.");
         Assert.True(programDataCleanupIndex > appCleanupIndex, "HealthMailer app-folder cleanup must happen before remove-data ProgramData cleanup.");
-        Assert.Contains("InstallerSecurity.PrepareApplicationDirectoryForRemoval(InstallerPaths.ProgramFilesRoot)", uninstaller, StringComparison.Ordinal);
         Assert.Contains("DeleteProtectedApplicationDirectory(InstallerPaths.ProgramFilesRoot)", uninstaller, StringComparison.Ordinal);
-        Assert.Contains("InstallerSecurity.HardenApplicationDirectory(path)", uninstaller, StringComparison.Ordinal);
         Assert.Contains("Restart Windows and rerun uninstall.", uninstaller, StringComparison.Ordinal);
         Assert.Contains("Preserving ProgramData evidence except installed application files", uninstaller, StringComparison.Ordinal);
         Assert.Contains("Final ProgramData cleanup", uninstaller, StringComparison.Ordinal);
         Assert.Contains("HealthMailer process did not stop before uninstall", uninstaller, StringComparison.Ordinal);
+        Assert.DoesNotContain("PrepareApplicationDirectoryForRemoval", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("if (!IsAdministrator())", program, StringComparison.Ordinal);
+        Assert.Contains("HealthMailer uninstall requires administrator rights.", program, StringComparison.Ordinal);
+        Assert.Contains("return InsufficientPermissions;", program, StringComparison.Ordinal);
+        Assert.Contains("Verb = \"runas\"", uninstallForm, StringComparison.Ordinal);
+        Assert.Contains("--uninstall --remove-data --quiet", uninstallForm, StringComparison.Ordinal);
+        Assert.Contains("--uninstall --quiet", uninstallForm, StringComparison.Ordinal);
+        Assert.Contains("administrator approval", uninstallForm, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("bool useTempLog = uninstall && removeData", program, StringComparison.Ordinal);
         Assert.Contains("HealthMailer uninstall needs review. ProgramData was not fully removed.", program, StringComparison.Ordinal);
     }

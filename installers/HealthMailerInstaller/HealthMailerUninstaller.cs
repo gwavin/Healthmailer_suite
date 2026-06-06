@@ -46,8 +46,7 @@ internal static class HealthMailerUninstaller
 
     private static void RemoveProtectedApplicationDirectory(Action<string> log)
     {
-        log("Preparing hardened HealthMailer application folder for removal.");
-        InstallerSecurity.PrepareApplicationDirectoryForRemoval(InstallerPaths.ProgramFilesRoot);
+        log("Removing hardened HealthMailer application folder with administrator approval.");
         DeleteProtectedApplicationDirectory(InstallerPaths.ProgramFilesRoot);
     }
 
@@ -68,7 +67,6 @@ internal static class HealthMailerUninstaller
                     continue;
                 }
 
-                InstallerSecurity.HardenApplicationDirectory(path);
                 throw new IOException(
                     "Could not remove the protected HealthMailer application folder. A Windows process may still hold HealthMailer.exe. Restart Windows and rerun uninstall.",
                     ex);

@@ -66,6 +66,12 @@ internal static class Program
                     return Success;
                 }
 
+                if (!IsAdministrator())
+                {
+                    log("HealthMailer uninstall requires administrator rights.");
+                    return InsufficientPermissions;
+                }
+
                 if (installed || (removeData && hasLocalData))
                 {
                     HealthMailerUninstaller.Uninstall(removeData, log);
@@ -264,6 +270,13 @@ if ($task) {
         {
             return null;
         }
+    }
+
+    private static bool IsAdministrator()
+    {
+        using WindowsIdentity identity = WindowsIdentity.GetCurrent();
+        WindowsPrincipal principal = new(identity);
+        return principal.IsInRole(WindowsBuiltInRole.Administrator);
     }
 
     private static int MapExitCode(Exception ex)

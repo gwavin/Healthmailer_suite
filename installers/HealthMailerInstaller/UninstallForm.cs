@@ -1,5 +1,8 @@
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.Versioning;
+using System.Security.Principal;
 using System.Windows.Forms;
 
 namespace HealthMailerInstaller;
@@ -90,6 +93,17 @@ internal sealed class UninstallForm : Form
             return;
         }
 
+        if (!IsAdministrator())
+        {
+            AppendStatus("HealthMailer removal requires administrator approval.");
+            if (TryRelaunchElevated())
+            {
+                Close();
+            }
+
+            return;
+        }
+
         SetBusy(true);
         _statusText.Clear();
         AppendStatus("Uninstall is running. Buttons are disabled until this step completes.");
@@ -129,11 +143,65 @@ internal sealed class UninstallForm : Form
         }
     }
 
+    private bool TryRelaunchElevated()
+    {
+        DialogResult approval = MessageBox.Show(
+            this,
+            "Removing HealthMailer requires administrator approval. Windows will ask for permission, then complete the already-confirmed uninstall.",
+            Text,
+            MessageBoxButtons.OKCancel,
+            MessageBoxIcon.Information);
+
+        if (approval != DialogResult.OK)
+        {
+            AppendStatus("Administrator relaunch was cancelled before UAC.");
+            return false;
+        }
+
+        try
+        {
+            string exePath = Environment.ProcessPath ?? Application.ExecutablePath;
+            string arguments = _removeData.Checked ? "--uninstall --remove-data --quiet" : "--uninstall --quiet";
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = exePath,
+                Arguments = arguments,
+                UseShellExecute = true,
+                Verb = "runas"
+            });
+            AppendStatus("Elevated HealthMailer uninstaller was started and will complete the already-confirmed uninstall.");
+            return true;
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            AppendStatus("Administrator approval was cancelled.");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            AppendStatus("Could not start elevated uninstaller: " + ex.Message);
+            MessageBox.Show(this, "Could not start the elevated HealthMailer uninstaller:\n\n" + ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return false;
+        }
+    }
+
+    private static bool IsAdministrator()
+    {
+        using WindowsIdentity identity = WindowsIdentity.GetCurrent();
+        WindowsPrincipal principal = new(identity);
+        return principal.IsInRole(WindowsBuiltInRole.Administrator);
+    }
+
     private void ShowInitialState()
     {
         if (HealthMailerUninstaller.IsInstalled())
         {
             AppendStatus("Ready to uninstall HealthMailer. Local ProgramData evidence is preserved by default.");
+            if (!IsAdministrator())
+            {
+                AppendStatus("Administrator approval will be required to remove HealthMailer.");
+            }
+
             return;
         }
 
