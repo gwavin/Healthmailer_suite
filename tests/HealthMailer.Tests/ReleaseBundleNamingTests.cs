@@ -396,6 +396,10 @@ public sealed class ReleaseBundleNamingTests
             Assert.DoesNotContain(@"ProgramData\PrintRxerPortMonitor.dll", script, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain(@"LocalAppData\PrintRxerPortMonitor.dll", script, StringComparison.OrdinalIgnoreCase);
         }
+
+        Assert.Contains("Registry::HKEY_LOCAL_MACHINE", monitorScript, StringComparison.Ordinal);
+        Assert.Contains("RESTRICTED SERVICES\\PrintSpoolerService", monitorScript, StringComparison.Ordinal);
+        Assert.Contains("New-Item -Path $monitorRegistryPath -Force", monitorScript, StringComparison.Ordinal);
     }
 
     private static string FindRepoRoot()

@@ -18,12 +18,13 @@ $systemDllPath = Join-Path $env:WINDIR 'System32\PrintRxerPortMonitor.dll'
 $monitorName = 'PrintRxer Port Monitor'
 $portName = 'printrx:'
 $workingRoot = Join-Path (Join-Path $env:ProgramData 'printRxer') 'work'
-$monitorRegistryPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\$monitorName"
+$monitorRegistryPath = "Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Monitors\$monitorName"
 $powershellExe = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $icaclsExe = Join-Path $env:WINDIR 'System32\icacls.exe'
 $logDirectory = Join-Path $repoRoot 'bin\logs'
 $logPath = Join-Path $logDirectory 'Install-PrintRxerPortMonitor.log'
 $bootstrapLogPath = Join-Path $logDirectory 'Install-PrintRxerPortMonitor.bootstrap.log'
+$spoolerServiceAccount = 'RESTRICTED SERVICES\PrintSpoolerService'
 
 function Set-HardenedPortMonitorFileAcl {
     param([Parameter(Mandatory = $true)][string]$Path)
@@ -36,19 +37,21 @@ function Set-HardenedPortMonitorFileAcl {
     $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new('SYSTEM', 'FullControl', 'Allow'))
     $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new('BUILTIN\Administrators', 'FullControl', 'Allow'))
     $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new('NT AUTHORITY\LOCAL SERVICE', 'ReadAndExecute,Read', 'Allow'))
+    $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($spoolerServiceAccount, 'ReadAndExecute,Read', 'Allow'))
     Set-Acl -LiteralPath $Path -AclObject $acl
 }
 
 function Set-HardenedPortMonitorRegistryAcl {
     param([Parameter(Mandatory = $true)][string]$Path)
 
-    $acl = Get-Acl -LiteralPath $Path
+    $acl = Get-PortMonitorRegistryAcl -Path $Path
     $acl.SetAccessRuleProtection($true, $false)
     foreach ($rule in @($acl.Access)) {
         $acl.RemoveAccessRuleAll($rule)
     }
     $acl.AddAccessRule([Security.AccessControl.RegistryAccessRule]::new('SYSTEM', 'FullControl', 'Allow'))
     $acl.AddAccessRule([Security.AccessControl.RegistryAccessRule]::new('BUILTIN\Administrators', 'FullControl', 'Allow'))
+    $acl.AddAccessRule([Security.AccessControl.RegistryAccessRule]::new($spoolerServiceAccount, 'ReadKey', 'Allow'))
     Set-Acl -LiteralPath $Path -AclObject $acl
 }
 
@@ -60,6 +63,8 @@ function Assert-HardenedPortMonitorFileAcl {
         'S-1-5-32-544' = [Security.AccessControl.FileSystemRights]::FullControl
         'S-1-5-19' = [Security.AccessControl.FileSystemRights]::ReadAndExecute -bor [Security.AccessControl.FileSystemRights]::Read
     }
+    $spoolerSid = ([Security.Principal.NTAccount]$spoolerServiceAccount).Translate([Security.Principal.SecurityIdentifier]).Value
+    $expected[$spoolerSid] = [Security.AccessControl.FileSystemRights]::ReadAndExecute -bor [Security.AccessControl.FileSystemRights]::Read
     $acl = Get-Acl -LiteralPath $Path
     if (-not $acl.AreAccessRulesProtected) {
         throw "Port monitor DLL ACL inheritance is enabled: $Path"
@@ -79,8 +84,9 @@ function Assert-HardenedPortMonitorFileAcl {
 function Assert-HardenedPortMonitorRegistryAcl {
     param([Parameter(Mandatory = $true)][string]$Path)
 
-    $expected = @('S-1-5-18', 'S-1-5-32-544')
-    $acl = Get-Acl -LiteralPath $Path
+    $spoolerSid = ([Security.Principal.NTAccount]$spoolerServiceAccount).Translate([Security.Principal.SecurityIdentifier]).Value
+    $expected = @('S-1-5-18', 'S-1-5-32-544', $spoolerSid)
+    $acl = Get-PortMonitorRegistryAcl -Path $Path
     if (-not $acl.AreAccessRulesProtected) {
         throw "Port monitor registry ACL inheritance is enabled: $Path"
     }
@@ -90,9 +96,28 @@ function Assert-HardenedPortMonitorRegistryAcl {
     }
     foreach ($rule in $rules) {
         $sid = $rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
-        if ($sid -notin $expected -or $rule.AccessControlType -ne 'Allow' -or (($rule.RegistryRights -band [Security.AccessControl.RegistryRights]::FullControl) -ne [Security.AccessControl.RegistryRights]::FullControl)) {
+        $requiredRights = if ($sid -eq $spoolerSid) { [Security.AccessControl.RegistryRights]::ReadKey } else { [Security.AccessControl.RegistryRights]::FullControl }
+        if ($sid -notin $expected -or $rule.AccessControlType -ne 'Allow' -or (($rule.RegistryRights -band $requiredRights) -ne $requiredRights)) {
             throw "Port monitor registry ACL does not match the hardened specification: $Path"
         }
+    }
+}
+
+function Get-PortMonitorRegistryAcl {
+    param([Parameter(Mandatory = $true)][string]$Path, [int]$TimeoutSeconds = 20)
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ($true) {
+        try {
+            return Get-Acl -LiteralPath $Path -ErrorAction Stop
+        }
+        catch [System.Management.Automation.ItemNotFoundException] {
+        }
+
+        if ((Get-Date) -ge $deadline) {
+            throw "The registered port monitor key could not be opened for ACL hardening within $TimeoutSeconds seconds: $Path"
+        }
+        Start-Sleep -Milliseconds 250
     }
 }
 
@@ -362,13 +387,18 @@ public static class PrintRxerNativeMethods
             throw "AddMonitor failed with Win32 error $lastError."
         }
     }
-    Set-HardenedPortMonitorRegistryAcl -Path $monitorRegistryPath
-    Assert-HardenedPortMonitorRegistryAcl -Path $monitorRegistryPath
-    Assert-HardenedPortMonitorFileAcl -Path $systemDllPath
 
     if ($RestartSpoolerAfterInstall) {
         Restart-Service -Name Spooler -Force
+        Wait-ServiceStatus -Name Spooler -Status Running
     }
+
+    New-Item -Path $monitorRegistryPath -Force | Out-Null
+    New-ItemProperty -LiteralPath $monitorRegistryPath -Name 'Driver' -Value ([System.IO.Path]::GetFileName($systemDllPath)) -PropertyType String -Force | Out-Null
+
+    Set-HardenedPortMonitorRegistryAcl -Path $monitorRegistryPath
+    Assert-HardenedPortMonitorRegistryAcl -Path $monitorRegistryPath
+    Assert-HardenedPortMonitorFileAcl -Path $systemDllPath
 
     $port = Get-PrinterPort -Name $portName -ErrorAction SilentlyContinue
     if (-not $port) {

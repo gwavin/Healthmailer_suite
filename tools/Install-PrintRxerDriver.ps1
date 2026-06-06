@@ -18,6 +18,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $logDirectory = Join-Path $repoRoot 'bin\logs'
 $logPath = Join-Path $logDirectory 'Install-PrintRxerDriver.log'
 $portMonitorDllPath = Join-Path $env:WINDIR 'System32\PrintRxerPortMonitor.dll'
+$spoolerServiceAccount = 'RESTRICTED SERVICES\PrintSpoolerService'
 
 function Set-HardenedPortMonitorFileAcl {
     param([Parameter(Mandatory = $true)][string]$Path)
@@ -30,6 +31,7 @@ function Set-HardenedPortMonitorFileAcl {
     $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new('SYSTEM', 'FullControl', 'Allow'))
     $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new('BUILTIN\Administrators', 'FullControl', 'Allow'))
     $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new('NT AUTHORITY\LOCAL SERVICE', 'ReadAndExecute,Read', 'Allow'))
+    $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($spoolerServiceAccount, 'ReadAndExecute,Read', 'Allow'))
     Set-Acl -LiteralPath $Path -AclObject $acl
 }
 
@@ -44,6 +46,8 @@ function Assert-HardenedPortMonitorFileAcl {
         'S-1-5-32-544' = [Security.AccessControl.FileSystemRights]::FullControl
         'S-1-5-19' = [Security.AccessControl.FileSystemRights]::ReadAndExecute -bor [Security.AccessControl.FileSystemRights]::Read
     }
+    $spoolerSid = ([Security.Principal.NTAccount]$spoolerServiceAccount).Translate([Security.Principal.SecurityIdentifier]).Value
+    $expected[$spoolerSid] = [Security.AccessControl.FileSystemRights]::ReadAndExecute -bor [Security.AccessControl.FileSystemRights]::Read
     $acl = Get-Acl -LiteralPath $Path
     if (-not $acl.AreAccessRulesProtected) {
         throw "Port monitor DLL ACL inheritance is enabled: $Path"

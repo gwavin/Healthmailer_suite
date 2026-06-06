@@ -343,14 +343,16 @@ if ($printer.DriverName -ne 'PrintRxer XPS Driver') { throw ('The printRxer prin
         SecurityIdentifier system = new(WellKnownSidType.LocalSystemSid, null);
         SecurityIdentifier admins = new(WellKnownSidType.BuiltinAdministratorsSid, null);
         SecurityIdentifier localService = new(WellKnownSidType.LocalServiceSid, null);
+        SecurityIdentifier spoolerService = (SecurityIdentifier)new NTAccount(@"RESTRICTED SERVICES\PrintSpoolerService").Translate(typeof(SecurityIdentifier));
 
         FileSecurity fileSecurity = new();
         fileSecurity.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
         fileSecurity.AddAccessRule(new FileSystemAccessRule(system, FileSystemRights.FullControl, AccessControlType.Allow));
         fileSecurity.AddAccessRule(new FileSystemAccessRule(admins, FileSystemRights.FullControl, AccessControlType.Allow));
         fileSecurity.AddAccessRule(new FileSystemAccessRule(localService, FileSystemRights.ReadAndExecute | FileSystemRights.Read, AccessControlType.Allow));
+        fileSecurity.AddAccessRule(new FileSystemAccessRule(spoolerService, FileSystemRights.ReadAndExecute | FileSystemRights.Read, AccessControlType.Allow));
         new FileInfo(dllPath).SetAccessControl(fileSecurity);
-        VerifyPortMonitorFileSecurity(dllPath, system, admins, localService);
+        VerifyPortMonitorFileSecurity(dllPath, system, admins, localService, spoolerService);
 
         const string monitorKeyPath = @"SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer Port Monitor";
         using RegistryKey key = Registry.LocalMachine.OpenSubKey(
@@ -363,11 +365,12 @@ if ($printer.DriverName -ne 'PrintRxer XPS Driver') { throw ('The printRxer prin
         registrySecurity.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
         registrySecurity.AddAccessRule(new RegistryAccessRule(system, RegistryRights.FullControl, InheritanceFlags.None, PropagationFlags.None, AccessControlType.Allow));
         registrySecurity.AddAccessRule(new RegistryAccessRule(admins, RegistryRights.FullControl, InheritanceFlags.None, PropagationFlags.None, AccessControlType.Allow));
+        registrySecurity.AddAccessRule(new RegistryAccessRule(spoolerService, RegistryRights.ReadKey, InheritanceFlags.None, PropagationFlags.None, AccessControlType.Allow));
         key.SetAccessControl(registrySecurity);
-        VerifyPortMonitorRegistrySecurity(key, system, admins);
+        VerifyPortMonitorRegistrySecurity(key, system, admins, spoolerService);
     }
 
-    private static void VerifyPortMonitorFileSecurity(string path, SecurityIdentifier system, SecurityIdentifier admins, SecurityIdentifier localService)
+    private static void VerifyPortMonitorFileSecurity(string path, SecurityIdentifier system, SecurityIdentifier admins, SecurityIdentifier localService, SecurityIdentifier spoolerService)
     {
         FileSecurity security = new FileInfo(path).GetAccessControl(AccessControlSections.Access);
         if (!security.AreAccessRulesProtected)
@@ -381,7 +384,8 @@ if ($printer.DriverName -ne 'PrintRxer XPS Driver') { throw ('The printRxer prin
         VerifyOnlyAllowedFileRule(rules, system, FileSystemRights.FullControl);
         VerifyOnlyAllowedFileRule(rules, admins, FileSystemRights.FullControl);
         VerifyOnlyAllowedFileRule(rules, localService, FileSystemRights.ReadAndExecute | FileSystemRights.Read);
-        if (rules.Length != 3)
+        VerifyOnlyAllowedFileRule(rules, spoolerService, FileSystemRights.ReadAndExecute | FileSystemRights.Read);
+        if (rules.Length != 4)
         {
             throw new InvalidOperationException("Port monitor DLL contains an unexpected explicit access rule.");
         }
@@ -396,7 +400,7 @@ if ($printer.DriverName -ne 'PrintRxer XPS Driver') { throw ('The printRxer prin
         }
     }
 
-    private static void VerifyPortMonitorRegistrySecurity(RegistryKey key, SecurityIdentifier system, SecurityIdentifier admins)
+    private static void VerifyPortMonitorRegistrySecurity(RegistryKey key, SecurityIdentifier system, SecurityIdentifier admins, SecurityIdentifier spoolerService)
     {
         RegistrySecurity security = key.GetAccessControl(AccessControlSections.Access);
         if (!security.AreAccessRulesProtected)
@@ -416,7 +420,13 @@ if ($printer.DriverName -ne 'PrintRxer XPS Driver') { throw ('The printRxer prin
             }
         }
 
-        if (rules.Length != 2)
+        RegistryAccessRule? spoolerRule = rules.SingleOrDefault(candidate => spoolerService.Equals(candidate.IdentityReference));
+        if (spoolerRule is null || spoolerRule.AccessControlType != AccessControlType.Allow || (spoolerRule.RegistryRights & RegistryRights.ReadKey) != RegistryRights.ReadKey)
+        {
+            throw new InvalidOperationException("Port monitor registry-key ACL does not grant the spooler service read-only access.");
+        }
+
+        if (rules.Length != 3)
         {
             throw new InvalidOperationException("Port monitor registry key contains an unexpected explicit access rule.");
         }
