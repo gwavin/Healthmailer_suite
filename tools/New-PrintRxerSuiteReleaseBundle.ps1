@@ -164,8 +164,7 @@ function Copy-ReleaseDocumentation {
 
     Copy-RequiredFile '.\healthmailer_release_doc_cleaned.html' (Join-Path $Destination 'healthmailer_release_doc.html')
     Copy-RequiredFile '.\printRxer_HealthMailer_User_Guide.html' (Join-Path $Destination 'printRxer_HealthMailer_User_Guide.html')
-    Copy-RequiredFile '.\docs\PrintRxer_HealthMailer_IT_QRG_Current.docx' (Join-Path $Destination 'PrintRxerV3-Install-Guide.docx')
-    Copy-RequiredFile '.\docs\PrintRxer_HealthMailer_IT_QRG_Current.docx' (Join-Path $Destination 'HealthMailer-Install-Guide.docx')
+    Copy-RequiredFile '.\docs\PrintRxerSuite-Install-Guide.html' (Join-Path $Destination 'PrintRxerSuite-Install-Guide.html')
 
     foreach ($doc in @(
         'RECIPIENTS.md',
@@ -421,8 +420,7 @@ Safety notes:
     )) {
         Copy-RequiredFile (Join-Path '.\tools' $tool) (Join-Path $printRxerRoot ('payload\tools\' + $tool))
     }
-    Copy-RequiredFile '.\healthmailer_release_doc_cleaned.html' (Join-Path $printRxerRoot 'healthmailer_release_doc.html')
-    Copy-RequiredFile '.\docs\PrintRxer_HealthMailer_IT_QRG_Current.docx' (Join-Path $printRxerRoot 'PrintRxerV3-Install-Guide.docx')
+    Copy-ReleaseDocumentation $printRxerRoot
     Get-ChildItem -LiteralPath (Join-Path $printRxerRoot 'payload\publish\printRxer') -Filter '*.pdb' -File -ErrorAction SilentlyContinue |
         Remove-Item -Force
 
@@ -456,6 +454,8 @@ Notes:
   Installing or removing printRxer printer capture requires administrator approval. In this release, the printRxer component installer still runs as an administrator because app-file installation and printer capture are coupled; validation reports the scheduled task principal so IT can confirm task ownership.
   ProgramData files are preserved by default as audit/support evidence. Use --remove-data only for a clean lab reset.
   Full guidance: healthmailer_release_doc.html
+  Suite install guide: PrintRxerSuite-Install-Guide.html
+  End-user guide: printRxer_HealthMailer_User_Guide.html
 "@
     Write-BuildMetadata $printRxerRoot $Version $buildTimeUtc $gitCommit $gitRef $dirtyState
 
@@ -463,8 +463,7 @@ Notes:
     Copy-RequiredFile (Join-Path $healthMailerInstallerPublish 'HealthMailerInstaller.exe') (Join-Path $healthMailerRoot 'HealthMailerSetup.exe')
     Copy-RequiredDirectory $healthMailerPublish (Join-Path $healthMailerRoot 'payload\publish\HealthMailer')
     Copy-RequiredDirectory '.\assets\branding' (Join-Path $healthMailerRoot 'payload\assets\branding')
-    Copy-RequiredFile '.\healthmailer_release_doc_cleaned.html' (Join-Path $healthMailerRoot 'healthmailer_release_doc.html')
-    Copy-RequiredFile '.\docs\PrintRxer_HealthMailer_IT_QRG_Current.docx' (Join-Path $healthMailerRoot 'HealthMailer-Install-Guide.docx')
+    Copy-ReleaseDocumentation $healthMailerRoot
     Get-ChildItem -LiteralPath (Join-Path $healthMailerRoot 'payload\publish\HealthMailer') -Filter '*.pdb' -File -ErrorAction SilentlyContinue |
         Remove-Item -Force
 
@@ -498,6 +497,8 @@ Notes:
   The installer asks for the handoff folder. Use the same folder configured for printRxer.
   ProgramData files are preserved by default as audit/support evidence. Use --remove-data only for a clean lab reset.
   Full guidance: healthmailer_release_doc.html
+  Suite install guide: PrintRxerSuite-Install-Guide.html
+  End-user guide: printRxer_HealthMailer_User_Guide.html
 "@
     Write-BuildMetadata $healthMailerRoot $Version $buildTimeUtc $gitCommit $gitRef $dirtyState
 

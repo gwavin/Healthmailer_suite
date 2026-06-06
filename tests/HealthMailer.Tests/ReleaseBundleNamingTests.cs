@@ -26,9 +26,15 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("Target machines should not need a separate .NET Desktop Runtime installation", script, StringComparison.Ordinal);
         Assert.Contains("printRxerSetup.exe", script, StringComparison.Ordinal);
         Assert.Contains("payload\\publish\\printRxer", script, StringComparison.Ordinal);
-        Assert.Contains("PrintRxer_HealthMailer_IT_QRG_Current.docx", script, StringComparison.Ordinal);
-        Assert.Contains("PrintRxerV3-Install-Guide.docx", script, StringComparison.Ordinal);
-        Assert.Contains("HealthMailer-Install-Guide.docx", script, StringComparison.Ordinal);
+        Assert.Contains("PrintRxerSuite-Install-Guide.html", script, StringComparison.Ordinal);
+        Assert.Contains("healthmailer_release_doc_cleaned.html", script, StringComparison.Ordinal);
+        Assert.Contains("healthmailer_release_doc.html", script, StringComparison.Ordinal);
+        Assert.DoesNotContain(".doc" + "x", script, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("PrintRxer_HealthMailer_IT_QRG_" + "Current", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("PrintRxerV3-Install-Guide." + "docx", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("HealthMailer-Install-Guide." + "docx", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("PrintRxerV3-Install-Guide." + "html", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("HealthMailer-Install-Guide." + "html", script, StringComparison.Ordinal);
         Assert.Contains("HealthMailer.ContractTests.csproj", script, StringComparison.Ordinal);
         Assert.Contains("PrintRxerV3.ContractTests.csproj", script, StringComparison.Ordinal);
         Assert.DoesNotContain("dotnet " + "test", script, StringComparison.Ordinal);

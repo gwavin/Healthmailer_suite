@@ -11,8 +11,9 @@
 - [ ] Run `PrintRxerSuiteInstaller.exe --smoke-test` from the extracted folder using `Start-Process -Wait -PassThru`.
 - [ ] Confirm `PrintRxerSuiteInstaller.exe`, `INSTALL-BUNDLE-README.txt`, and `SHA256SUMS.txt` are present at the ZIP root.
 - [ ] Confirm component ZIPs exist for support/internal use.
-- [ ] Confirm `PrintRxerV3-Install-Guide.docx` is present at the printRxer component ZIP root.
-- [ ] Confirm `HealthMailer-Install-Guide.docx` is present at the HealthMailer component ZIP root.
+- [ ] Confirm `PrintRxerSuite-Install-Guide.html`, `healthmailer_release_doc.html`, and `printRxer_HealthMailer_User_Guide.html` are present at the suite and component ZIP roots.
+- [ ] Confirm bundled Markdown support docs include `RECIPIENTS.md`, `TROUBLESHOOTING.md`, `OPERATIONS-RUNBOOK.md`, `HANDOFF-CONTRACT.md`, `HANDOFF-FOLDER-SETUP.md`, and `CONFIGURATION.md`.
+- [ ] Confirm no Word-document files are included in release bundles.
 - [ ] Confirm component ZIPs contain `SHA256SUMS.txt` and exclude `.pdb`, `bin`, `obj`, `publish`, `tmp`, and staging folders.
 - [ ] Confirm version/build artifacts are from a clean checkout.
 
@@ -98,7 +99,7 @@
 ## Documentation
 
 - [ ] README role links are current.
-- [ ] Review current IT guidance in `docs/PrintRxer_HealthMailer_IT_QRG_Current.docx`.
+- [ ] Review current IT guidance in `docs/PrintRxerSuite-Install-Guide.html`.
 - [ ] Use `README.md`, `SECURITY.md`, `DEPLOYMENT.md`, `docs/OPERATIONS-RUNBOOK.md`, and this checklist as current release guidance.
 - [ ] Deployment guide matches scripts.
 - [ ] Configuration guide matches `HealthMailerConfig`.

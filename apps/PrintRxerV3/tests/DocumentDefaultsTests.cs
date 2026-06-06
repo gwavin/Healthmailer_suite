@@ -100,7 +100,7 @@ public sealed class DocumentDefaultsTests
 
 
     [TestCase("../../../bad.pdf", "bad.pdf")]
-    [TestCase("report.docx", "report.pdf")]
+    [TestCase("report.doc", "report.pdf")]
     [TestCase("", "fallback.pdf")]
     [TestCase("CON.pdf", "fallback.pdf")]
     public void SanitizeAttachmentFileName_prevents_paths_and_forces_pdf(string value, string expected)

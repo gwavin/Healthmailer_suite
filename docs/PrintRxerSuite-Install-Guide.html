@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>printRxer / HealthMailer Suite Install Guide</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #fdfdfd; }
+        h1 { color: #1a365d; border-bottom: 2px solid #2b6cb0; padding-bottom: 8px; font-size: 24pt; margin-bottom: 4px; }
+        .subtitle { font-size: 11pt; color: #4a5568; margin-top: 0; margin-bottom: 24px; font-style: italic; }
+        h2 { color: #2c5282; font-size: 14pt; margin-top: 24px; margin-bottom: 12px; border-left: 4px solid #4299e1; padding-left: 8px; }
+        p, li { font-size: 11pt; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 10.5pt; }
+        th, td { border: 1px solid #cbd5e0; padding: 10px 12px; text-align: left; }
+        th { background: #ebf8ff; color: #2c5282; }
+        tr:nth-child(even) { background: #f7fafc; }
+        ul { margin-top: 6px; margin-bottom: 16px; padding-left: 24px; }
+        li { margin-bottom: 6px; }
+        .file-list { font-family: "Courier New", Courier, monospace; background: #edf2f7; padding: 12px 16px; border-radius: 4px; list-style-type: none; }
+    </style>
+</head>
+<body>
+    <h1>printRxer / HealthMailer Suite Install Guide</h1>
+    <div class="subtitle">Current release guidance | Windows x64 | IT and security review</div>
+
+    <h2>Purpose</h2>
+    <p><strong>printRxer</strong> captures an approved clinical print job and creates a validated handoff package. <strong>HealthMailer</strong> watches the configured handoff folder and, when explicitly approved, sends the PDF through the logged-in user's Outlook/Healthmail profile. printRxer does not send email.</p>
+
+    <h2>Deployment Roles</h2>
+    <table>
+        <thead><tr><th>Machine Role</th><th>Responsibilities</th><th>Setup Executable in Component Bundle</th></tr></thead>
+        <tbody>
+            <tr><td><strong>printRxer printing machine</strong></td><td>Print/capture, recipient picker, PDF preparation, local outbox, validated handoff package creation.</td><td><code>printRxerSetup.exe</code></td></tr>
+            <tr><td><strong>HealthMailer sending machine</strong></td><td>Handoff watcher, validation, Outlook COM send, and terminal audit records. Chart/ViewPoint copy is removed/deferred.</td><td><code>HealthMailerSetup.exe</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2>Release Bundle</h2>
+    <ul>
+        <li>Build with <code>tools/New-PrintRxerSuiteReleaseBundle.ps1</code>.</li>
+        <li>The suite ZIP is the normal IT entry point and contains <code>PrintRxerSuiteInstaller.exe</code>.</li>
+        <li>Component ZIPs are provided for approved support or role-specific deployment.</li>
+        <li>Release ZIPs include <code>SHA256SUMS.txt</code>. Verify checksums before deployment.</li>
+    </ul>
+
+    <h2>Handoff Folder and Access Control</h2>
+    <ul>
+        <li>The same handoff path must be configured for both roles.</li>
+        <li>The handoff may be local for a same-machine pilot or a secured UNC path for split-machine deployment.</li>
+        <li>Use UNC paths directly rather than mapped drive letters.</li>
+        <li>IT owns share and NTFS ACLs. Restrict access to approved printRxer writers, the HealthMailer sender context, and approved administrators/support staff.</li>
+    </ul>
+
+    <h2>Installation</h2>
+    <ul>
+        <li>Run printRxer installation in an administrator-capable context because it installs the port monitor, PrintRxer XPS driver, printer queue, app files, and watcher task.</li>
+        <li>Run HealthMailer setup as the intended Outlook/Healthmail sender user so Outlook COM and the scheduled task use the correct Windows profile.</li>
+        <li>Live sending requires explicit installer-created approval. Use dry-run validation before enabling sending.</li>
+        <li>Validate the installation from the suite installer after setup.</li>
+    </ul>
+
+    <h2>Uninstall and Evidence</h2>
+    <ul>
+        <li>Standard uninstall preserves ProgramData, logs, configuration, archives, and audit/support evidence by default.</li>
+        <li>Use the remove-data option or <code>--remove-data</code> only for an explicitly approved clean lab reset.</li>
+        <li>Review support and audit requirements before deleting local data.</li>
+    </ul>
+
+    <h2>Security and Operational Checks</h2>
+    <ul>
+        <li>Keep release bundles and support bundles on approved HSE-controlled storage.</li>
+        <li>Support bundles exclude PDF payloads by default, but logs and metadata may still contain sensitive information.</li>
+        <li>Confirm the Outlook profile, recipient restrictions, handoff ACLs, scheduled tasks, printer components, and log rotation during deployment review.</li>
+    </ul>
+
+    <h2>Current Release Guidance Documents</h2>
+    <ul class="file-list">
+        <li>README.md</li>
+        <li>SECURITY.md</li>
+        <li>DEPLOYMENT.md</li>
+        <li>docs/OPERATIONS-RUNBOOK.md</li>
+        <li>docs/RELEASE-CHECKLIST.md</li>
+    </ul>
+</body>
+</html>
