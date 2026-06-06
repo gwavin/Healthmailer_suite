@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -98,11 +99,11 @@ internal static class Assert
     public static void True(bool condition, string? message = null) { if (!condition) Fail(message ?? "Expected true."); }
     public static void False(bool condition, string? message = null) { if (condition) Fail(message ?? "Expected false."); }
     public static void Null(object? value) { if (value is not null) Fail("Expected null."); }
-    public static void NotNull(object? value) { if (value is null) Fail("Expected non-null value."); }
+    public static void NotNull([NotNull] object? value) { if (value is null) Fail("Expected non-null value."); }
     public static void Empty(IEnumerable values) { if (values.Cast<object?>().Any()) Fail("Expected empty collection."); }
     public static T Single<T>(IEnumerable<T> values) { T[] items = values.ToArray(); if (items.Length != 1) Fail($"Expected one item, found {items.Length}."); return items[0]; }
     public static void Equal<T>(T expected, T actual) { if (!EqualityComparer<T>.Default.Equals(expected, actual)) Fail($"Expected: {expected}{Environment.NewLine}Actual:   {actual}"); }
-    public static void Contains(string expected, string actual, StringComparison comparison = StringComparison.Ordinal) { if (!actual.Contains(expected, comparison)) Fail($"Expected string to contain: {expected}"); }
+    public static void Contains(string expected, string? actual, StringComparison comparison = StringComparison.Ordinal) { if (actual is null || !actual.Contains(expected, comparison)) Fail($"Expected string to contain: {expected}"); }
     public static void DoesNotContain(string expected, string actual, StringComparison comparison = StringComparison.Ordinal) { if (actual.Contains(expected, comparison)) Fail($"Expected string not to contain: {expected}"); }
     public static void Contains<T>(IEnumerable<T> values, Func<T, bool> predicate) { if (!values.Any(predicate)) Fail("Expected collection to contain a matching item."); }
     public static void DoesNotContain<T>(IEnumerable<T> values, Func<T, bool> predicate) { if (values.Any(predicate)) Fail("Expected collection not to contain a matching item."); }
@@ -120,5 +121,6 @@ internal static class Assert
     }
     public static TException Throws<TException>(Action action) where TException : Exception { try { action(); } catch (TException ex) { return ex; } catch (Exception ex) { Fail($"Expected {typeof(TException).Name}, found {ex.GetType().Name}."); } Fail($"Expected {typeof(TException).Name}."); return null!; }
     public static void All<T>(IEnumerable<T> values, Action<T> assertion) { foreach (T value in values) assertion(value); }
+    [DoesNotReturn]
     private static void Fail(string message) => throw new InvalidOperationException(message);
 }
