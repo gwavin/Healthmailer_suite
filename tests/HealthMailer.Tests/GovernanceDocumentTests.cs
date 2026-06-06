@@ -29,7 +29,8 @@ public sealed class GovernanceDocumentTests
         string text = File.ReadAllText(Path.Combine(RepositoryRoot(), "installers", "HealthMailerInstaller", "InstallForm.cs"));
 
         Assert.Contains("Enable live Outlook sending", text, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("new InstallOptions(_selectedHandoffRoot, _sendMailCheckBox.Checked)", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Successful-send prescription retention", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("new InstallOptions(_selectedHandoffRoot, _sendMailCheckBox.Checked, SelectedRetentionDays())", text, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -38,6 +39,7 @@ public sealed class GovernanceDocumentTests
         string text = File.ReadAllText(Path.Combine(RepositoryRoot(), "installers", "HealthMailerInstaller", "Program.cs"));
 
         Assert.Contains("Missing required argument: --send-mail true|false", text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("--sent-prescription-retention-days <days>", text, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("value = true;" + Environment.NewLine + "            error = null;" + Environment.NewLine + "            return true;", text, StringComparison.OrdinalIgnoreCase);
     }
 

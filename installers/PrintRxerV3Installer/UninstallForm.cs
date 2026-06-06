@@ -12,7 +12,7 @@ internal sealed class UninstallForm : Form
 {
     private readonly CheckBox _removeData = new()
     {
-        Text = "Remove local ProgramData too - lab reset only",
+        Text = "Also remove local ProgramData - approved lab reset only",
         AutoSize = true
     };
 
@@ -45,7 +45,7 @@ internal sealed class UninstallForm : Form
 
         Label description = new()
         {
-            Text = "This removes the printRxer watcher and the visible printRxer capture printer. Local ProgramData evidence is preserved by default.",
+            Text = "This removes printRxer application, watcher, and printer-capture components. Local ProgramData evidence, logs, configuration, and archives are preserved by default.",
             AutoSize = false,
             Location = new Point(20, 55),
             Size = new Size(700, 46)
@@ -104,8 +104,8 @@ internal sealed class UninstallForm : Form
         }
 
         string message = _removeData.Checked
-            ? "This will remove printRxer and delete C:\\ProgramData\\printRxer. Continue?"
-            : "This will remove printRxer while preserving C:\\ProgramData\\printRxer. Continue?";
+            ? "This will uninstall printRxer and remove C:\\ProgramData\\printRxer, including local data, logs, configuration, outbox, processed captures, failed captures, and archives. Continue?"
+            : "This will uninstall printRxer and preserve C:\\ProgramData\\printRxer, including local data, logs, configuration, outbox, processed captures, failed captures, and archives. Continue?";
 
         DialogResult confirm = MessageBox.Show(this, message, Text, MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
         if (confirm != DialogResult.Yes)

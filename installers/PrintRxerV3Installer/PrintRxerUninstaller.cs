@@ -54,6 +54,11 @@ internal static class PrintRxerUninstaller
             TryStep(() => DeleteDirectoryBestEffort(InstallerPaths.ProgramDataRoot, log), "Final ProgramData cleanup", log);
         }
 
+        if (removeData)
+        {
+            RemoveLateRecreatedProgramData(log);
+        }
+
         log("Final component state: " + ComponentStateSummary());
     }
 
@@ -147,6 +152,37 @@ if (Test-Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer P
             {
                 log("Could not remove " + path + " automatically. It may be in use and can be removed after restart. " + ex.Message);
             }
+        }
+    }
+
+    private static void RemoveLateRecreatedProgramData(Action<string> log)
+    {
+        for (int attempt = 1; attempt <= 5; attempt++)
+        {
+            Thread.Sleep(1000);
+            if (!Directory.Exists(InstallerPaths.ProgramDataRoot))
+            {
+                return;
+            }
+
+            log("ProgramData was recreated after deletion; retrying approved lab-reset removal. Attempt " + attempt + " of 5.");
+            LogProgramDataChildren(log);
+            TryStep(() => DeleteDirectoryBestEffort(InstallerPaths.ProgramDataRoot, log), "Late ProgramData cleanup", log);
+        }
+    }
+
+    private static void LogProgramDataChildren(Action<string> log)
+    {
+        try
+        {
+            foreach (string child in Directory.EnumerateFileSystemEntries(InstallerPaths.ProgramDataRoot).Take(20))
+            {
+                log("Remaining ProgramData child: " + child);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            log("Could not enumerate recreated ProgramData before retry: " + ex.Message);
         }
     }
 

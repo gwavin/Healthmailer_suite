@@ -36,9 +36,9 @@ if ($PublishedRuntime) {
 }
 
 if ($RemoveData) {
-    Write-Step "Remove local data root '$LocalRoot', including config, logs, sent, failed, quarantine, and ledger."
+    Write-Step "Remove local ProgramData root '$LocalRoot', including local data, logs, configuration, sent archives, failed archives, quarantine, and ledger."
 } else {
-    Write-Step "Preserve local data root '$LocalRoot' by default."
+    Write-Step "Preserve local ProgramData root '$LocalRoot' by default, including local data, logs, configuration, archives, and ledger."
 }
 
 if ($PlanOnly) {
@@ -64,7 +64,7 @@ if ($PublishedRuntime -and (Test-Path -LiteralPath $PublishedRuntime)) {
 
 if ($RemoveData -and (Test-Path -LiteralPath $LocalRoot)) {
     Remove-Item -LiteralPath $LocalRoot -Recurse -Force
-    Write-Step "Local HealthMailer data removed."
+    Write-Step "Local HealthMailer ProgramData removed."
 }
 
 Write-Step "Uninstall completed."

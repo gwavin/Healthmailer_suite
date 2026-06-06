@@ -113,6 +113,8 @@ Processed packages are moved out of the handoff folder into:
 %ProgramData%\HealthMailer\quarantine
 ```
 
+Successful `sent` archives keep audit files, but `prescription.pdf` is removed after the configured `SentPrescriptionRetentionDays` period. The installer default is 14 days. Failed and quarantined packages are preserved for explicit review.
+
 ## Commands
 
 Run watcher:

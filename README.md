@@ -58,7 +58,7 @@ Run commands from the extracted suite ZIP root when IT deployment tooling requir
 .\printRxerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming"
 .\printRxerSetup.exe --validate
 
-.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true
+.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true --sent-prescription-retention-days 14
 .\HealthMailerSetup.exe --validate
 ```
 

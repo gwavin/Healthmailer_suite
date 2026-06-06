@@ -21,6 +21,7 @@ public sealed class PackageProcessor
     public int ProcessAvailablePackages()
     {
         _config.EnsureDirectories();
+        CleanupSentPrescriptionArchives();
         try
         {
             if (!Directory.Exists(_config.HandoffRoot))
@@ -213,6 +214,76 @@ public sealed class PackageProcessor
         _auditWriter.WriteTerminalRecords(packageDirectory, result, _config);
         claim.Release();
         MoveToArchive(packageDirectory, archiveRoot);
+    }
+
+    private void CleanupSentPrescriptionArchives()
+    {
+        if (_config.SentPrescriptionRetentionDays == 0)
+        {
+            return;
+        }
+
+        DateTime cutoffUtc = DateTime.UtcNow.AddDays(-_config.SentPrescriptionRetentionDays);
+        foreach (string archiveDirectory in SafeEnumerateDirectories(_config.SentRoot))
+        {
+            string pdfPath = Path.Combine(archiveDirectory, "prescription.pdf");
+            if (!File.Exists(pdfPath))
+            {
+                continue;
+            }
+
+            DateTime archiveTimeUtc = GetArchiveCompletedTimeUtc(archiveDirectory);
+            if (archiveTimeUtc > cutoffUtc)
+            {
+                continue;
+            }
+
+            try
+            {
+                File.Delete(pdfPath);
+                _log("Deleted retained sent prescription PDF after " + _config.SentPrescriptionRetentionDays.ToString(System.Globalization.CultureInfo.InvariantCulture) + " day retention: " + Path.GetFileName(archiveDirectory));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _log("Could not delete retained sent prescription PDF for " + Path.GetFileName(archiveDirectory) + ": " + ex.Message);
+            }
+        }
+    }
+
+    private static IEnumerable<string> SafeEnumerateDirectories(string root)
+    {
+        try
+        {
+            return Directory.Exists(root)
+                ? Directory.EnumerateDirectories(root).ToArray()
+                : [];
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DirectoryNotFoundException)
+        {
+            return [];
+        }
+    }
+
+    private static DateTime GetArchiveCompletedTimeUtc(string archiveDirectory)
+    {
+        string resultPath = Path.Combine(archiveDirectory, "result.json");
+        try
+        {
+            if (File.Exists(resultPath))
+            {
+                using JsonDocument document = JsonDocument.Parse(File.ReadAllText(resultPath));
+                if (document.RootElement.TryGetProperty("CompletedAtUtc", out JsonElement completedAt) &&
+                    completedAt.TryGetDateTimeOffset(out DateTimeOffset parsed))
+                {
+                    return parsed.UtcDateTime;
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+        }
+
+        return Directory.GetLastWriteTimeUtc(archiveDirectory);
     }
 
     private static ProcessingResult CreateResult(string packageName, PackageOutcome outcome, string message)

@@ -106,7 +106,7 @@ printRxer printing machine:
 HealthMailer sending machine:
 
 ```powershell
-.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true
+.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true --sent-prescription-retention-days 14
 .\HealthMailerSetup.exe --validate
 ```
 

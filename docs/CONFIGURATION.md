@@ -22,6 +22,7 @@ The installer asks for the handoff folder and optional ViewPoint/chart folder, w
 | `LocalRoot` | HealthMailer config, logs, archives, quarantine, and ledger root. | `C:\ProgramData\HealthMailer` |
 | `PollIntervalSeconds` | Fallback polling interval in addition to file watcher events. | `5` |
 | `StaleLockMinutes` | Age after which `.healthmailer.lock` may be retried. | `30` |
+| `SentPrescriptionRetentionDays` | Days to keep `prescription.pdf` in successful `sent` archives. `0` keeps sent PDFs indefinitely. Audit files remain. | `14` |
 | `WriteHtmlSummary` | Enables self-contained `summary.html`. | `false` |
 | `SendMail` | Sends through Outlook when true and live sending is explicitly approved. Dry-run/no-send when false. | `false` |
 | `ConfigCreatedByInstaller` | Marker written by HealthMailer setup for installed configurations. | `false` |
@@ -53,6 +54,7 @@ processed-ledger.jsonl
   "LocalRoot": "C:\\ProgramData\\HealthMailer",
   "PollIntervalSeconds": 5,
   "StaleLockMinutes": 30,
+  "SentPrescriptionRetentionDays": 14,
   "WriteHtmlSummary": false,
   "SendMail": false,
   "ConfigCreatedByInstaller": true,
@@ -84,6 +86,7 @@ processed-ledger.jsonl
   "LocalRoot": "C:\\ProgramData\\HealthMailer",
   "PollIntervalSeconds": 5,
   "StaleLockMinutes": 30,
+  "SentPrescriptionRetentionDays": 14,
   "WriteHtmlSummary": true,
   "SendMail": true,
   "ConfigCreatedByInstaller": true,
@@ -113,7 +116,9 @@ Local ACL hardening is best-effort and applies only to local NTFS paths. HealthM
 
 Local HealthMailer archives, failed packages, quarantine, logs, config, and ledger are restricted evidence stores. The local handoff/drop folder is the only category that may intentionally allow broader local write access for same-machine printRxer to HealthMailer compatibility.
 
-Automatic archive deletion is disabled by default. Sent, failed, and quarantine packages are not cleaned up during normal processing.
+Successful `sent` archives keep small audit files, but `prescription.pdf` is removed after `SentPrescriptionRetentionDays` days. The installer default is 14 days. Set `SentPrescriptionRetentionDays` to `0` only when governance approves retaining successful sent prescription PDFs indefinitely.
+
+Automatic deletion of failed and quarantine archives is disabled by default. Failed and quarantine packages are not cleaned up during normal processing because they require explicit review.
 
 printRxer has its own config at:
 
@@ -135,6 +140,12 @@ If `SendMail=false`, validation does not require Outlook COM registration and pr
 
 ```powershell
 HealthMailer.exe --process-once --config C:\ProgramData\HealthMailer\healthmailer.settings.json
+```
+
+Quiet install can set sent prescription PDF retention explicitly:
+
+```powershell
+.\HealthMailerSetup.exe --quiet --handoff-root "\\server\HealthMailerDrop$\incoming" --send-mail true --sent-prescription-retention-days 14
 ```
 
 ## Scripted IT Configuration

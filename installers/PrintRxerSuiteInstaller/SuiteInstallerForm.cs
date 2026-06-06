@@ -161,7 +161,7 @@ internal sealed class SuiteInstallerForm : Form
                 }
             }
 
-            long? logStart = setupKind == SetupKind.PrintRxer && isUninstall
+            long? logStart = setupKind == SetupKind.PrintRxer
                 ? TryGetFileLength(SuitePaths.PrintRxerInstallerLogPath)
                 : null;
             using Form busyDialog = ShowBusyDialog(ProgressTitle(setupKind, isUninstall), ProgressMessage(setupKind, isUninstall));
@@ -181,7 +181,7 @@ internal sealed class SuiteInstallerForm : Form
             {
                 AppendStatus(setupResult.Output);
             }
-            else if (setupKind == SetupKind.PrintRxer && isUninstall)
+            else if (setupKind == SetupKind.PrintRxer)
             {
                 AppendNewLogLines(SuitePaths.PrintRxerInstallerLogPath, logStart);
             }
@@ -269,12 +269,13 @@ internal sealed class SuiteInstallerForm : Form
             Height = 46,
             Dock = DockStyle.Top
         });
-        panel.Controls.Add(new ProgressBar
+        panel.Controls.Add(new Label
         {
-            Style = ProgressBarStyle.Marquee,
-            MarqueeAnimationSpeed = 35,
+            Text = "Working...",
+            AutoSize = false,
+            Height = 24,
             Dock = DockStyle.Top,
-            Height = 24
+            TextAlign = ContentAlignment.MiddleLeft
         });
 
         dialog.Controls.Add(panel);
@@ -322,7 +323,7 @@ internal sealed class SuiteInstallerForm : Form
             string text = reader.ReadToEnd().Trim();
             AppendStatus(string.IsNullOrWhiteSpace(text)
                 ? "No new printRxer installer log lines were written."
-                : "printRxer uninstall log:" + Environment.NewLine + text);
+                : "printRxer installer log:" + Environment.NewLine + text);
         }
         catch (Exception ex)
         {
@@ -367,6 +368,7 @@ internal sealed class SuiteInstallerForm : Form
                 ? "Suite installer is already running with administrator rights; starting printRxer setup directly."
                 : "Suite installer is not elevated; requesting Windows administrator approval for printRxer setup.");
             string arguments = "--quiet --handoff-root \"" + EscapeArgument(handoffRoot) + "\"";
+            long? logStart = TryGetFileLength(SuitePaths.PrintRxerInstallerLogPath);
             using Form busyDialog = ShowBusyDialog(ProgressTitle(SetupKind.PrintRxer, uninstall: false), ProgressMessage(SetupKind.PrintRxer, uninstall: false));
             ProcessResult setupResult = ProcessRunner.RunForResult(SuitePaths.PrintRxerSetupPath, arguments, elevate: true, whileWaiting: PumpBusyUi);
             busyDialog.Close();
@@ -381,6 +383,10 @@ internal sealed class SuiteInstallerForm : Form
             if (!string.IsNullOrWhiteSpace(setupResult.Output))
             {
                 AppendStatus(setupResult.Output);
+            }
+            else
+            {
+                AppendNewLogLines(SuitePaths.PrintRxerInstallerLogPath, logStart);
             }
 
             if (setupResult.ExitCode != 0)
@@ -738,7 +744,7 @@ internal sealed class SuiteInstallerForm : Form
         Button repairPrintRxer = CreateButton("Repair / reinstall printRxer printing", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer); });
         Button repairCapture = CreateButton("Repair printRxer printer capture", (_, _) => { dialog.Close(); RunElevatedScript(SuitePaths.CaptureInstallScriptPath); });
         Button repairHealthMailer = CreateButton("Repair / reinstall HealthMailer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.HealthMailerSetupPath, SetupKind.HealthMailer); });
-        Button uninstallPrintRxer = CreateButton("Uninstall printRxer", (_, _) => { dialog.Close(); RunPrintRxerUninstall(); });
+        Button uninstallPrintRxer = CreateButton("Uninstall printRxer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer, "--uninstall"); });
         Button uninstallHealthMailer = CreateButton("Uninstall HealthMailer", (_, _) => { dialog.Close(); RunSetup(SuitePaths.HealthMailerSetupPath, SetupKind.HealthMailer, "--uninstall"); });
 
         foreach (Button button in new[] { repairPrintRxer, repairCapture, repairHealthMailer, uninstallPrintRxer, uninstallHealthMailer })
@@ -751,96 +757,6 @@ internal sealed class SuiteInstallerForm : Form
 
         dialog.Controls.Add(panel);
         dialog.ShowDialog(this);
-    }
-
-    private void RunPrintRxerUninstall()
-    {
-        PrintRxerInstallState state = GetPrintRxerInstallState();
-        if (!state.IsInstalled)
-        {
-            AppendStatus("printRxer is not currently installed on this machine.");
-            if (!state.HasProgramData)
-            {
-                AppendStatus("Nothing needs to be removed.");
-                MessageBox.Show(this, "printRxer is not installed on this machine. Nothing needs to be removed.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            AppendStatus("Preserved local ProgramData exists at C:\\ProgramData\\printRxer.");
-            DialogResult resetChoice = MessageBox.Show(
-                this,
-                "printRxer is not installed on this machine, so there are no application, task, or printer-capture components to uninstall." +
-                Environment.NewLine + Environment.NewLine +
-                "Preserved local ProgramData still exists at C:\\ProgramData\\printRxer." +
-                Environment.NewLine + Environment.NewLine +
-                "Choose Yes only for an approved lab reset where local printRxer ProgramData should be removed.",
-                "printRxer is not installed",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Information,
-                MessageBoxDefaultButton.Button2);
-
-            if (resetChoice != DialogResult.Yes)
-            {
-                AppendStatus("printRxer ProgramData was preserved.");
-                return;
-            }
-
-            AppendStatus("printRxer is not installed; approved ProgramData removal selected.");
-            RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer, "--uninstall --remove-data --quiet");
-            return;
-        }
-
-        DialogResult dataChoice = MessageBox.Show(
-            this,
-            "Standard printRxer uninstall preserves local evidence in C:\\ProgramData\\printRxer, including logs, configuration, archives, and support/audit material." +
-            Environment.NewLine + Environment.NewLine +
-            "Choose Yes only for an approved lab reset where local printRxer ProgramData should also be removed." +
-            Environment.NewLine + Environment.NewLine +
-            "Remove C:\\ProgramData\\printRxer too?",
-            "printRxer ProgramData",
-            MessageBoxButtons.YesNoCancel,
-            MessageBoxIcon.Warning,
-            MessageBoxDefaultButton.Button2);
-
-        if (dataChoice == DialogResult.Cancel)
-        {
-            AppendStatus("printRxer uninstall cancelled before ProgramData choice.");
-            return;
-        }
-
-        string arguments = dataChoice == DialogResult.Yes
-            ? "--uninstall --remove-data --quiet"
-            : "--uninstall --quiet";
-
-        AppendStatus(dataChoice == DialogResult.Yes
-            ? "printRxer uninstall selected with ProgramData removal."
-            : "printRxer uninstall selected with ProgramData preserved.");
-        RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer, arguments);
-    }
-
-    private static PrintRxerInstallState GetPrintRxerInstallState()
-    {
-        bool installed = Directory.Exists(SuitePaths.PrintRxerProgramFilesRoot);
-        bool hasProgramData = Directory.Exists(SuitePaths.PrintRxerProgramDataRoot);
-
-        string state = ProcessRunner.PowerShell(@"
-if (Get-ScheduledTask -TaskName 'printRxer' -ErrorAction SilentlyContinue) { 'task' }
-if (Get-ScheduledTask -TaskName 'PrintRxerV3' -ErrorAction SilentlyContinue) { 'task' }
-if (Get-ScheduledTask -TaskName 'PrintRxer Agent' -ErrorAction SilentlyContinue) { 'task' }
-if (Get-Printer -Name 'printRxer' -ErrorAction SilentlyContinue) { 'printer' }
-if (Get-PrinterPort -Name 'printrx:' -ErrorAction SilentlyContinue) { 'port' }
-if (Get-PrinterDriver -Name 'PrintRxer XPS Driver' -ErrorAction SilentlyContinue) { 'driver' }
-if (Test-Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer Port Monitor') { 'monitor' }
-", requireSuccess: false);
-
-        installed = installed ||
-            state.Contains("task", StringComparison.OrdinalIgnoreCase) ||
-            state.Contains("printer", StringComparison.OrdinalIgnoreCase) ||
-            state.Contains("port", StringComparison.OrdinalIgnoreCase) ||
-            state.Contains("driver", StringComparison.OrdinalIgnoreCase) ||
-            state.Contains("monitor", StringComparison.OrdinalIgnoreCase);
-
-        return new PrintRxerInstallState(installed, hasProgramData);
     }
 
     private void RunUserAction(Action action)
@@ -900,6 +816,4 @@ if (Test-Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer P
         PrintRxer,
         HealthMailer
     }
-
-    private sealed record PrintRxerInstallState(bool IsInstalled, bool HasProgramData);
 }

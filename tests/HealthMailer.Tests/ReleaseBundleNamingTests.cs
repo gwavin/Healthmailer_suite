@@ -68,17 +68,8 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("bool elevate = setupKind == SetupKind.PrintRxer", form, StringComparison.Ordinal);
         Assert.Contains("RunPrintRxerInstall", form, StringComparison.Ordinal);
         Assert.Contains("--quiet --handoff-root", form, StringComparison.Ordinal);
-        Assert.Contains("--uninstall --quiet", form, StringComparison.Ordinal);
-        Assert.Contains("--uninstall --remove-data --quiet", form, StringComparison.Ordinal);
-        Assert.Contains("RunPrintRxerUninstall", form, StringComparison.Ordinal);
-        Assert.Contains("GetPrintRxerInstallState", form, StringComparison.Ordinal);
-        Assert.Contains("printRxer is not installed on this machine. Nothing needs to be removed.", form, StringComparison.Ordinal);
-        Assert.Contains("printRxer is not installed; approved ProgramData removal selected.", form, StringComparison.Ordinal);
-        Assert.Contains("printRxer ProgramData was preserved.", form, StringComparison.Ordinal);
-        Assert.Contains("Remove C:\\\\ProgramData\\\\printRxer too?", form, StringComparison.Ordinal);
-        Assert.Contains("MessageBoxDefaultButton.Button2", form, StringComparison.Ordinal);
-        Assert.Contains("printRxer uninstall selected with ProgramData preserved", form, StringComparison.Ordinal);
-        Assert.Contains("printRxer uninstall selected with ProgramData removal", form, StringComparison.Ordinal);
+        Assert.Contains("RunSetup(SuitePaths.PrintRxerSetupPath, SetupKind.PrintRxer, \"--uninstall\")", form, StringComparison.Ordinal);
+        Assert.Contains("RunSetup(SuitePaths.HealthMailerSetupPath, SetupKind.HealthMailer, \"--uninstall\")", form, StringComparison.Ordinal);
         Assert.Contains("printRxer uninstall will remove the watcher, app files, printer queue, driver, port, and monitor", form, StringComparison.Ordinal);
         Assert.Contains("ComponentDisplayName(setupKind) + \" uninstall is running", form, StringComparison.Ordinal);
         Assert.Contains("Suite buttons are disabled while Windows removes", form, StringComparison.Ordinal);
@@ -92,14 +83,34 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("Please wait while Windows installs printRxer, including the watcher, printer queue, driver, port, monitor, and app files.", form, StringComparison.Ordinal);
         Assert.Contains("HealthMailer uninstall finished. Standard uninstall preserves C:\\\\ProgramData\\\\HealthMailer evidence by default.", form, StringComparison.Ordinal);
         Assert.Contains("AppendNewLogLines(SuitePaths.PrintRxerInstallerLogPath", form, StringComparison.Ordinal);
-        Assert.Contains("printRxer uninstall log:", form, StringComparison.Ordinal);
+        Assert.Contains("printRxer installer log:", form, StringComparison.Ordinal);
         Assert.Contains("ProcessRunner.RunForResult(setupPath, arguments, elevate: elevate, whileWaiting: PumpBusyUi)", form, StringComparison.Ordinal);
         Assert.Contains("ValidatePrintRxerAfterSetup", form, StringComparison.Ordinal);
+        Assert.DoesNotContain("RunPrintRxerUninstall", form, StringComparison.Ordinal);
+        Assert.DoesNotContain("GetPrintRxerInstallState", form, StringComparison.Ordinal);
         Assert.DoesNotContain("ProcessRunner.StartElevated(setupPath, arguments)", form, StringComparison.Ordinal);
         Assert.Contains("No printRxer or HealthMailer log folder exists yet", form, StringComparison.Ordinal);
         Assert.DoesNotContain("Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)", form, StringComparison.Ordinal);
         Assert.Contains("MinimumSize = new Size(560, 360)", form, StringComparison.Ordinal);
         Assert.Contains("TableLayoutPanel panel", form, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Component_uninstall_dialogs_present_same_data_removal_pattern()
+    {
+        string repoRoot = FindRepoRoot();
+        string printRxerForm = File.ReadAllText(Path.Combine(repoRoot, "installers", "PrintRxerV3Installer", "UninstallForm.cs"));
+        string healthMailerForm = File.ReadAllText(Path.Combine(repoRoot, "installers", "HealthMailerInstaller", "UninstallForm.cs"));
+
+        foreach (string form in new[] { printRxerForm, healthMailerForm })
+        {
+            Assert.Contains("Also remove local ProgramData - approved lab reset only", form, StringComparison.Ordinal);
+            Assert.Contains("Local ProgramData evidence, logs, configuration, and archives are preserved by default.", form, StringComparison.Ordinal);
+            Assert.Contains("Lab reset is selected, so preserved local ProgramData can still be removed after confirmation.", form, StringComparison.Ordinal);
+            Assert.Contains("Uninstall is running. Buttons are disabled until this step completes.", form, StringComparison.Ordinal);
+            Assert.Contains("_removeData.Enabled = !busy", form, StringComparison.Ordinal);
+            Assert.Contains("Uninstalling...", form, StringComparison.Ordinal);
+        }
     }
 
     [Fact]
@@ -162,6 +173,9 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("Final component state", uninstaller, StringComparison.Ordinal);
         Assert.Contains("Removing scheduled task", uninstaller, StringComparison.Ordinal);
         Assert.Contains("Printer cleanup step finished", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("RemoveLateRecreatedProgramData", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("ProgramData was recreated after deletion; retrying approved lab-reset removal.", uninstaller, StringComparison.Ordinal);
+        Assert.Contains("Remaining ProgramData child:", uninstaller, StringComparison.Ordinal);
         Assert.Contains("--uninstall --quiet", uninstallForm, StringComparison.Ordinal);
         Assert.Contains("--uninstall --remove-data --quiet", uninstallForm, StringComparison.Ordinal);
         Assert.Contains("complete the already-confirmed uninstall", uninstallForm, StringComparison.Ordinal);

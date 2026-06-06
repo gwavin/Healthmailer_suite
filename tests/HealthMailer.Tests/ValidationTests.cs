@@ -111,6 +111,7 @@ public sealed class ValidationTests
 
         Assert.False(config.SendMail);
         Assert.False(config.LiveSendingApproved);
+        Assert.Equal(14, config.SentPrescriptionRetentionDays);
         Assert.True(File.Exists(configPath));
     }
 }

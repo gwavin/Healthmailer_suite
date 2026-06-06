@@ -7,7 +7,7 @@ namespace HealthMailerInstaller;
 [SupportedOSPlatform("windows")]
 internal sealed class UninstallForm : Form
 {
-    private readonly CheckBox _removeData = new() { Text = "Remove local ProgramData too - lab reset only", AutoSize = true };
+    private readonly CheckBox _removeData = new() { Text = "Also remove local ProgramData - approved lab reset only", AutoSize = true };
     private readonly TextBox _statusText = new() { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical };
     private readonly Button _uninstallButton = new() { Text = "Uninstall" };
     private readonly Button _closeButton = new() { Text = "Close" };
@@ -23,7 +23,7 @@ internal sealed class UninstallForm : Form
         Label title = new() { Text = "Uninstall HealthMailer", Font = new Font(Font.FontFamily, 14, FontStyle.Bold), AutoSize = true, Location = new Point(18, 18) };
         Label description = new()
         {
-            Text = "This removes the HealthMailer watcher and application files. Local sent/failed/quarantine evidence is preserved by default.",
+            Text = "This removes HealthMailer application components. Local ProgramData evidence, logs, configuration, and archives are preserved by default.",
             AutoSize = false,
             Location = new Point(20, 55),
             Size = new Size(700, 46)
@@ -82,18 +82,17 @@ internal sealed class UninstallForm : Form
         }
 
         string message = _removeData.Checked
-            ? "This will remove HealthMailer and delete C:\\ProgramData\\HealthMailer. Continue?"
-            : "This will remove HealthMailer while preserving C:\\ProgramData\\HealthMailer. Continue?";
+            ? "This will uninstall HealthMailer and remove C:\\ProgramData\\HealthMailer, including local data, logs, configuration, sent archives, failed archives, quarantine, and the ledger. Continue?"
+            : "This will uninstall HealthMailer and preserve C:\\ProgramData\\HealthMailer, including local data, logs, configuration, archives, and the ledger. Continue?";
 
         if (MessageBox.Show(this, message, Text, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
         {
             return;
         }
 
-        _uninstallButton.Enabled = false;
-        _closeButton.Enabled = false;
-        Cursor = Cursors.WaitCursor;
+        SetBusy(true);
         _statusText.Clear();
+        AppendStatus("Uninstall is running. Buttons are disabled until this step completes.");
 
         try
         {
@@ -126,9 +125,7 @@ internal sealed class UninstallForm : Form
         }
         finally
         {
-            _uninstallButton.Enabled = true;
-            _closeButton.Enabled = true;
-            Cursor = Cursors.Default;
+            SetBusy(false);
         }
     }
 
@@ -157,6 +154,16 @@ internal sealed class UninstallForm : Form
         _statusText.AppendText("[" + DateTime.Now.ToString("HH:mm:ss") + "] " + message + Environment.NewLine);
         _statusText.SelectionStart = _statusText.TextLength;
         _statusText.ScrollToCaret();
+        Application.DoEvents();
+    }
+
+    private void SetBusy(bool busy)
+    {
+        _uninstallButton.Enabled = !busy;
+        _removeData.Enabled = !busy;
+        _closeButton.Enabled = !busy;
+        _uninstallButton.Text = busy ? "Uninstalling..." : "Uninstall";
+        Cursor = busy ? Cursors.WaitCursor : Cursors.Default;
         Application.DoEvents();
     }
 

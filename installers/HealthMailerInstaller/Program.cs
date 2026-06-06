@@ -114,7 +114,13 @@ internal static class Program
                     return MissingRequiredArgument;
                 }
 
-                HealthMailerInstallerEngine.Install(new InstallOptions(handoffRoot, sendMail), log);
+                if (!TryGetIntOption(args, "--sent-prescription-retention-days", defaultValue: 14, out int retentionDays, out error))
+                {
+                    log(error ?? "Invalid --sent-prescription-retention-days value.");
+                    return MissingRequiredArgument;
+                }
+
+                HealthMailerInstallerEngine.Install(new InstallOptions(handoffRoot, sendMail, retentionDays), log);
                 log("HealthMailer quiet install completed.");
                 return Success;
             }
@@ -234,7 +240,7 @@ if ($task) {
 HealthMailerSetup.exe
 
 Usage:
-  HealthMailerSetup.exe --quiet --handoff-root <path> --send-mail true|false
+  HealthMailerSetup.exe --quiet --handoff-root <path> --send-mail true|false [--sent-prescription-retention-days <days>]
   HealthMailerSetup.exe --uninstall --quiet [--remove-data]
   HealthMailerSetup.exe --validate
   HealthMailerSetup.exe --help
@@ -270,6 +276,11 @@ Exit codes:
         if (HasOptionWithoutValue(args, "--send-mail"))
         {
             return "--send-mail requires true or false.";
+        }
+
+        if (HasOptionWithoutValue(args, "--sent-prescription-retention-days"))
+        {
+            return "--sent-prescription-retention-days requires a whole number of days. Use 0 to retain sent prescription PDFs indefinitely.";
         }
 
         return null;
@@ -320,6 +331,26 @@ Exit codes:
         }
 
         error = name + " must be true or false.";
+        return false;
+    }
+
+    private static bool TryGetIntOption(string[] args, string name, int defaultValue, out int value, out string? error)
+    {
+        string? text = GetOption(args, name);
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            value = defaultValue;
+            error = null;
+            return true;
+        }
+
+        if (int.TryParse(text, out value) && value >= 0)
+        {
+            error = null;
+            return true;
+        }
+
+        error = name + " must be 0 or a positive whole number of days.";
         return false;
     }
 

@@ -372,6 +372,58 @@ public sealed class PackageProcessorTests
     }
 
     [Fact]
+    public void ProcessAvailablePackages_deletes_old_sent_prescription_pdf_but_keeps_audit_files()
+    {
+        TestPaths paths = CreatePaths();
+        string oldSent = Path.Combine(paths.LocalRoot, "sent", "old-sent");
+        Directory.CreateDirectory(oldSent);
+        File.WriteAllText(Path.Combine(oldSent, "prescription.pdf"), "%PDF-1.4 old");
+        File.WriteAllText(Path.Combine(oldSent, "result.json"), JsonSerializer.Serialize(new
+        {
+            Outcome = "Sent",
+            CompletedAtUtc = DateTimeOffset.UtcNow.AddDays(-15)
+        }));
+        File.WriteAllText(Path.Combine(oldSent, "summary.txt"), "old summary");
+        string oldFailed = Path.Combine(paths.LocalRoot, "failed", "old-failed");
+        Directory.CreateDirectory(oldFailed);
+        File.WriteAllText(Path.Combine(oldFailed, "prescription.pdf"), "%PDF-1.4 failed");
+        CreatePackage(paths.HandoffRoot, "pkg-retention-cleanup");
+
+        HealthMailerConfig config = CreateConfig(paths);
+        config.SentPrescriptionRetentionDays = 14;
+        int processed = new PackageProcessor(config, new RecordingMailer(), _ => { }).ProcessAvailablePackages();
+
+        Assert.Equal(1, processed);
+        Assert.True(Directory.Exists(oldSent));
+        Assert.False(File.Exists(Path.Combine(oldSent, "prescription.pdf")));
+        Assert.True(File.Exists(Path.Combine(oldSent, "result.json")));
+        Assert.True(File.Exists(Path.Combine(oldSent, "summary.txt")));
+        Assert.True(File.Exists(Path.Combine(oldFailed, "prescription.pdf")));
+    }
+
+    [Fact]
+    public void ProcessAvailablePackages_sent_prescription_retention_zero_preserves_sent_pdf()
+    {
+        TestPaths paths = CreatePaths();
+        string oldSent = Path.Combine(paths.LocalRoot, "sent", "old-sent");
+        Directory.CreateDirectory(oldSent);
+        File.WriteAllText(Path.Combine(oldSent, "prescription.pdf"), "%PDF-1.4 old");
+        File.WriteAllText(Path.Combine(oldSent, "result.json"), JsonSerializer.Serialize(new
+        {
+            Outcome = "Sent",
+            CompletedAtUtc = DateTimeOffset.UtcNow.AddDays(-120)
+        }));
+        CreatePackage(paths.HandoffRoot, "pkg-retention-disabled");
+
+        HealthMailerConfig config = CreateConfig(paths);
+        config.SentPrescriptionRetentionDays = 0;
+        int processed = new PackageProcessor(config, new RecordingMailer(), _ => { }).ProcessAvailablePackages();
+
+        Assert.Equal(1, processed);
+        Assert.True(File.Exists(Path.Combine(oldSent, "prescription.pdf")));
+    }
+
+    [Fact]
     public void SummaryHtml_contains_no_scripts_or_external_resources()
     {
         TestPaths paths = CreatePaths();

@@ -41,7 +41,7 @@ printRxer also waits for the captured payload to be stable before opening the pi
 
 HealthMailer writes `result.json` for terminal outcomes and preserves packages in `sent`, `failed`, or `quarantine`.
 
-Automatic deletion of sent, failed, and quarantine archives is disabled by default. These folders are operational evidence for a clinical communication workflow. Failed and quarantined packages require explicit review and must not be silently deleted by background processing.
+Successful `sent` archives keep audit evidence, but `prescription.pdf` is removed after the configured `SentPrescriptionRetentionDays` period. The installer default is 14 days. Failed and quarantined packages require explicit review and must not be silently deleted by background processing.
 
 This is audit evidence, not legal non-repudiation. Local governance still owns:
 

@@ -48,6 +48,7 @@ internal static class HealthMailerInstallerEngine
             LocalRoot = InstallerPaths.ProgramDataRoot,
             PollIntervalSeconds = 5,
             StaleLockMinutes = 30,
+            SentPrescriptionRetentionDays = options.SentPrescriptionRetentionDays,
             WriteHtmlSummary = false,
             Logging = new { MaxLogBytes = 10485760, MaxLogFiles = 5 },
             SendMail = options.SendMail,

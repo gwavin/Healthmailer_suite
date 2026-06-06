@@ -9,6 +9,7 @@ public sealed class HealthMailerConfig
     public string LocalRoot { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "HealthMailer");
     public int PollIntervalSeconds { get; set; } = 5;
     public int StaleLockMinutes { get; set; } = 30;
+    public int SentPrescriptionRetentionDays { get; set; } = 14;
     public bool WriteHtmlSummary { get; set; }
     public LoggingOptions Logging { get; set; } = new();
     public bool SendMail { get; set; }
@@ -113,6 +114,11 @@ public sealed class HealthMailerConfig
         if (config.StaleLockMinutes <= 0)
         {
             config.StaleLockMinutes = 30;
+        }
+
+        if (config.SentPrescriptionRetentionDays < 0)
+        {
+            config.SentPrescriptionRetentionDays = 14;
         }
 
         config.Logging ??= new LoggingOptions();

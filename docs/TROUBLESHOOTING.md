@@ -136,7 +136,9 @@ Only one HealthMailer runtime should use a given `LocalRoot` and `processed-ledg
 
 ## Archive Cleanup
 
-HealthMailer does not automatically delete sent, failed, or quarantine archives. If evidence storage is growing, escalate to the local governance/support process. Do not delete failed or quarantined packages without explicit review.
+HealthMailer removes `prescription.pdf` from successful `sent` archives after the configured `SentPrescriptionRetentionDays` period. The installer default is 14 days, while audit files such as `result.json` and `summary.txt` remain.
+
+HealthMailer does not automatically delete failed or quarantine archives. If evidence storage is growing, escalate to the local governance/support process. Do not delete failed or quarantined packages without explicit review.
 
 If a cleanup command is added later, it should be explicit and plan-only by default.
 

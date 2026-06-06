@@ -44,6 +44,11 @@ internal sealed class InstallForm : Form
         AutoSize = true,
         Checked = false
     };
+    private readonly ComboBox _sentPrescriptionRetention = new()
+    {
+        DropDownStyle = ComboBoxStyle.DropDownList,
+        Dock = DockStyle.Top
+    };
 
     private string _selectedHandoffRoot = InstallerPaths.DefaultHandoffRoot;
 
@@ -56,6 +61,14 @@ internal sealed class InstallForm : Form
         Icon = InstallerBranding.TryCreateIcon();
 
         Controls.Add(_contentPanel);
+        _sentPrescriptionRetention.Items.AddRange(new object[]
+        {
+            new RetentionChoice("Keep sent prescription PDFs for 7 days", 7),
+            new RetentionChoice("Keep sent prescription PDFs for 14 days (recommended)", 14),
+            new RetentionChoice("Keep sent prescription PDFs for 30 days", 30),
+            new RetentionChoice("Keep sent prescription PDFs indefinitely", 0)
+        });
+        _sentPrescriptionRetention.SelectedIndex = 1;
         ShowFolderStep();
     }
 
@@ -106,6 +119,10 @@ internal sealed class InstallForm : Form
         layout.Controls.Add(CreateWrappedLabel("HealthMailer must run on the Windows account with the approved classic Outlook/Healthmail profile.", 40));
         layout.Controls.Add(_sendMailCheckBox);
         layout.Controls.Add(CreateWrappedLabel("Leave this unchecked for dry-run validation. Check it only when this installer is being run by the approved Outlook/Healthmail sender user and live sending is approved.", 50));
+        layout.Controls.Add(Spacer(8));
+        layout.Controls.Add(CreateWrappedLabel("Successful-send prescription retention:", 26));
+        layout.Controls.Add(_sentPrescriptionRetention);
+        layout.Controls.Add(CreateWrappedLabel("HealthMailer keeps small audit files for sent packages, but removes sent prescription PDFs after this period. Failed and quarantined packages are not automatically cleaned because they require review.", 58));
         layout.Controls.Add(CreateButtonRow(_nextButton, _closeButton, _uninstallButton));
 
         _nextButton.Click -= NextClicked;
@@ -129,6 +146,7 @@ internal sealed class InstallForm : Form
 
         layout.Controls.Add(CreateWrappedLabel("HealthMailer will watch:", 30));
         layout.Controls.Add(_reviewText);
+        layout.Controls.Add(CreateWrappedLabel("Successful sent prescription PDF retention: " + SelectedRetentionDescription(), 34));
         string mode = _sendMailCheckBox.Checked
             ? "Live Outlook sending will be enabled for approved recipient domains."
             : "Dry-run/no-send mode will be enabled; packages will validate but no email will be sent.";
@@ -261,7 +279,7 @@ internal sealed class InstallForm : Form
     {
         DialogResult confirm = MessageBox.Show(
             this,
-                "Install HealthMailer watching this handoff folder?\n\n" + _selectedHandoffRoot + "\n\nLive Outlook sending: " + (_sendMailCheckBox.Checked ? "enabled" : "disabled"),
+                "Install HealthMailer watching this handoff folder?\n\n" + _selectedHandoffRoot + "\n\nLive Outlook sending: " + (_sendMailCheckBox.Checked ? "enabled" : "disabled") + "\nSent prescription PDF retention: " + SelectedRetentionDescription(),
             Text,
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Question);
@@ -276,7 +294,7 @@ internal sealed class InstallForm : Form
 
         try
         {
-            HealthMailerInstallerEngine.Install(new InstallOptions(_selectedHandoffRoot, _sendMailCheckBox.Checked), AppendStatus);
+            HealthMailerInstallerEngine.Install(new InstallOptions(_selectedHandoffRoot, _sendMailCheckBox.Checked, SelectedRetentionDays()), AppendStatus);
             AppendStatus("Install completed successfully.");
             MessageBox.Show(this, "HealthMailer was installed successfully. Click OK to close setup.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
             Close();
@@ -301,6 +319,16 @@ internal sealed class InstallForm : Form
         Application.DoEvents();
     }
 
+    private int SelectedRetentionDays()
+    {
+        return _sentPrescriptionRetention.SelectedItem is RetentionChoice choice ? choice.Days : 14;
+    }
+
+    private string SelectedRetentionDescription()
+    {
+        return _sentPrescriptionRetention.SelectedItem is RetentionChoice choice ? choice.Text : "Keep sent prescription PDFs for 14 days (recommended)";
+    }
+
     private void AppendStatus(string message)
     {
         if (_statusText.Parent is null)
@@ -312,5 +340,10 @@ internal sealed class InstallForm : Form
         _statusText.SelectionStart = _statusText.TextLength;
         _statusText.ScrollToCaret();
         Application.DoEvents();
+    }
+
+    private sealed record RetentionChoice(string Text, int Days)
+    {
+        public override string ToString() => Text;
     }
 }
