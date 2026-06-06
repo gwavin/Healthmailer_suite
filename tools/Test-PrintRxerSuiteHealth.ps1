@@ -43,6 +43,110 @@ function Get-TaskState([string]$Name) {
     }
 }
 
+function Test-PrintRxerPortMonitorSecurity {
+    $dllPath = Join-Path $env:WINDIR 'System32\PrintRxerPortMonitor.dll'
+    $regPath = "Registry::HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer Port Monitor"
+    
+    if (Test-Path -LiteralPath $dllPath) {
+        try {
+            $acl = Get-Acl -LiteralPath $dllPath
+            foreach ($rule in $acl.Access) {
+                if ($rule.AccessControlType -eq 'Allow') {
+                    $sid = $null
+                    try {
+                        $sid = $rule.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value
+                    } catch {
+                        $sid = $rule.IdentityReference.Value
+                    }
+                    if ($sid -ne 'S-1-5-18' -and $sid -ne 'S-1-5-32-544') {
+                        $rights = $rule.FileSystemRights
+                        # Check for specific write/modify rights to avoid false positives with ReadAndExecute/Read
+                        $writeModifyFlags = [System.Security.AccessControl.FileSystemRights]::WriteData -bor
+                                            [System.Security.AccessControl.FileSystemRights]::AppendData -bor
+                                            [System.Security.AccessControl.FileSystemRights]::WriteAttributes -bor
+                                            [System.Security.AccessControl.FileSystemRights]::WriteExtendedAttributes -bor
+                                            [System.Security.AccessControl.FileSystemRights]::Delete -bor
+                                            [System.Security.AccessControl.FileSystemRights]::ChangePermissions -bor
+                                            [System.Security.AccessControl.FileSystemRights]::TakeOwnership
+                        if (($rights -band $writeModifyFlags) -ne 0) {
+                            $critical.Add("CRITICAL_SECURITY_FAILURE: DLL '$dllPath' allows write/modify access to non-admin identity '$($rule.IdentityReference.Value)' ($sid).")
+                        }
+                    }
+                }
+            }
+        }
+        catch {
+            $ex = $_.Exception
+            $isUnauthorized = $false
+            if ($null -ne $ex) {
+                if ($ex -is [System.UnauthorizedAccessException] -or $ex -is [System.Security.SecurityException]) {
+                    $isUnauthorized = $true
+                } elseif ($null -ne $ex.InnerException -and ($ex.InnerException -is [System.UnauthorizedAccessException] -or $ex.InnerException -is [System.Security.SecurityException])) {
+                    $isUnauthorized = $true
+                }
+            }
+            if (-not $isUnauthorized -and $_.ToString() -match "unauthorized|permission|access") {
+                $isUnauthorized = $true
+            }
+
+            if ($isUnauthorized) {
+                $notices.Add("Notice: Skipping DLL ACL validation because the current user does not have permission to read ACLs (expected for standard users).")
+            } else {
+                $critical.Add("CRITICAL_SECURITY_FAILURE: Failed to query/verify ACL for DLL '$dllPath': $_")
+            }
+        }
+    }
+
+    if (Test-Path -Path $regPath) {
+        try {
+            $acl = Get-Acl -Path $regPath
+            foreach ($rule in $acl.Access) {
+                if ($rule.AccessControlType -eq 'Allow') {
+                    $sid = $null
+                    try {
+                        $sid = $rule.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value
+                    } catch {
+                        $sid = $rule.IdentityReference.Value
+                    }
+                    if ($sid -ne 'S-1-5-18' -and $sid -ne 'S-1-5-32-544') {
+                        $rights = $rule.RegistryRights
+                        # Check for specific write/modify rights to avoid false positives with ReadKey
+                        $writeModifyFlags = [System.Security.AccessControl.RegistryRights]::SetValue -bor
+                                            [System.Security.AccessControl.RegistryRights]::CreateSubKey -bor
+                                            [System.Security.AccessControl.RegistryRights]::CreateLink -bor
+                                            [System.Security.AccessControl.RegistryRights]::Delete -bor
+                                            [System.Security.AccessControl.RegistryRights]::ChangePermissions -bor
+                                            [System.Security.AccessControl.RegistryRights]::TakeOwnership
+                        if (($rights -band $writeModifyFlags) -ne 0) {
+                            $critical.Add("CRITICAL_SECURITY_FAILURE: Registry key '$regPath' allows write/modify access to non-admin identity '$($rule.IdentityReference.Value)' ($sid).")
+                        }
+                    }
+                }
+            }
+        }
+        catch {
+            $ex = $_.Exception
+            $isUnauthorized = $false
+            if ($null -ne $ex) {
+                if ($ex -is [System.UnauthorizedAccessException] -or $ex -is [System.Security.SecurityException]) {
+                    $isUnauthorized = $true
+                } elseif ($null -ne $ex.InnerException -and ($ex.InnerException -is [System.UnauthorizedAccessException] -or $ex.InnerException -is [System.Security.SecurityException])) {
+                    $isUnauthorized = $true
+                }
+            }
+            if (-not $isUnauthorized -and $_.ToString() -match "unauthorized|permission|access") {
+                $isUnauthorized = $true
+            }
+
+            if ($isUnauthorized) {
+                $notices.Add("Notice: Skipping registry ACL validation because the current user does not have permission to read ACLs (expected for standard users).")
+            } else {
+                $critical.Add("CRITICAL_SECURITY_FAILURE: Failed to query/verify ACL for registry key '$regPath': $_")
+            }
+        }
+    }
+}
+
 $warnings = New-Object System.Collections.Generic.List[string]
 $critical = New-Object System.Collections.Generic.List[string]
 $notices = New-Object System.Collections.Generic.List[string]
@@ -108,6 +212,8 @@ if ($healthConfig) {
         $warnings.Add("HealthMailer handoff folder is unavailable: $($healthConfig.HandoffRoot)")
     }
 }
+
+Test-PrintRxerPortMonitorSecurity
 
 $result = [ordered]@{
     Status = if ($critical.Count -gt 0) { 'Critical' } elseif ($warnings.Count -gt 0) { 'Warning' } elseif ($printTaskState -eq 'NotInstalled' -and $healthTaskState -eq 'NotInstalled') { 'NotInstalled' } else { 'Healthy' }

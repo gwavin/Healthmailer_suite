@@ -6,6 +6,12 @@ using PrintRxerV3.Recipients;
 
 namespace PrintRxerV3Installer;
 
+public class FatalSecurityException : Exception
+{
+    public FatalSecurityException(string message) : base(message) { }
+    public FatalSecurityException(string message, Exception innerException) : base(message, innerException) { }
+}
+
 internal static class PrintRxerInstaller
 {
     public static void Install(InstallOptions options, Action<string> log)
@@ -187,8 +193,9 @@ internal static class PrintRxerInstaller
             DirectoryInfo directory = new(path);
             directory.SetAccessControl(CreateBaseDirectorySecurity(runtimeRights));
         }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or SystemException)
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
         {
+            throw new FatalSecurityException($"Failed to secure/harden directory ACLs on {path}", ex);
         }
     }
 
@@ -211,8 +218,9 @@ internal static class PrintRxerInstaller
             security.AddAccessRule(new FileSystemAccessRule(users, runtimeRights, AccessControlType.Allow));
             new FileInfo(path).SetAccessControl(security);
         }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or SystemException)
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
         {
+            throw new FatalSecurityException($"Failed to secure/harden file ACLs on {path}", ex);
         }
     }
 
@@ -351,7 +359,15 @@ if ($printer.DriverName -ne 'PrintRxer XPS Driver') { throw ('The printRxer prin
         fileSecurity.AddAccessRule(new FileSystemAccessRule(admins, FileSystemRights.FullControl, AccessControlType.Allow));
         fileSecurity.AddAccessRule(new FileSystemAccessRule(localService, FileSystemRights.ReadAndExecute | FileSystemRights.Read, AccessControlType.Allow));
         fileSecurity.AddAccessRule(new FileSystemAccessRule(spoolerService, FileSystemRights.ReadAndExecute | FileSystemRights.Read, AccessControlType.Allow));
-        new FileInfo(dllPath).SetAccessControl(fileSecurity);
+        
+        try
+        {
+            new FileInfo(dllPath).SetAccessControl(fileSecurity);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+        {
+            throw new FatalSecurityException($"Failed to secure/harden port monitor DLL ACLs on {dllPath}", ex);
+        }
         VerifyPortMonitorFileSecurity(dllPath, system, admins, localService, spoolerService);
 
         const string monitorKeyPath = @"SYSTEM\CurrentControlSet\Control\Print\Monitors\PrintRxer Port Monitor";
@@ -366,7 +382,18 @@ if ($printer.DriverName -ne 'PrintRxer XPS Driver') { throw ('The printRxer prin
         registrySecurity.AddAccessRule(new RegistryAccessRule(system, RegistryRights.FullControl, InheritanceFlags.None, PropagationFlags.None, AccessControlType.Allow));
         registrySecurity.AddAccessRule(new RegistryAccessRule(admins, RegistryRights.FullControl, InheritanceFlags.None, PropagationFlags.None, AccessControlType.Allow));
         registrySecurity.AddAccessRule(new RegistryAccessRule(spoolerService, RegistryRights.ReadKey, InheritanceFlags.None, PropagationFlags.None, AccessControlType.Allow));
-        key.SetAccessControl(registrySecurity);
+        
+        SecurityIdentifier users = new(WellKnownSidType.BuiltinUsersSid, null);
+        registrySecurity.AddAccessRule(new RegistryAccessRule(users, RegistryRights.ReadKey, InheritanceFlags.None, PropagationFlags.None, AccessControlType.Allow));
+        
+        try
+        {
+            key.SetAccessControl(registrySecurity);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or System.Security.SecurityException)
+        {
+            throw new FatalSecurityException("Failed to secure/harden port monitor registry key ACLs.", ex);
+        }
         VerifyPortMonitorRegistrySecurity(key, system, admins, spoolerService);
     }
 
@@ -426,7 +453,14 @@ if ($printer.DriverName -ne 'PrintRxer XPS Driver') { throw ('The printRxer prin
             throw new InvalidOperationException("Port monitor registry-key ACL does not grant the spooler service read-only access.");
         }
 
-        if (rules.Length != 3)
+        SecurityIdentifier users = new(WellKnownSidType.BuiltinUsersSid, null);
+        RegistryAccessRule? usersRule = rules.SingleOrDefault(candidate => users.Equals(candidate.IdentityReference));
+        if (usersRule is null || usersRule.AccessControlType != AccessControlType.Allow || (usersRule.RegistryRights & RegistryRights.ReadKey) != RegistryRights.ReadKey)
+        {
+            throw new InvalidOperationException("Port monitor registry-key ACL does not grant the Users group read-only access.");
+        }
+
+        if (rules.Length != 4)
         {
             throw new InvalidOperationException("Port monitor registry key contains an unexpected explicit access rule.");
         }

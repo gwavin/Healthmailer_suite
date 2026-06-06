@@ -52,7 +52,8 @@ function Set-HardenedPortMonitorRegistryAcl {
     $acl.AddAccessRule([Security.AccessControl.RegistryAccessRule]::new('SYSTEM', 'FullControl', 'Allow'))
     $acl.AddAccessRule([Security.AccessControl.RegistryAccessRule]::new('BUILTIN\Administrators', 'FullControl', 'Allow'))
     $acl.AddAccessRule([Security.AccessControl.RegistryAccessRule]::new($spoolerServiceAccount, 'ReadKey', 'Allow'))
-    Set-Acl -LiteralPath $Path -AclObject $acl
+    $acl.AddAccessRule([Security.AccessControl.RegistryAccessRule]::new('BUILTIN\Users', 'ReadKey', 'Allow'))
+    Set-Acl -Path $Path -AclObject $acl
 }
 
 function Assert-HardenedPortMonitorFileAcl {
@@ -85,7 +86,8 @@ function Assert-HardenedPortMonitorRegistryAcl {
     param([Parameter(Mandatory = $true)][string]$Path)
 
     $spoolerSid = ([Security.Principal.NTAccount]$spoolerServiceAccount).Translate([Security.Principal.SecurityIdentifier]).Value
-    $expected = @('S-1-5-18', 'S-1-5-32-544', $spoolerSid)
+    $usersSid = ([Security.Principal.SecurityIdentifier]::new([Security.Principal.WellKnownSidType]::BuiltinUsersSid, $null)).Value
+    $expected = @('S-1-5-18', 'S-1-5-32-544', $spoolerSid, $usersSid)
     $acl = Get-PortMonitorRegistryAcl -Path $Path
     if (-not $acl.AreAccessRulesProtected) {
         throw "Port monitor registry ACL inheritance is enabled: $Path"
@@ -96,7 +98,7 @@ function Assert-HardenedPortMonitorRegistryAcl {
     }
     foreach ($rule in $rules) {
         $sid = $rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
-        $requiredRights = if ($sid -eq $spoolerSid) { [Security.AccessControl.RegistryRights]::ReadKey } else { [Security.AccessControl.RegistryRights]::FullControl }
+        $requiredRights = if ($sid -eq $spoolerSid -or $sid -eq $usersSid) { [Security.AccessControl.RegistryRights]::ReadKey } else { [Security.AccessControl.RegistryRights]::FullControl }
         if ($sid -notin $expected -or $rule.AccessControlType -ne 'Allow' -or (($rule.RegistryRights -band $requiredRights) -ne $requiredRights)) {
             throw "Port monitor registry ACL does not match the hardened specification: $Path"
         }
@@ -109,9 +111,10 @@ function Get-PortMonitorRegistryAcl {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ($true) {
         try {
-            return Get-Acl -LiteralPath $Path -ErrorAction Stop
+            return Get-Acl -Path $Path -ErrorAction Stop
         }
-        catch [System.Management.Automation.ItemNotFoundException] {
+        catch {
+            # Catch all exceptions (such as ActionPreferenceStopException) and retry until timeout
         }
 
         if ((Get-Date) -ge $deadline) {
@@ -393,8 +396,10 @@ public static class PrintRxerNativeMethods
         Wait-ServiceStatus -Name Spooler -Status Running
     }
 
-    New-Item -Path $monitorRegistryPath -Force | Out-Null
-    New-ItemProperty -LiteralPath $monitorRegistryPath -Name 'Driver' -Value ([System.IO.Path]::GetFileName($systemDllPath)) -PropertyType String -Force | Out-Null
+    if (-not (Test-Path -Path $monitorRegistryPath)) {
+        New-Item -Path $monitorRegistryPath -Force | Out-Null
+    }
+    New-ItemProperty -Path $monitorRegistryPath -Name 'Driver' -Value ([System.IO.Path]::GetFileName($systemDllPath)) -PropertyType String -Force | Out-Null
 
     Set-HardenedPortMonitorRegistryAcl -Path $monitorRegistryPath
     Assert-HardenedPortMonitorRegistryAcl -Path $monitorRegistryPath
