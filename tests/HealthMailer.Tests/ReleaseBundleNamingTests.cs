@@ -87,7 +87,9 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("Advanced / repair", form, StringComparison.Ordinal);
         Assert.Contains("Repair printRxer printer capture", form, StringComparison.Ordinal);
         Assert.Contains("excludes PDF payloads by default", form, StringComparison.Ordinal);
-        Assert.Contains("HealthMailer setup will run as the current Windows user", form, StringComparison.Ordinal);
+        Assert.Contains("HealthMailer setup will run as the current Windows user. Use the Outlook/Healthmail sender account", form, StringComparison.Ordinal);
+        Assert.Contains("HealthMailer uninstall may request administrator approval to remove the protected application folder.", form, StringComparison.Ordinal);
+        Assert.Contains("Standard uninstall preserves C:\\\\ProgramData\\\\HealthMailer evidence by default.", form, StringComparison.Ordinal);
         Assert.Contains("printRxer setup includes printer capture", form, StringComparison.Ordinal);
         Assert.Contains("bool isUninstall = arguments.Contains(\"--uninstall\"", form, StringComparison.Ordinal);
         Assert.Contains("bool elevate = setupKind == SetupKind.PrintRxer", form, StringComparison.Ordinal);
@@ -103,7 +105,7 @@ public sealed class ReleaseBundleNamingTests
         Assert.Contains("whileWaiting: PumpBusyUi", form, StringComparison.Ordinal);
         Assert.Contains("Application.DoEvents()", form, StringComparison.Ordinal);
         Assert.Contains("setupKind == SetupKind.HealthMailer ? \"HealthMailer\" : \"printRxer\"", form, StringComparison.Ordinal);
-        Assert.Contains("Please wait while Windows removes the HealthMailer scheduled task and app files.", form, StringComparison.Ordinal);
+        Assert.Contains("Please wait while HealthMailer uninstall runs. Administrator approval may be requested before the scheduled task and protected app files are removed.", form, StringComparison.Ordinal);
         Assert.Contains("Please wait while Windows installs HealthMailer for the Outlook/Healthmail sender user.", form, StringComparison.Ordinal);
         Assert.Contains("Please wait while Windows installs printRxer, including the watcher, printer queue, driver, port, monitor, and app files.", form, StringComparison.Ordinal);
         Assert.Contains("HealthMailer uninstall finished. Standard uninstall preserves C:\\\\ProgramData\\\\HealthMailer evidence by default.", form, StringComparison.Ordinal);

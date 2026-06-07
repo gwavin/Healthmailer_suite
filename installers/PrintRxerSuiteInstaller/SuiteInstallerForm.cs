@@ -135,6 +135,7 @@ internal sealed class SuiteInstallerForm : Form
 
         string message = setupKind switch
         {
+            SetupKind.HealthMailer when isUninstall => "HealthMailer uninstall may request administrator approval to remove the protected application folder. Standard uninstall preserves C:\\ProgramData\\HealthMailer evidence by default.",
             SetupKind.HealthMailer => "HealthMailer setup will run as the current Windows user. Use the Outlook/Healthmail sender account so the scheduled task and Outlook COM automation use the correct profile.",
             SetupKind.PrintRxer when isUninstall => "printRxer uninstall will remove the watcher, app files, printer queue, driver, port, and monitor in one administrator-approved step. Standard uninstall preserves local data, logs, and archives by default.",
             _ => "printRxer setup includes printer capture. Windows will ask for administrator approval while it installs the app files, port monitor, driver, and local printer queue. After install, run validation to confirm the scheduled task principal."
@@ -225,7 +226,7 @@ internal sealed class SuiteInstallerForm : Form
         if (uninstall)
         {
             return setupKind == SetupKind.HealthMailer
-            ? "Please wait while Windows removes the HealthMailer scheduled task and app files."
+            ? "Please wait while HealthMailer uninstall runs. Administrator approval may be requested before the scheduled task and protected app files are removed."
             : "Please wait while Windows removes the printRxer watcher, printer queue, driver, port, monitor, and app files.";
         }
 
