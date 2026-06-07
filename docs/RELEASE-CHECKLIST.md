@@ -54,8 +54,8 @@
 - [ ] Missing `READY` is ignored.
 - [ ] Bad PDF hash is quarantined.
 - [ ] Duplicate package is quarantined and not resent.
-- [ ] Stale lock is retried.
-- [ ] Fresh lock is left alone.
+- [ ] Lock containing a dead PID is reclaimed immediately.
+- [ ] Lock owned by an active HealthMailer process is left alone.
 - [ ] Confirm current release docs and config do not present removed/deferred chart/ViewPoint copy as available.
 - [ ] `result.json` and `summary.txt` are present for terminal outcomes.
 - [ ] Optional `summary.html` has no scripts or external resources.
@@ -63,13 +63,14 @@
 - [ ] printRxer log rotation caps `printRxer.log` and old logs.
 - [ ] HealthMailer starts and keeps polling when watched UNC is temporarily unavailable.
 - [ ] HealthMailer does not send partial `.uploading-*` package.
-- [ ] Fresh `.healthmailer.lock` prevents claim.
-- [ ] Stale `.healthmailer.lock` permits claim.
-- [ ] Invalid lock content falls back to lock file timestamp.
+- [ ] `.healthmailer.lock` records the claiming HealthMailer process ID.
+- [ ] Invalid or unreadable lock ownership is left alone fail-closed.
 - [ ] Concurrent claim attempt allows only one processor to claim.
 - [ ] Ledger detects duplicates by package ID and completed package hash.
 - [ ] Ledger cache reloads after external ledger append.
 - [ ] Malformed ledger line is ignored without breaking duplicate checks.
+- [ ] Timestamped sent-ledger entries older than 30 days are excluded from the active duplicate cache.
+- [ ] Legacy sent-ledger entries without a valid timestamp remain in the active duplicate cache.
 - [ ] Sent, failed, and quarantine archives are not deleted during normal processing.
 - [ ] Local ACL hardening skips UNC paths and applies restricted rules to archives, logs, config, and ledger.
 
@@ -88,6 +89,8 @@
 - [ ] Pending local package later publishes after share returns.
 - [ ] printRxer watcher uses configured `RetryIntervalSeconds`.
 - [ ] Duplicate publish attempt is safe/idempotent.
+- [ ] Verify `RecipientCsvValidator` required, alias, and search-column lookups match current production Healthmail and Outlook CSV schemas.
+- [ ] Confirm repository documentation does not reference unsupported legacy three-column recipient schemas.
 
 ## Uninstall
 

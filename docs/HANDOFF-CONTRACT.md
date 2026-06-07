@@ -32,7 +32,7 @@ HealthMailer cross-checks that:
 - the recipient domain is allowed; and
 - the package ID and completed package hash are not already in the ledger.
 
-These controls reject packages that fail validation and reduce spoofing and accidental-ingestion risk. The ledger prevents duplicate sends by package ID and completed package hash. The handoff folder should normally be empty or contain only active package folders.
+These controls reject packages that fail validation and reduce spoofing and accidental-ingestion risk. The ledger checks package ID and completed package hash against its active duplicate cache. The handoff folder should normally be empty or contain only active package folders.
 
 ## `request.json`
 
@@ -167,5 +167,9 @@ HealthMailer appends successful and terminal mail-attempt records to:
 C:\ProgramData\HealthMailer\processed-ledger.jsonl
 ```
 
-This prevents duplicate sends by package ID or completed package hash.
+HealthMailer checks package ID and completed package hash against an in-memory cache populated from valid timestamped sent records from the previous 30 days. Legacy ledger records without a valid timestamp remain loaded fail-closed. The complete append-only ledger remains audit evidence and must not be manually edited or truncated.
+
+## Package Claim Lock
+
+HealthMailer atomically claims a package with `.healthmailer.lock` and writes its process ID into the file. A lock owned by an active process named `HealthMailer` is retained. A dead PID, or a PID now owned by a differently named process, is reclaimed immediately. Malformed or unreadable lock ownership is left alone for support review to avoid duplicate processing.
 

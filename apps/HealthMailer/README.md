@@ -84,6 +84,8 @@ HealthMailer also maintains:
 %ProgramData%\HealthMailer\processed-ledger.jsonl
 ```
 
+The ledger remains full append-only audit evidence. The active duplicate cache loads valid timestamped sent records from the previous 30 days and keeps legacy timestamp-less records fail-closed. Do not manually edit or truncate the ledger.
+
 The ledger records package IDs and completed package hashes once `MailSent=true`.
 If either value is seen again, HealthMailer quarantines the duplicate instead of
 sending it. Legacy chart-copy audit outcomes remain readable for compatibility.

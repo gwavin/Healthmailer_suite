@@ -147,11 +147,20 @@
 
   <h3>Recipient List Format Schema</h3>
   <p>
-    The master CSV must follow the exact structure below (no patient-identifiable data should be included):
+    The preferred master CSV requires <code>recipientId</code>, <code>displayName</code>,
+    <code>email</code>, and <code>active</code>. Optional picker-search fields include
+    <code>organisation</code>, <code>site</code>, <code>department</code>, and
+    <code>service</code>. The active field accepts true/false, yes/no, or 1/0.
+    Supported Healthmail and Outlook exports are also accepted as documented in
+    <code>RECIPIENTS.md</code>. No patient-identifiable data should be included.
   </p>
-  <pre><code>RecipientName,RecipientEmail,Code
-"Dr. Jane Doe","jane.doe@healthmail.ie","D123"
-"NMH Outpatients Clinic","outpatients@nmh.ie","NMH-01"</code></pre>
+  <pre><code>recipientId,displayName,email,active,organisation,site,department,service
+"recipient-001","Example Healthmail Recipient","recipient@healthmail.ie","true","Example Service","Example Site","Department","Service"</code></pre>
+  <p>
+    HealthMailer enforces its configured destination-domain allow-list at the final send boundary.
+    Addresses outside that allow-list are not sent and are quarantined with a
+    <code>RecipientRejected</code> outcome.
+  </p>
   <pre><code>$handoffRoot = "\\server\HealthMailerDrop$\incoming"
 $source = "\\approved-server\approved-share\HM-Recipients_Master.csv"
 $recipientFolder = Join-Path $handoffRoot "recipients"
@@ -324,7 +333,8 @@ C:\ProgramData\HealthMailer\logs\HealthMailerInstaller.log</code></pre>
   <ul>
     <li><code>READY</code> prevents half-written package processing.</li>
     <li>SHA256 validation prevents mismatched PDF and metadata sends.</li>
-    <li>The duplicate ledger prevents repeat sends.</li>
+    <li>The full duplicate ledger is retained as audit evidence; the active duplicate cache loads valid timestamped sent records from the previous 30 days and legacy timestamp-less records.</li>
+    <li>Package claims use a PID-bearing <code>.healthmailer.lock</code>; ambiguous lock ownership is left alone fail-closed.</li>
     <li>Failed and quarantined packages are retained for review.</li>
     <li>printRxer creates packages only; HealthMailer owns delivery through local Outlook.</li>
   </ul>

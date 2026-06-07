@@ -41,6 +41,15 @@ Recommended practical split:
 
 Ordinary users should not receive direct browse/delete access unless that access is explicitly approved by the local site. The normal workflow should not require users to open the share.
 
+The package drop root and central recipient-distribution folder have different access requirements:
+
+| Location | Required access |
+| --- | --- |
+| `<HandoffRoot>` | printRxer writers need create/write access; the HealthMailer watcher needs read, lock-file write, move, and delete access. |
+| `<HandoffRoot>\recipients` | Only authorised IT maintainers should have write access. printRxer runtime users or workstation identities need read-only access. |
+
+Do not propagate broad drop-root write permissions into `<HandoffRoot>\recipients`; recipient-list tampering can redirect clinical documents.
+
 ## Copy-Paste IT Request
 
 ```text
@@ -84,7 +93,7 @@ HealthMailer keeps:
 C:\ProgramData\HealthMailer\processed-ledger.jsonl
 ```
 
-If a package ID or completed package hash has already been sent, the package is quarantined rather than resent.
+If a package ID or completed package hash is present in the active duplicate cache, the package is quarantined rather than resent. The active cache loads timestamped sent records from the previous 30 days and retains legacy timestamp-less records fail-closed. The physical ledger remains full audit evidence and must not be manually truncated.
 
 ## Terminal Folders
 

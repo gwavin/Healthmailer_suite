@@ -25,7 +25,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\Install-HealthMailerTask.ps1
 Check for:
 
 - missing `READY`
-- existing fresh `.healthmailer.lock`
+- existing `.healthmailer.lock` owned by an active HealthMailer PID, or malformed lock ownership left fail-closed
 - malformed `request.json`
 - PDF hash mismatch
 - package already sent
@@ -127,6 +127,8 @@ C:\ProgramData\HealthMailer\processed-ledger.jsonl
 Do not manually resend without governance approval.
 
 Only one HealthMailer runtime should use a given `LocalRoot` and `processed-ledger.jsonl`. The ledger cache detects external file changes, but multiple active senders against one ledger are still an unsupported operating model.
+
+The active duplicate cache loads valid timestamped sent records from the previous 30 days and retains legacy timestamp-less records fail-closed. Do not manually edit or truncate the physical ledger.
 
 ## Archive Cleanup
 

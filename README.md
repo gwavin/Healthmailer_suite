@@ -81,7 +81,7 @@ Clean lab reset is explicit:
 
 - `READY` prevents half-written package processing.
 - SHA256 validation prevents mismatched PDF/metadata sends.
-- The duplicate ledger prevents repeat sends.
+- The duplicate ledger records send history. HealthMailer checks valid timestamped sent records from the previous 30 days, plus legacy timestamp-less records, in its active duplicate cache.
 - `result.json` and `summary.txt` provide terminal evidence for sent, failed, and quarantined packages.
 - printRxer installation/removal may require administrator/UAC approval because printer capture includes a port monitor, XPS driver, and local `printRxer` printer queue.
 - printRxer is installed once per machine. Its watcher scheduled task is registered for all interactive Windows users so shared workstations start a user-scoped watcher when each user logs on.

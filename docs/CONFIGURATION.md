@@ -23,7 +23,7 @@ Chart/ViewPoint copy is removed/deferred in the current release. It is not a sup
 | `HandoffRoot` | Folder watched for printRxer packages. Can be local or UNC. | `C:\ProgramData\printRxer\handoff` |
 | `LocalRoot` | HealthMailer config, logs, archives, quarantine, and ledger root. | `C:\ProgramData\HealthMailer` |
 | `PollIntervalSeconds` | Fallback polling interval in addition to file watcher events. | `5` |
-| `StaleLockMinutes` | Age after which `.healthmailer.lock` may be retried. | `30` |
+| `StaleLockMinutes` | Legacy compatibility field retained in existing config files. Current package claims use the PID stored in `.healthmailer.lock`; this value no longer controls lock expiry. | `30` |
 | `SentPrescriptionRetentionDays` | Days to keep `prescription.pdf` in successful `sent` archives. `0` keeps sent PDFs indefinitely. Audit files remain. | `14` |
 | `WriteHtmlSummary` | Enables self-contained `summary.html`. | `false` |
 | `SendMail` | Sends through Outlook when true and live sending is explicitly approved. Dry-run/no-send when false. | `false` |
@@ -113,6 +113,10 @@ Local HealthMailer archives, failed packages, quarantine, logs, config, and ledg
 Successful `sent` archives keep small audit files, but `prescription.pdf` is removed after `SentPrescriptionRetentionDays` days. The installer default is 14 days. Set `SentPrescriptionRetentionDays` to `0` only when governance approves retaining successful sent prescription PDFs indefinitely.
 
 Automatic deletion of failed and quarantine archives is disabled by default. Failed and quarantine packages are not cleaned up during normal processing because they require explicit review.
+
+HealthMailer writes its current process ID into `.healthmailer.lock`. A lock owned by an active process named `HealthMailer` is left alone; a dead PID or PID now owned by another process is reclaimed immediately. Malformed or unreadable lock ownership is treated as active and left for support review.
+
+`processed-ledger.jsonl` remains the full audit record and must not be manually truncated. To bound memory use, the active duplicate cache loads valid timestamped sent records from the previous 30 days. Legacy records without a valid timestamp remain in the cache fail-closed.
 
 printRxer has its own config at:
 

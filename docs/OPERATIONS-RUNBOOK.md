@@ -105,6 +105,8 @@ HealthMailer does not automatically delete `sent`, `failed`, or `quarantine` arc
 
 Do not manually edit or truncate `processed-ledger.jsonl`. It is duplicate-send safety evidence. A single HealthMailer runtime should own one `LocalRoot` and ledger.
 
+The ledger file remains complete audit evidence. To bound memory use, HealthMailer loads valid timestamped sent records from the previous 30 days into its active duplicate cache; legacy records without a valid timestamp remain loaded fail-closed.
+
 ## Interpret Outcomes
 
 | Outcome | Action |

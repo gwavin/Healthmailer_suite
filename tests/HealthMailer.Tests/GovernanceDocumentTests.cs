@@ -102,6 +102,25 @@ public sealed class GovernanceDocumentTests
         Assert.Contains(@"Get-Acl ""$env:WINDIR\System32\PrintRxerPortMonitor.dll""", runbook, StringComparison.Ordinal);
     }
 
+    [Test]
+    public void Current_docs_describe_recipient_pid_lock_and_ledger_boundaries()
+    {
+        string root = RepositoryRoot();
+        string recipients = File.ReadAllText(Path.Combine(root, "docs", "RECIPIENTS.md"));
+        string configuration = File.ReadAllText(Path.Combine(root, "docs", "CONFIGURATION.md"));
+        string contract = File.ReadAllText(Path.Combine(root, "docs", "HANDOFF-CONTRACT.md"));
+        string runbook = File.ReadAllText(Path.Combine(root, "docs", "OPERATIONS-RUNBOOK.md"));
+        string releaseGuide = File.ReadAllText(Path.Combine(root, "healthmailer_release_doc_cleaned.html"));
+
+        Assert.Contains("recipientId,displayName,email,active", recipients, StringComparison.Ordinal);
+        Assert.Contains("RecipientRejected", recipients, StringComparison.Ordinal);
+        Assert.Contains("process ID", configuration, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("previous 30 days", contract, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("must not be manually edited or truncated", contract, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Do not manually edit or truncate", runbook, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("RecipientName,RecipientEmail,Code", releaseGuide, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string RepositoryRoot()
     {
         string current = AppContext.BaseDirectory;

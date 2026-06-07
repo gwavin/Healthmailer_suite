@@ -73,6 +73,8 @@ Optional columns:
 organisation,site,department,service,sortOrder,notes
 ```
 
+The picker search index uses `organisation`, `site`, `department`, and `service` when present. `sortOrder` and `notes` are accepted but are not picker search fields.
+
 Rules:
 
 - `recipientId` must be stable and unique.
@@ -88,9 +90,22 @@ Supported Healthmail master export schema:
 DisplayName,Healthmail Address,Company,City,Phone,County,Title
 ```
 
-For this format, `DisplayName` is used as the picker name, `Healthmail Address` is used as the delivery address and stable recipient ID, and all rows are treated as active. `Company`, `City`, `Phone`, `County`, and `Title` are included in search terms when present.
+`Display Name` and `Healthmail Email` are also accepted header aliases. For this format, the display-name field is used as the picker name, the Healthmail address is used as the delivery address and stable recipient ID, and all rows are treated as active. `Company`, `City`, `County`, `Phone`, and `Title` are included in search terms when present. The validator also tolerates the known export header variant `County ` with trailing whitespace.
 
-Older Outlook-style exports with `Name` and `E-mail Address` are also accepted for compatibility. In those files, `Government ID Number` or `ID 2` is preferred as the stable recipient ID when present; otherwise the email address is used.
+Older Outlook-style exports are also accepted for compatibility. The name header may be `Name`, `Display Name`, or `DisplayName`; the address header may be `E-mail Address`, `Email Address`, or `Email`. `Government ID Number` or `ID 2` is preferred as the stable recipient ID when present; otherwise the email address is used. Picker search includes `Title`, `First Name`, `Middle Name`, `Last Name`, `Company`, `City`, `County`, `Business Phone`, and `Job Title` when present.
+
+## Delivery Domain Boundary
+
+Recipient-list validation confirms the CSV structure and email syntax. HealthMailer separately enforces the final send-boundary allow-list. The installer default permits:
+
+```text
+healthmail.ie
+hse.ie
+nmh.ie
+rotunda.ie
+```
+
+An otherwise valid recipient outside the configured `AllowedRecipientDomains` list is not sent. HealthMailer records a `RecipientRejected` outcome and moves the package to quarantine for review.
 
 The recipients.csv file is an address book/configuration file only. It must not contain patient names, MRNs, prescription details, or other patient-identifiable information.
 
