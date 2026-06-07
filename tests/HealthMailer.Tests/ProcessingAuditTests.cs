@@ -91,6 +91,36 @@ public sealed class ProcessingAuditTests
         Assert.False(ledger.HasSent(CreatePackage("pkg", "hash")));
     }
 
+    [Test]
+    public void HasSent_excludes_timestamped_entries_older_than_thirty_days()
+    {
+        string ledgerPath = CreateLedgerPath();
+        WriteSentLedgerEntry(ledgerPath, "old-package", "old-hash", DateTimeOffset.UtcNow.AddDays(-31));
+        ProcessedPackageLedger ledger = new(ledgerPath);
+
+        Assert.False(ledger.HasSent(CreatePackage("old-package", "old-hash")));
+    }
+
+    [Test]
+    public void HasSent_keeps_timestamped_entries_inside_thirty_day_window()
+    {
+        string ledgerPath = CreateLedgerPath();
+        WriteSentLedgerEntry(ledgerPath, "recent-package", "recent-hash", DateTimeOffset.UtcNow.AddDays(-29));
+        ProcessedPackageLedger ledger = new(ledgerPath);
+
+        Assert.True(ledger.HasSent(CreatePackage("recent-package", "recent-hash")));
+    }
+
+    [Test]
+    public void HasSent_keeps_legacy_entries_without_timestamp()
+    {
+        string ledgerPath = CreateLedgerPath();
+        WriteSentLedgerEntry(ledgerPath, "legacy-package", "legacy-hash", completedAtUtc: null);
+        ProcessedPackageLedger ledger = new(ledgerPath);
+
+        Assert.True(ledger.HasSent(CreatePackage("legacy-package", "legacy-hash")));
+    }
+
     private static string CreateLedgerPath()
     {
         return Path.Combine(Path.GetTempPath(), "healthmailer-ledger-" + Guid.NewGuid().ToString("N"), "processed-ledger.jsonl");
@@ -126,5 +156,18 @@ public sealed class ProcessingAuditTests
             CompletedPackageHash = completedPackageHash,
             MailSent = true
         };
+    }
+
+    private static void WriteSentLedgerEntry(string ledgerPath, string packageId, string completedPackageHash, DateTimeOffset? completedAtUtc)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(ledgerPath)!);
+        File.WriteAllText(ledgerPath, JsonSerializer.Serialize(new
+        {
+            PackageId = packageId,
+            outcome = "Sent",
+            CompletedAtUtc = completedAtUtc,
+            CompletedPackageHash = completedPackageHash,
+            MailSent = true
+        }) + Environment.NewLine);
     }
 }

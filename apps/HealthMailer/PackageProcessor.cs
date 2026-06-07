@@ -160,20 +160,16 @@ public sealed class PackageProcessor
         try
         {
             FileStream lockStream = new(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-            if (lockStream.Length > 0)
+            if (lockStream.Length > 0 && IsActiveHealthMailerLockOwner(lockStream))
             {
-                DateTimeOffset lockTime = ReadLockTime(lockPath, lockStream);
-                if (DateTimeOffset.UtcNow - lockTime < TimeSpan.FromMinutes(_config.StaleLockMinutes))
-                {
-                    lockStream.Dispose();
-                    return null;
-                }
+                lockStream.Dispose();
+                return null;
             }
 
             lockStream.SetLength(0);
             lockStream.Position = 0;
-            byte[] timestamp = System.Text.Encoding.UTF8.GetBytes(DateTimeOffset.UtcNow.ToString("O") + Environment.NewLine);
-            lockStream.Write(timestamp);
+            byte[] processId = System.Text.Encoding.UTF8.GetBytes(Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture) + Environment.NewLine);
+            lockStream.Write(processId);
             lockStream.Flush(flushToDisk: true);
             return new PackageClaim(lockPath, lockStream);
         }
@@ -193,20 +189,35 @@ public sealed class PackageProcessor
         };
     }
 
-    private static DateTimeOffset ReadLockTime(string lockPath, FileStream lockStream)
+    private static bool IsActiveHealthMailerLockOwner(FileStream lockStream)
     {
         lockStream.Position = 0;
         byte[] buffer = new byte[lockStream.Length];
         _ = lockStream.Read(buffer);
         string content = System.Text.Encoding.UTF8.GetString(buffer).Trim();
-        if (DateTimeOffset.TryParse(content, out DateTimeOffset parsed))
+        lockStream.Position = 0;
+        if (!int.TryParse(content, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int processId))
         {
-            lockStream.Position = 0;
-            return parsed.ToUniversalTime();
+            return true;
         }
 
-        lockStream.Position = 0;
-        return File.GetLastWriteTimeUtc(lockPath);
+        try
+        {
+            using System.Diagnostics.Process process = System.Diagnostics.Process.GetProcessById(processId);
+            return process.ProcessName.Equals("HealthMailer", StringComparison.OrdinalIgnoreCase);
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return true;
+        }
     }
 
     private void WriteAndArchive(string packageDirectory, ProcessingResult result, string archiveRoot, PackageClaim claim)

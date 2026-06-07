@@ -291,12 +291,13 @@ public sealed class ReleaseBundleNamingTests
         string repoRoot = FindRepoRoot();
         string processor = File.ReadAllText(Path.Combine(repoRoot, "apps", "HealthMailer", "PackageProcessor.cs"));
         int claimIndex = processor.IndexOf("private PackageClaim? TryClaimPackage", StringComparison.Ordinal);
-        int nextMethodIndex = processor.IndexOf("private static DateTimeOffset ReadLockTime", StringComparison.Ordinal);
+        int nextMethodIndex = processor.IndexOf("private static bool IsActiveHealthMailerLockOwner", StringComparison.Ordinal);
         string claimBody = processor.Substring(claimIndex, nextMethodIndex - claimIndex);
 
         Assert.Contains("FileMode.OpenOrCreate", claimBody, StringComparison.Ordinal);
         Assert.Contains("FileShare.None", claimBody, StringComparison.Ordinal);
         Assert.DoesNotContain("File.Exists(lockPath)", claimBody, StringComparison.Ordinal);
+        Assert.Contains("Environment.ProcessId", claimBody, StringComparison.Ordinal);
     }
 
     [Test]

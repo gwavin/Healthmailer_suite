@@ -167,6 +167,7 @@ public sealed class ProcessedPackageLedger
 
         _sentPackageIds.Clear();
         _sentCompletedHashes.Clear();
+        DateTimeOffset cutoffUtc = DateTimeOffset.UtcNow.AddDays(-30);
         foreach (string line in File.ReadLines(_path))
         {
             if (string.IsNullOrWhiteSpace(line))
@@ -178,6 +179,11 @@ public sealed class ProcessedPackageLedger
             {
                 using JsonDocument document = JsonDocument.Parse(line);
                 JsonElement root = document.RootElement;
+                if (TryReadCompletedAtUtc(root, out DateTimeOffset completedAtUtc) && completedAtUtc < cutoffUtc)
+                {
+                    continue;
+                }
+
                 string outcome = root.TryGetProperty("outcome", out JsonElement status) ? status.ToString() : string.Empty;
                 bool mailSent =
                     root.TryGetProperty("mailSent", out JsonElement camelMailSent) && camelMailSent.ValueKind == JsonValueKind.True ||
@@ -235,5 +241,21 @@ public sealed class ProcessedPackageLedger
         }
 
         return string.Empty;
+    }
+
+    private static bool TryReadCompletedAtUtc(JsonElement root, out DateTimeOffset completedAtUtc)
+    {
+        foreach (string name in new[] { "completedAtUtc", "CompletedAtUtc" })
+        {
+            if (root.TryGetProperty(name, out JsonElement value) &&
+                value.ValueKind == JsonValueKind.String &&
+                value.TryGetDateTimeOffset(out completedAtUtc))
+            {
+                return true;
+            }
+        }
+
+        completedAtUtc = default;
+        return false;
     }
 }

@@ -282,11 +282,11 @@ public sealed class PackageProcessorTests
     }
 
     [Test]
-    public void ProcessAvailablePackages_stale_lock_is_retried()
+    public void ProcessAvailablePackages_dead_pid_lock_is_retried_immediately()
     {
         TestPaths paths = CreatePaths();
         string packageDirectory = CreatePackage(paths.HandoffRoot, "pkg-stale-lock");
-        File.WriteAllText(Path.Combine(packageDirectory, ".healthmailer.lock"), DateTimeOffset.UtcNow.AddHours(-2).ToString("O"));
+        File.WriteAllText(Path.Combine(packageDirectory, ".healthmailer.lock"), int.MaxValue.ToString());
         RecordingMailer mailer = new();
 
         int processed = CreateProcessor(paths, mailer).ProcessAvailablePackages();
@@ -296,11 +296,11 @@ public sealed class PackageProcessorTests
     }
 
     [Test]
-    public void ProcessAvailablePackages_fresh_lock_is_ignored()
+    public void ProcessAvailablePackages_ambiguous_lock_is_ignored()
     {
         TestPaths paths = CreatePaths();
         string packageDirectory = CreatePackage(paths.HandoffRoot, "pkg-fresh-lock");
-        File.WriteAllText(Path.Combine(packageDirectory, ".healthmailer.lock"), DateTimeOffset.UtcNow.ToString("O"));
+        File.WriteAllText(Path.Combine(packageDirectory, ".healthmailer.lock"), "not-a-pid");
         RecordingMailer mailer = new();
 
         int processed = CreateProcessor(paths, mailer).ProcessAvailablePackages();
@@ -308,22 +308,6 @@ public sealed class PackageProcessorTests
         Assert.Equal(0, processed);
         Assert.Empty(mailer.Sent);
         Assert.True(Directory.Exists(packageDirectory));
-    }
-
-    [Test]
-    public void ProcessAvailablePackages_invalid_stale_lock_uses_file_timestamp_and_retries()
-    {
-        TestPaths paths = CreatePaths();
-        string packageDirectory = CreatePackage(paths.HandoffRoot, "pkg-invalid-stale-lock");
-        string lockPath = Path.Combine(packageDirectory, ".healthmailer.lock");
-        File.WriteAllText(lockPath, "not a timestamp");
-        File.SetLastWriteTimeUtc(lockPath, DateTime.UtcNow.AddHours(-2));
-        RecordingMailer mailer = new();
-
-        int processed = CreateProcessor(paths, mailer).ProcessAvailablePackages();
-
-        Assert.Equal(1, processed);
-        Assert.Single(mailer.Sent);
     }
 
     [Test]
