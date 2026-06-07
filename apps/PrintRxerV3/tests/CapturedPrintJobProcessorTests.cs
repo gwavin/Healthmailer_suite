@@ -9,6 +9,14 @@ namespace PrintRxerV3.Tests;
 public sealed class CapturedPrintJobProcessorTests
 {
     [Test]
+    public void Print_queue_cleanup_preserves_recent_completed_jobs()
+    {
+        string source = File.ReadAllText(Path.Combine(FindRepoRoot(), "apps", "PrintRxerV3", "app", "PrintQueueCleaner.cs"));
+
+        Assert.Contains("(Get-Date).Subtract($_.TimeSubmitted).TotalMinutes -gt 5", source);
+    }
+
+    [Test]
     public void ProcessOne_moves_ready_capture_to_processed_after_handoff_package_is_written()
     {
         string root = Path.Combine(Path.GetTempPath(), "printrxer-v3-capture-" + Guid.NewGuid().ToString("N"));
@@ -100,6 +108,17 @@ public sealed class CapturedPrintJobProcessorTests
         Assert.Equal("RecipientSelectionCancelled", result.Outcome);
         Assert.Equal(1, cleanupCalls);
         Assert.Equal(1, pickerCalls);
+    }
+
+    private static string FindRepoRoot()
+    {
+        DirectoryInfo? directory = new(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "PrintRxerSuite.slnx")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName ?? throw new DirectoryNotFoundException("Could not locate repository root.");
     }
 
     [Test]

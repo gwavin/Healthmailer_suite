@@ -31,6 +31,11 @@ public static class HandoffPackageLoader
                 return PackageLoadResult.Fail("Package is missing request.json, prescription.pdf, or request.sha256.");
             }
 
+            if (!WaitForFilesToSettle([requestPath, pdfPath, hashPath], maxRetries: 5, delayMs: 200))
+            {
+                return PackageLoadResult.Fail("Package payload files remain locked by an external process.");
+            }
+
             if (!SecurityUtilities.LooksLikePdf(pdfPath))
             {
                 return PackageLoadResult.Fail("prescription.pdf is not a PDF.");
@@ -138,5 +143,37 @@ public static class HandoffPackageLoader
     {
         string combined = SecurityUtilities.ComputeSha256(requestPath) + SecurityUtilities.ComputeSha256(pdfPath) + SecurityUtilities.ComputeSha256(hashPath);
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(combined))).ToLowerInvariant();
+    }
+
+    private static bool WaitForFilesToSettle(string[] paths, int maxRetries, int delayMs)
+    {
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            bool allClear = true;
+            foreach (string path in paths)
+            {
+                try
+                {
+                    using FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None);
+                }
+                catch (IOException)
+                {
+                    allClear = false;
+                    break;
+                }
+            }
+
+            if (allClear)
+            {
+                return true;
+            }
+
+            if (attempt < maxRetries - 1)
+            {
+                Thread.Sleep(delayMs * (attempt + 1));
+            }
+        }
+
+        return false;
     }
 }

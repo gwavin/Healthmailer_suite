@@ -12,7 +12,8 @@ public static class PrintQueueCleaner
         }
 
         string command = "Get-PrintJob -PrinterName 'printRxer' -ErrorAction SilentlyContinue | " +
-            "Where-Object { $_.JobStatus -match 'Complete' } | Remove-PrintJob -ErrorAction SilentlyContinue";
+            "Where-Object { $_.JobStatus -match 'Complete' -and (Get-Date).Subtract($_.TimeSubmitted).TotalMinutes -gt 5 } | " +
+            "Remove-PrintJob -ErrorAction SilentlyContinue";
         using Process? process = Process.Start(new ProcessStartInfo
         {
             FileName = "powershell.exe",

@@ -60,6 +60,24 @@ public sealed class HandoffPackageTests
         Assert.Equal(first.Package!.CompletedPackageHash, second.Package!.CompletedPackageHash);
     }
 
+    [Test]
+    public void TryLoadReadyPackage_retries_transient_payload_file_lock()
+    {
+        string packageDirectory = CreatePackage();
+        string requestPath = Path.Combine(packageDirectory, "request.json");
+        using FileStream transientLock = File.Open(requestPath, FileMode.Open, FileAccess.Read, FileShare.None);
+        Task releaseLock = Task.Run(() =>
+        {
+            Thread.Sleep(300);
+            transientLock.Dispose();
+        });
+
+        PackageLoadResult result = HandoffPackageLoader.TryLoad(packageDirectory);
+        releaseLock.GetAwaiter().GetResult();
+
+        Assert.True(result.Success, result.Error);
+    }
+
     private static string CreatePackage(bool includeReady = true)
     {
         string packageDirectory = Path.Combine(Path.GetTempPath(), "healthmailer-package-" + Guid.NewGuid().ToString("N"));
