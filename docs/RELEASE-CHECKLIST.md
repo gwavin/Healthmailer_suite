@@ -85,6 +85,7 @@
 - [ ] Missing `submittingUserSid` defers by default.
 - [ ] Explicit import/test override for missing SID is documented.
 - [ ] Picker still requires explicit button action; double-click does not send.
+- [ ] `Preview document` opens the controlled in-app viewer with only page navigation and close controls; it provides no print, save, external-viewer, prepare, or send action.
 - [ ] Network/share unavailable during printRxer publish leaves package in local outbox.
 - [ ] Pending local package later publishes after share returns.
 - [ ] printRxer watcher uses configured `RetryIntervalSeconds`.
