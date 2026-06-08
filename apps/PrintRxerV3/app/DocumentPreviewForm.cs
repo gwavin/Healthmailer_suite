@@ -32,15 +32,11 @@ internal sealed class DocumentPreviewForm : Form
         _pageImage.BackColor = Color.FromArgb(64, 68, 74);
         _pageImage.SizeMode = PictureBoxSizeMode.Zoom;
 
-        Button fitButton = CreateButton("Fit", 80);
-        Button zoomButton = CreateButton("Actual size", 100);
         Button closeButton = CreateButton("Close", 100);
         closeButton.DialogResult = DialogResult.OK;
 
         _previousButton.Click += (_, _) => ShowPage(_pageIndex - 1);
         _nextButton.Click += (_, _) => ShowPage(_pageIndex + 1);
-        fitButton.Click += (_, _) => _pageImage.SizeMode = PictureBoxSizeMode.Zoom;
-        zoomButton.Click += (_, _) => _pageImage.SizeMode = PictureBoxSizeMode.CenterImage;
 
         FlowLayoutPanel controls = new()
         {
@@ -53,8 +49,6 @@ internal sealed class DocumentPreviewForm : Form
         controls.Controls.Add(_previousButton);
         controls.Controls.Add(_nextButton);
         controls.Controls.Add(_pageLabel);
-        controls.Controls.Add(fitButton);
-        controls.Controls.Add(zoomButton);
         controls.Controls.Add(closeButton);
 
         Controls.Add(_pageImage);

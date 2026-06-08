@@ -21,7 +21,8 @@ public sealed class PreviewPrescriptionServiceTests
         Assert.Contains("\"Close\"", previewForm);
         Assert.Contains("\"Previous page\"", previewForm);
         Assert.Contains("\"Next page\"", previewForm);
-        Assert.Contains("\"Fit\"", previewForm);
+        Assert.DoesNotContain("\"Fit\"", previewForm);
+        Assert.DoesNotContain("\"Actual size\"", previewForm);
         Assert.DoesNotContain("WebView", previewForm, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Process.Start", previewForm, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("SaveFileDialog", previewForm, StringComparison.OrdinalIgnoreCase);
