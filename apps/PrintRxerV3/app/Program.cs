@@ -418,10 +418,11 @@ public static class Program
     {
         try
         {
-            Log("PreviewPrescriptionRequested: rendering temporary preview.");
-            string previewPath = PreviewPrescriptionService.PreparePreviewPdf(context, config.TempRoot);
-            PreviewPrescriptionService.OpenWithDefaultViewer(previewPath);
-            Log("PreviewPrescriptionOpened: " + previewPath);
+            Log("PreviewPrescriptionRequested: rendering controlled in-app preview.");
+            IReadOnlyList<byte[]> pages = PreviewPrescriptionService.PreparePreviewPages(context);
+            using DocumentPreviewForm preview = new(pages);
+            preview.ShowDialog();
+            Log("PreviewPrescriptionClosed.");
         }
         catch (Exception ex)
         {

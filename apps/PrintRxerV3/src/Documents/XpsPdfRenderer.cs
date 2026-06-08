@@ -11,6 +11,41 @@ namespace PrintRxerV3.Documents;
 
 public static partial class XpsPdfRenderer
 {
+    public static IReadOnlyList<byte[]> RenderToJpegPages(
+        string xpsPath,
+        int dpi = 150,
+        int jpegQuality = 85,
+        int maxPageCount = 100,
+        long maxRenderedPixelsPerPage = 50_000_000)
+    {
+        if (string.IsNullOrWhiteSpace(xpsPath) || !File.Exists(xpsPath))
+        {
+            throw new FileNotFoundException("Captured XPS file not found.", xpsPath);
+        }
+
+        string renderPath = xpsPath;
+        string? normalizedPath = null;
+        try
+        {
+            if (IsPiecewiseXpsPackage(xpsPath))
+            {
+                normalizedPath = NormalizePiecewiseXpsPackage(xpsPath);
+                renderPath = normalizedPath;
+            }
+
+            return RenderPages(renderPath, dpi, jpegQuality, maxPageCount, maxRenderedPixelsPerPage)
+                .Select(page => page.ImageBytes)
+                .ToArray();
+        }
+        finally
+        {
+            if (normalizedPath is not null)
+            {
+                TryDelete(normalizedPath);
+            }
+        }
+    }
+
     public static void RenderToPdf(
         string xpsPath,
         string pdfPath,

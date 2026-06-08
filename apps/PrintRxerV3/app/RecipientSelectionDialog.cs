@@ -723,7 +723,17 @@ public sealed class RecipientSelectionDialog : Form
         previewButton.Enabled = false;
         try
         {
-            _previewPrescription();
+            bool previousTopMost = TopMost;
+            TopMost = false;
+            try
+            {
+                _previewPrescription();
+            }
+            finally
+            {
+                TopMost = previousTopMost;
+                Activate();
+            }
         }
         catch
         {

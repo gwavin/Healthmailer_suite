@@ -58,6 +58,17 @@ public static class PreviewPrescriptionService
         });
     }
 
+    public static IReadOnlyList<byte[]> PreparePreviewPages(CapturedPrintJobContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        if (string.IsNullOrWhiteSpace(context.PayloadPath) || !File.Exists(context.PayloadPath))
+        {
+            throw new FileNotFoundException("Captured document payload was not available for preview.", context.PayloadPath);
+        }
+
+        return XpsPdfRenderer.RenderToJpegPages(context.PayloadPath);
+    }
+
     private static void TryDeleteDirectory(string directory)
     {
         try
